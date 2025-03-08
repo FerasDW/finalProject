@@ -160,7 +160,7 @@
 /* transform animation effect for sidebar menu */
 .sidebar-item:hover .sidebar-icon,
 .sidebar-item:hover {
-  transform: scale(1.09);
+  transform: scale(1.05);
   color: #0073ff;
 }
 
@@ -169,13 +169,5 @@
 .sidebar-item.chat-active {
   background: rgba(0, 115, 255, 0.238);
   color: #0073ff;
-  transform: none;
+  /* transform: none; */
 }
-
-/* .sidebar-item.chat-active:hover {
-  transform: none;
-} */
-
-/* .sidebar-item:not(.chat-active):hover {
-  background: rgba(0, 115, 255, 0.1);
-} */
