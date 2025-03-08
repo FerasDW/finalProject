@@ -5,22 +5,19 @@ import '../../../../CSS/Dashboard/Sidebar.css';
 import Logo from "../../../../Assets/Images/Logo/PNG/LogoSquare@0.5x.png";
 import { AlignJustify } from "react-feather";
 
-const Sidebar = ({ menuItems, position = "left" }) => {
+const Sidebar = ({ menuItems, position = "left"}) => {
   const [selected, setSelected] = useState("Home");
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeChat, setActiveChat] = useState(null);
+  // const [selectedItem, setselectedItem] = useState(null);
 
   const handleItemClick = (title) => {
+    const contact = menuItems.find(item => item.title === title);
     if (position === "right") {
-      const contact = menuItems.find(item => item.title === title);
-
-      setActiveChat(activeChat?.title === title ? null : contact);
-      setSelected(activeChat?.title === title ? null : title);
+      setSelected(selected?.title === title ? null : contact);
     }
 
     if (position === "left") {
-      const contact = menuItems.find(item => item.title === title);
-      setSelected(activeChat?.title === title ? null : title);
+      setSelected(title);
     }
   };
 
@@ -36,7 +33,7 @@ const Sidebar = ({ menuItems, position = "left" }) => {
         </div>
         <div className="sidebar-header">
           <img className="sidebar-profile-image" src={Logo} alt="Profile" />
-          {!isCollapsed && <span className="sidebar-profile-username">test</span>}
+          <span className="sidebar-profile-username">test</span>
         </div>
         <nav className="sidebar-menu">
           {menuItems.map((item, index) => (
@@ -46,16 +43,16 @@ const Sidebar = ({ menuItems, position = "left" }) => {
               selected={selected}
               onClick={() => handleItemClick(item.title)}
               isCollapsed={isCollapsed}
-              isActive={activeChat?.title === item.title}
+              isActive={selected?.title === item.title}
             />
           ))}
         </nav>
       </div>
-      {activeChat && (
+      {selected && position === "right" &&selected !== "Home" &&( // should fixed !!
         <ChatInterface
-          contact={activeChat}
+          contact={selected}
           onClose={() => {
-            setActiveChat(null);
+            // setselectedItem(null);
             setSelected(null);
           }}
         />

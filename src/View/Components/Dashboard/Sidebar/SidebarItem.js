@@ -1,9 +1,9 @@
 const SidebarItem = ({title, icon, badge, selected, onClick, isCollapsed, isActive,}) => {
   return (
     <div
-    className={`sidebar-item ${selected === title && !isActive ? "active" : ""} ${isActive ? "chat-active" : ""}`}
-    onClick={onClick}
-      title={isCollapsed ? title : ""}
+      className={`sidebar-item ${selected === title && !isActive ? "active" : ""} ${isActive ? "chat-active" : ""}`}
+      onClick={onClick}
+      title={title}
     >
       <div className="sidebar-icon">{icon}</div>
       {!isCollapsed && (
