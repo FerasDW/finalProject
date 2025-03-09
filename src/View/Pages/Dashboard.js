@@ -1,24 +1,14 @@
-import Sidebar from "../Components/Dashboard/Sidebar/Sidebar";
-import Content from "../Components/Dashboard/Content/content";
-import Topbar from "../Components/Dashboard/Topbar/Topbar";
-import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList";
-
+import Sidebar from "../Components/Dashboard/Sidebar/Sidebar.js";
+import Content from "../Components/Dashboard/Content/Content.js";
+import Topbar from "../Components/Dashboard/Topbar/Topbar.js";
+import "../../CSS/Dashboard/Dashboard.css"
+import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList.js";
 export default function Dashboard({ userRole }) {
   return (
-<div className="body" style={{ height: "100vh" }}>
-      <div className="dashboard" style={{ display: "flex", height: "100%" }}>
-        
+<div className="body">
+      <div className="dashboard" >
         <Sidebar menuItems={leftMenuItems} position="left" />
-        <div
-          className="main"
-          style={{ 
-            display: "flex", 
-            flexDirection: "column", 
-            width: "100%",
-            height: "100%",
-            overflow: "hidden"
-          }}
-        >
+        <div className="main">
           <Topbar />
           <Content />
         </div>

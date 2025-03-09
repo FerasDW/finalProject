@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "../View/Pages/Auth/login.js";
-import Dashboard from "../View/Components/Dashboard/Dashboard.js";
+import Dashboard from "../View/Pages/Dashboard.js";
 function GlobalRoutes() {
   return (
     <Routes>
