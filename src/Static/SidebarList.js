@@ -6,6 +6,8 @@ import femaleFace2 from "../Assets/Images/Logo/PNG/femaleFace2.png";
 
 
 export const leftMenuItems = [
+    {
+    "1100":[
     { title: "Home", icon: <Home />},
     { title: "Courses", icon: <BookOpen />},
     { title: "Calendar", icon: <Calendar />},
@@ -13,7 +15,8 @@ export const leftMenuItems = [
     { title: "Community", icon: <Users />},
     { title: "Statistics", icon: <BarChart2 />},
     { title: "Settings", icon: <Settings />},
-    { title: "Logout", icon: <LogOut />},
+    { title: "Logout", icon: <LogOut />}]
+}
 ];
 
 const imgStyle = { width: 30, height: 30, borderRadius: 10 };

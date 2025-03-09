@@ -15,6 +15,13 @@ body {
   align-items: center;
   height: 100vh;
 }
+.login-body
+{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
 @media (max-width: 576px) {
   .container {
@@ -43,10 +50,10 @@ body {
   .container {
     width: 720px;
   }
-  /* .logo{
+  .logo{
   position: relative;
   left:75px;
-} */
+}
   .input-div input {
     height: 30px;
   }
@@ -80,7 +87,7 @@ body {
 }
 @media (min-width: 1200px) {
   .container {
-    width: 100%;
+    width: 1160px;
   }
 }
 
