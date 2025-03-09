@@ -9,5 +9,4 @@ function GlobalRoutes() {
     </Routes>
   );
 }
-
 export default GlobalRoutes;

@@ -8,98 +8,92 @@ import "../../../index.css";
 import axios from "axios";
 import { LOGIN } from "../../../Api/Api";
 import { AuthContext } from "../../../Context/AuthContext.js";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Error from "../../Components/Auth/Error.js";
-import { useContext } from "react";
-
-
 
 export default function Login() {
-  //hooks
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  //token context
-  const  token  = useContext(AuthContext);
-  console.log(token);
-  //to use navigation
+  const { loginUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  //functions
   function handleChanges(e) {
-    setFormData({ ...formData, [e.target.name]: e.target.value });//to change the value of the input
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   }
-  //to handle the login
+
   async function handleLogin(e) {
-    e.preventDefault();//to prevent the default behavior of the form
-    setLoading(true);//to show the loading spinner
+    e.preventDefault();
+    setLoading(true);
     setError("");
+
     try {
-      
-      const loginResponse = await axios.post(LOGIN, formData,
-      {headers: {Authorization: `Bearer `}});//to send the data to the server
-      const serverToken = loginResponse.data.token;//to get the token from the server
-      token.setToken(serverToken);//to set the token in the context
-      navigate("/dashboard", { replace: true });//to navigate to the dashboard
+      // ✅ Send login request (cookies will be handled automatically)
+      await axios.post(LOGIN, formData, { withCredentials: true });
+
+      // ✅ Fetch user data after login
+      const response = await axios.get("http://localhost:8080/api/auth/user", {
+        withCredentials: true,
+      });
+      console.log("User data:", response);
+      // ✅ Update authentication context
+      loginUser(response.data);
+
+      navigate("/dashboard", { replace: true });
+
     } catch (err) {
-      console.log("Login Error:", err);
-      setError("Failed to log in");
+      console.error("Login Error:", err);
+      setError("Invalid email or password");
     }
     setLoading(false);
   }
+
   return (
-    <div className="body">
+    <div className="login-body">
       <div className="container">
         <div className="form-container">
           <div className="login-form form-splitter">
-              <form className="form-group" onSubmit={handleLogin}>
-                <img className="logo" src={Logo} alt="logo" />
-                  <Input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter email"
-                    label="Email"
-                    value= {formData.email}
-                    icon={faUser}
-                    onChange={handleChanges}
-                  />
-                
-                  <Input
-                    type="password"
-                    id="password"
-                    placeholder="Password"
-                    name="password"
-                    label="password"
-                    value= {formData.password}
-                    icon={faLock}
-                    onChange={handleChanges}
-                  />
-                
-                <button type="submit" className="btn">
-                  Submit
-                </button>
-                {error && <Error />}
-              </form>
+            <form className="form-group" onSubmit={handleLogin}>
+              <img className="logo" src={Logo} alt="logo" />
+              
+              <Input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter email"
+                label="Email"
+                value={formData.email}
+                icon={faUser}
+                onChange={handleChanges}
+              />
 
-              <div className="form-images">
-                <img className="bright-background"
-                  src={brightBackGround}
-                  alt="login"
-                />
-                <h3>Empowering learners<br/>
-                   of today to become <br/>the leaders of <br/>tomorrow</h3>
-                <img className="student-background"
-                  src={studentBackGround}
-                  alt="login"
-                />
-              </div>
+              <Input
+                type="password"
+                id="password"
+                placeholder="Password"
+                name="password"
+                label="password"
+                value={formData.password}
+                icon={faLock}
+                onChange={handleChanges}
+              />
+
+              <button type="submit" className="btn">
+                {loading ? "Logging in..." : "Submit"}
+              </button>
+              {error && <Error />}
+            </form>
+
+            <div className="form-images">
+              <img className="bright-background" src={brightBackGround} alt="login" />
+              <h3>Empowering learners<br/>of today to become <br/>the leaders of <br/>tomorrow</h3>
+              <img className="student-background" src={studentBackGround} alt="login" />
             </div>
           </div>
         </div>
-      
+      </div>
     </div>
   );
-};
+}

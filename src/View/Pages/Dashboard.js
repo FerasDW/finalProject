@@ -2,6 +2,7 @@ import Sidebar from "../Components/Dashboard/Sidebar/Sidebar";
 import Content from "../Components/Dashboard/Content/content";
 import Topbar from "../Components/Dashboard/Topbar/Topbar";
 import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList";
+
 export default function Dashboard({ userRole }) {
   return (
 <div className="body" style={{ height: "100vh" }}>
