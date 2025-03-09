@@ -4,6 +4,7 @@ import maleFace2 from "../Assets/Images/Logo/PNG/maleFace2.png";
 import femaleFace1 from "../Assets/Images/Logo/PNG/femaleFace1.png";
 import femaleFace2 from "../Assets/Images/Logo/PNG/femaleFace2.png";
 
+
 export const leftMenuItems = [
     {
     "1100":[
@@ -18,14 +19,18 @@ export const leftMenuItems = [
 }
 ];
 
+const imgStyle = { width: 30, height: 30, borderRadius: 10 };
+const createMenuItem = (title, imgSrc) => ({
+    title,
+    icon: <img src={imgSrc} alt={title} style={imgStyle} />
+});
 export const rightMenuItems = [
-    { title: "Muhammed1", icon: <img src={maleFace1} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed2", icon: <img src={maleFace2} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed3", icon: <img src={femaleFace1} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed4", icon: <img src={femaleFace2} alt="" style={{ width:30, height:30, borderRadius: 10}} />},    { title: "Muhammed", icon: <img src={maleFace1} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed5", icon: <img src={maleFace2} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed6", icon: <img src={femaleFace1} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed7", icon: <img src={femaleFace2} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed8", icon: <img src={femaleFace1} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
-    { title: "Muhammed9", icon: <img src={femaleFace2} alt="" style={{ width:30, height:30, borderRadius: 10}} />},
+    createMenuItem("Muhammed1", maleFace1),
+    createMenuItem("Muhammed2", maleFace2),
+    createMenuItem("Muhammed3", femaleFace1),
+    createMenuItem("Muhammed4", femaleFace2),
+    createMenuItem("Muhammed1", maleFace1),
+    createMenuItem("Muhammed2", maleFace2),
+    createMenuItem("Muhammed3", femaleFace1),
+    createMenuItem("Muhammed4", femaleFace2),
 ];
