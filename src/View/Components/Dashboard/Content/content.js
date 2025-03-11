@@ -113,26 +113,22 @@ const Content = ({ userRole }) => {
           />
         </div>
 
-               {/* row 3 */}
-       <div className="row">
-         <Box
-           title="Test"
-           contentBox="This is a test1"
-           image={img}
-           gridRow="span 10"
-         />
-         <Box
-           title="Test"
-           contentBox="This is a test2"
-           image={img}
-           gridColumn="span 8"
-           gridRow="span 10"
-          
-
-         />
-       </div>
-
-        
+        {/* row 3 */}
+        <div className="row">
+          <Box
+            title="Test"
+            contentBox="This is a test1"
+            image={img}
+            gridRow="span 10"
+          />
+          <Box
+            title="Test"
+            contentBox="This is a test2"
+            image={img}
+            gridColumn="span 8"
+            gridRow="span 10"
+          />
+        </div>
       </>
     ),
     lecturer: (
@@ -165,7 +161,7 @@ const Content = ({ userRole }) => {
   );
 };
 
-export default Content
+export default Content;
 
 //   return (
 //     <div className="content">
@@ -227,7 +223,6 @@ export default Content
 //           image={img}
 //           gridColumn="span 8"
 //           gridRow="span 10"
-          
 
 //         />
 //       </div>
