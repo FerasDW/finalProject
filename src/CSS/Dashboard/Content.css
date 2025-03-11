@@ -1,0 +1,15 @@
+.content {
+  display: flex;
+  padding: 15px;
+  flex-direction: column;
+  overflow: auto;
+  flex-grow: 1;
+}
+.row {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto;
+  gap: 20px;
+  flex-grow: 1; 
+  padding: 5px;
+}
