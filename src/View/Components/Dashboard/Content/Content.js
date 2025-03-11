@@ -1,6 +1,6 @@
 import React from "react";
 import Box from "./Box";
-import "../../../../CSS/Dashboard/Content.css";
+import "../../../../CSS/Dashboard/content.css";
 import img from "../../../../Assets/Images/Logo/PNG/LogoMonogram.png";
 import img3 from "../../../../Assets/Images/Logo/PNG/statistic.png";
 import img4 from "../../../../Assets/Images/Logo/PNG/award.png";
@@ -108,7 +108,7 @@ const Content = ({ userRole }) => {
           />
           <Box
             title="Upcoming Assignments"
-            assignments={<ScrollList assignments={upcomingAssignments} />}
+            assignments={<ScrollList assignments={upcomingAssignments} direction="column"/>}
             gridRow="span 4"
           />
         </div>

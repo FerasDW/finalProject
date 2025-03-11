@@ -1,6 +1,6 @@
 .scroll-list {
   display: flex;
-  flex-direction: column;
+  
   width: 100%;
   overflow-y: auto;
   gap: 10px;
