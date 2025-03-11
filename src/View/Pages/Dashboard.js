@@ -20,7 +20,7 @@ export default function Dashboard({ userRole }) {
 
         <div className="main">
           <Topbar />
-          <Content userRole={"lecturer"}/> {/*content[ authData.role ]*/}
+          <Content userRole={"student"}/> {/*content[ authData.role ]*/}
         </div>
 
         <div className="right-sidebar">
