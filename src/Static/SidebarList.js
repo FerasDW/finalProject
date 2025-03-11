@@ -1,36 +1,71 @@
-import { Home, BookOpen, Calendar, Mail, Users, BarChart2, Settings, LogOut } from "react-feather";
+import {
+  Home,
+  BookOpen,
+  Calendar,
+  Mail,
+  Users,
+  BarChart2,
+  Settings,
+  LogOut,
+} from "react-feather";
 import maleFace1 from "../Assets/Images/Logo/PNG/maleFace1.png";
 import maleFace2 from "../Assets/Images/Logo/PNG/maleFace2.png";
 import femaleFace1 from "../Assets/Images/Logo/PNG/femaleFace1.png";
 import femaleFace2 from "../Assets/Images/Logo/PNG/femaleFace2.png";
 
-
-export const leftMenuItems = [
-    {
-    "1100":[
-    { title: "Home", icon: <Home />},
-    { title: "Courses", icon: <BookOpen />},
-    { title: "Calendar", icon: <Calendar />},
-    { title: "Messages", icon: <Mail />},
-    { title: "Community", icon: <Users />},
-    { title: "Statistics", icon: <BarChart2 />},
-    { title: "Settings", icon: <Settings />},
-    { title: "Logout", icon: <LogOut />}]
-}
-];
+// menu item of the 3 users in dashboard
+export const leftMenuItems = {
+    // Admin left sidebar menu
+    1100: [
+      { title: "Home", icon: <Home /> },
+      { title: "Courses", icon: <BookOpen /> },
+      { title: "Calendar", icon: <Calendar /> },
+      { title: "Messages", icon: <Mail /> },
+      { title: "Community", icon: <Users /> },
+      { title: "Statistics", icon: <BarChart2 /> },
+      { title: "Settings", icon: <Settings /> },
+      { title: "Logout", icon: <LogOut /> },
+    ],
+  
+    // Student left sidebar menu
+    1200: [
+      { title: "Home", icon: <Home /> },
+      { title: "My Courses", icon: <BookOpen /> },
+      { title: "Calendar", icon: <Calendar /> },
+      { title: "Messages", icon: <Mail /> },
+      { title: "Community", icon: <Users /> },
+      { title: "Games", icon: <BarChart2 /> },
+      { title: "Library", icon: <BarChart2 /> },
+      { title: "Settings", icon: <Settings /> },
+      { title: "Logout", icon: <LogOut /> },
+    ],
+  
+    // Lecturer left sidebar menu
+    1300: [
+      { title: "Home", icon: <Home /> },
+      { title: "Courses", icon: <BookOpen /> },
+      { title: "Calendar", icon: <Calendar /> },
+      { title: "Messages", icon: <Mail /> },
+      { title: "Community", icon: <Users /> },
+      { title: "Statistics", icon: <BarChart2 /> },
+      { title: "Settings", icon: <Settings /> },
+      { title: "Logout", icon: <LogOut /> },
+    ],
+  };
+  
 
 const imgStyle = { width: 30, height: 30, borderRadius: 10 };
 const createMenuItem = (title, imgSrc) => ({
-    title,
-    icon: <img src={imgSrc} alt={title} style={imgStyle} />
+  title,
+  icon: <img src={imgSrc} alt={title} style={imgStyle} />,
 });
 export const rightMenuItems = [
-    createMenuItem("Muhammed1", maleFace1),
-    createMenuItem("Muhammed2", maleFace2),
-    createMenuItem("Muhammed3", femaleFace1),
-    createMenuItem("Muhammed4", femaleFace2),
-    createMenuItem("Muhammed1", maleFace1),
-    createMenuItem("Muhammed2", maleFace2),
-    createMenuItem("Muhammed3", femaleFace1),
-    createMenuItem("Muhammed4", femaleFace2),
+  createMenuItem("Muhammed1", maleFace1),
+  createMenuItem("Muhammed2", maleFace2),
+  createMenuItem("Muhammed3", femaleFace1),
+  createMenuItem("Muhammed4", femaleFace2),
+  createMenuItem("Muhammed1", maleFace1),
+  createMenuItem("Muhammed2", maleFace2),
+  createMenuItem("Muhammed3", femaleFace1),
+  createMenuItem("Muhammed4", femaleFace2),
 ];

@@ -1,3 +1,4 @@
+import { width } from '@fortawesome/free-solid-svg-icons/fa0'
 import { ResponsiveBar } from '@nivo/bar'
 
 // make sure parent container have a defined height when using
@@ -126,3 +127,5 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
         barAriaLabel={e=>e.id+": "+e.formattedValue+" in country: "+e.indexValue}
     />
 )
+
+export default MyResponsiveBar

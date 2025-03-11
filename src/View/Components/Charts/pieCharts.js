@@ -134,3 +134,5 @@ const MyResponsivePie = ({ data /* see data tab */ }) => (
         ]}
     />
 )
+
+export default MyResponsivePie

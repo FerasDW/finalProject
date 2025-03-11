@@ -50,3 +50,5 @@ const MyResponsiveRadialBar = ({ data}) => (
         ]}
     />
 )
+
+export default MyResponsiveRadialBar

@@ -15,9 +15,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     
     if (location.pathname === "/") return; 
-
     async function fetchUser() {
-      
+      console.log("Fetching user dataaaa...");
       try {
         const response = await axios.get("http://localhost:8080/api/auth/user", {
           withCredentials: true,

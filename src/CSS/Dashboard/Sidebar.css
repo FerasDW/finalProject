@@ -83,7 +83,7 @@
   transition: all 0.3s ease;
   align-items: center;
   margin: 5px 10px;
-  border-radius: 10px;
+  position: relative;
 }
 
 /* Sidebar icon inside items */
@@ -125,12 +125,15 @@
 
 
 /* Sidebar border radius based on position */
-.sidebar-right {
-  border-radius: 20px 0 0 20px;
+.sidebar-right .sidebar-item {
+  border-radius: 0 20px 20px 0;
+  
 }
 
-.sidebar-left {
-  border-radius: 0 20px 20px 0;
+.sidebar-left  .sidebar-item{
+  /* border-radius: 20px 0 0 20px; */
+  /* border-radius: 0 20px 20px 0; */
+
 }
 
 
@@ -147,15 +150,28 @@
 /* ------------------------------ SidebarItem States ------------------------------ */
 /* Hover effect for sidebar items */
 .sidebar-item:hover {
-  background: rgba(0, 115, 255, 0.1);
 }
 
 /* Active sidebar item */
 .sidebar-item.active {
   color: #0073ff;
   font-weight: bold;
-  background: rgba(0, 115, 255, 0.238);
+  background: linear-gradient(to right, #0066ff6c 10%, rgba(214, 216, 255, 0.718) 90%);
 }
+  .sidebar-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background-color: rgba(0, 0, 255, 0.499);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  .sidebar-item.active::before {
+    opacity: 1;
+  }
 
 /* transform animation effect for sidebar menu */
 .sidebar-item:hover .sidebar-icon,
