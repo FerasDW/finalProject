@@ -1,6 +1,6 @@
 import React from "react";
 import Box from "./Box";
-import "../../../../CSS/Dashboard/content.css";
+import "../../../../CSS/Dashboard/Content.css";
 import img from "../../../../Assets/Images/Logo/PNG/LogoMonogram.png";
 import img3 from "../../../../Assets/Images/Logo/PNG/statistic.png";
 import img4 from "../../../../Assets/Images/Logo/PNG/award.png";
