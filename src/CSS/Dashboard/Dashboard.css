@@ -7,7 +7,12 @@
   );
 }
 
-.dashboard {
+.main-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.dashboard, courses {
   display: flex;
   height: 100%;
 }

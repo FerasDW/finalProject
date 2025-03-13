@@ -1,10 +1,10 @@
 import "../../../../CSS/Dashboard/ScrollList.css";
-const ScrollListItem = ({ assignment }) => {
+const ScrollListItem = ({ item }) => {
     return (
         <div className="scroll-list-item">
-            <div className="assignment-name">{assignment.title}</div>
-            <div className="assignment-date">{assignment.date}</div>
-            <button className="assignment-button">View</button>
+            <div className="item-name">{item.title}</div>
+            <div className="item-date">{item.date}</div>
+            <button className="item-button">View</button>
         </div>
     );
 }
