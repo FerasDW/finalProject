@@ -13,7 +13,7 @@ import { rightMenuItems, leftMenuItems } from "../../../../Static/SidebarList";
 import Sidebar from "../Sidebar/Sidebar";
 import ScrollList from "../ScrollList/ScrollList";
 
-const Content = ({ userRole }) => {
+const DashboardContent = ({ userRole }) => {
   const upcomingAssignments = [
     { id: 1, title: "Math Homework", date: "2025-03-15" },
     { id: 2, title: "Science Report", date: "2025-03-12" },
@@ -78,7 +78,7 @@ const Content = ({ userRole }) => {
             boxLink="View entire course list"
             image={coursesImg}
             bgColor="#cffccc"
-            gridRow="span 6"
+            gridRow="span 7"
           />
           <Box
             title="Grades & Evaluations"
@@ -86,7 +86,7 @@ const Content = ({ userRole }) => {
             boxLink="View entire grades list"
             image={gradeImg}
             bgColor="#fffccc"
-            gridRow="span 6"
+            gridRow="span 7"
           />
           <Box
             title="Recent Notifications"
@@ -94,7 +94,7 @@ const Content = ({ userRole }) => {
             boxLink="View all notifications"
             image={notificationImg}
             bgColor="#ffcccc"
-            gridRow="span 6"
+            gridRow="span 7"
           />
         </div>
 
@@ -108,7 +108,7 @@ const Content = ({ userRole }) => {
           />
           <Box
             title="Upcoming Assignments"
-            assignments={<ScrollList assignments={upcomingAssignments} direction="column"/>}
+            assignments={<ScrollList data={upcomingAssignments} direction="column" type="list"/>}
             gridRow="span 4"
           />
         </div>
@@ -118,6 +118,7 @@ const Content = ({ userRole }) => {
           <Box
             title="Test"
             contentBox="This is a test1"
+            assignments={<ScrollList data={upcomingAssignments} direction="row" type="card"/>}
             image={img}
             gridRow="span 10"
           />
@@ -161,7 +162,7 @@ const Content = ({ userRole }) => {
   );
 };
 
-export default Content;
+export default DashboardContent;
 
 //   return (
 //     <div className="content">
