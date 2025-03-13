@@ -31,7 +31,7 @@ const calendarEvents = [
         title: "English",
         allDay: false,
         start: new Date(2025, 2, 13, 11, 0),
-        end: new Date(2025, 2, 13, 11, 45),
+        end: new Date(2025, 2, 13, 15, 45),
       },
     {
       title: "Biology",
