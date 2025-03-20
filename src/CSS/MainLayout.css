@@ -1,0 +1,42 @@
+.main-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.left-sidebar {
+  display: flex;
+  position: relative;
+}
+
+.right-sidebar > * {
+  flex: 1;
+  max-height: 50%;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #0073ff #ffffff;
+}
+
+.right-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 98vh;
+  gap: 15px;
+  justify-content: space-around;
+  align-items: end;
+}
+
+.body {
+  height: 100vh;
+  background-image: linear-gradient(
+    0deg,
+    rgba(0, 30, 255, 0.549),
+    rgba(93, 250, 255, 0.5)
+  );
+}

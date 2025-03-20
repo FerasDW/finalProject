@@ -7,10 +7,12 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@nivo/bar": "^0.88.0",
+    "@nivo/line": "^0.88.0",
     "@nivo/pie": "^0.88.0",
     "@nivo/radial-bar": "^0.88.0",
     "axios": "^1.8.1",
     "cra-template": "1.2.0",
+    "mdb-react-ui-kit": "^9.0.0",
     "moment": "^2.30.1",
     "react": "^19.0.0",
     "react-big-calendar": "^1.18.0",
@@ -18,8 +20,10 @@
     "react-cookie": "^7.2.2",
     "react-dom": "^19.0.0",
     "react-feather": "^2.0.10",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.2.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "styled-components": "^6.1.15"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -44,5 +48,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.13"
   }
 }

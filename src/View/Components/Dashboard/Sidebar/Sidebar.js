@@ -4,10 +4,12 @@ import ChatInterface from "../ChatInterface/ChatInterface";
 import '../../../../CSS/Dashboard/Sidebar.css';
 import Logo from "../../../../Assets/Images/Logo/PNG/LogoSquare@0.5x.png";
 import { AlignJustify } from "react-feather";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ menuItems, position = "left"}) => {
   const [selected, setSelected] = useState("Home");
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const navigate = useNavigate();
   // const [selectedItem, setselectedItem] = useState(null);
 
   const handleItemClick = (title) => {
@@ -18,6 +20,25 @@ const Sidebar = ({ menuItems, position = "left"}) => {
 
     if (position === "left") {
       setSelected(title);
+      switch (title) {
+        case "Home":
+          navigate("/dashboard");
+          break;
+        case "Calendar":
+          navigate("/calendar");
+          break;
+        case "Courses":
+          navigate("/courses");
+          break;
+        case "Messages":
+          navigate("/messages");
+          break;
+        case "Settings":
+          navigate("/settings");
+          break;
+        default:
+          break;
+      }
     }
   };
 

@@ -2,6 +2,8 @@ import { Moon, Sun, Bell, Search, User } from "react-feather";
 import { useContext } from "react";
 import { AuthContext } from "../../../../Context/AuthContext";
 import "../../../../CSS/Dashboard/Topbar.css";
+import SwitchMode from "../../Buttons/SwitchModeButton.js";
+import SearchInput from "../../Buttons/SearchInput.js";
 const Topbar = () => {
   const { authData, loading } = useContext(AuthContext); // ✅ Get loading state
 
@@ -10,19 +12,23 @@ const Topbar = () => {
   console.log(authData);
   return (
     <div className="topbar">
-      <div className="Username">
-        <p>{authData? authData.username : "Guest"}</p>
+      <div
+        className="Username"
+        style={{ display: "flex", flexDirection: "row" }}
+      >
+        <p>{authData ? authData.username : "Guest"}</p>
       </div>
 
       <div className="topbarIcons">
-      {/* SEARCH BAR */}
-      <Search />
-      
-      {/* ICONS */}
-      <Moon />
-      <Sun />
-      <Bell />
-      <User />
+        {/* SEARCH BAR */}
+        {/* <div>
+          <SwitchMode />
+        </div> */}
+        {/* <SearchInput /> */}
+
+        <SwitchMode />
+        <Bell />
+        <User />
       </div>
     </div>
   );

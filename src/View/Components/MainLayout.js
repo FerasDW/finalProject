@@ -4,7 +4,7 @@ import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList.js";
 import { AuthContext } from "../../Context/AuthContext.js";
 import { useContext } from "react";
 import { Outlet } from "react-router-dom";
-import "../../CSS/Dashboard/Dashboard.css";
+import "../../CSS/MainLayout.css";
 
 export default function MainLayout() {
   const { authData, loading } = useContext(AuthContext);
