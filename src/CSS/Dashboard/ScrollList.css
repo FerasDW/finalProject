@@ -5,11 +5,10 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: auto;
-  gap: 10px;
+  gap: 5px;
   /* margin-top: 26px; */
   scrollbar-width: thin;
   scrollbar-color: #0073ff #ffffff;
-
 }
 
 .scroll-list-item {
@@ -18,23 +17,22 @@
   justify-content: space-between;
   align-items: center;
   background: #007bff5e;
-  padding: 10px;
+  padding: 18px;
   margin-bottom: 2px;
   border-radius: 8px;
 }
 
-.assignment-name {
+.item-name {
   font-size: 16px;
   font-weight: bold;
 }
 
-.assignment-date {
+.item-date {
   font-size: 14px;
   color: #666;
- 
 }
 
-.assignment-button {
+.item-button {
   background-color: #007bff;
   color: white;
   border-radius: 5px;
@@ -42,8 +40,22 @@
   text-align: right;
 }
 
-.assignment-button:hover {
+.item-button:hover {
   background-color: #0056b3;
 }
 
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px;
+  align-items: center;
+}
 
+.icon {
+  background-color: #4a97e9a0;
+  padding: 7px;
+  border-radius: 50%;
+  cursor: pointer;
+}

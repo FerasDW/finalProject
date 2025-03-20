@@ -9,45 +9,86 @@ import gradeImg from "../../../../Assets/Images/Logo/PNG/grade.png";
 import notificationImg from "../../../../Assets/Images/Logo/PNG/notification.png";
 import coursesImg from "../../../../Assets/Images/Logo/PNG/courses.png";
 import BarChart from "../../Charts/barChart";
-import { rightMenuItems, leftMenuItems } from "../../../../Static/SidebarList";
-import Sidebar from "../Sidebar/Sidebar";
 import ScrollList from "../ScrollList/ScrollList";
+import PieChart from "../../Charts/pieCharts";
+import LineChart from "../../Charts/lineChart";
+import EventCalendar from "../../Calendar/EventCalendar";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { sampleData, upcomingAssignments, lineChartData, educationdata } from "../../../../Static/dashboardData";
 
 const DashboardContent = ({ userRole }) => {
-  const upcomingAssignments = [
-    { id: 1, title: "Math Homework", date: "2025-03-15" },
-    { id: 2, title: "Science Report", date: "2025-03-12" },
-    { id: 3, title: "History Essay", date: "2025-03-10" },
-    { id: 4, title: "Math Homework", date: "2025-03-15" },
-    { id: 5, title: "Science Report", date: "2025-03-12" },
-    { id: 6, title: "History Essay", date: "2025-03-10" },
-    { id: 1, title: "Math Homework", date: "2025-03-15" },
-    { id: 2, title: "Science Report", date: "2025-03-12" },
-    { id: 3, title: "History Essay", date: "2025-03-10" },
-    { id: 4, title: "Math Homework", date: "2025-03-15" },
-    { id: 5, title: "Science Report", date: "2025-03-12" },
-    { id: 6, title: "History Essay", date: "2025-03-10" },
-  ];
-
-  const sampleData = [
-    {
-      country: "AD",
-      "hot dog": 137,
-      "hot dogColor": "hsl(17, 70%, 50%)",
-      burger: 96,
-      burgerColor: "hsl(279, 70%, 50%)",
-      sandwich: 72,
-      sandwichColor: "hsl(220, 70%, 50%)",
-      kebab: 140,
-      kebabColor: "hsl(24, 70%, 50%)",
-      fries: 88,
-      friesColor: "hsl(316, 70%, 50%)",
-      donut: 49,
-      donutColor: "hsl(127, 70%, 50%)",
-    },
-  ];
+  
   const contentConfig = {
+
     admin: (
+      <>
+        <div className="row">
+          <Box
+            title="Total Enrolled Courses"
+            subtitle="5 Courses"
+            boxLink="View entire course list"
+            image={coursesImg}
+            bgColor="#cffccc"
+            gridRow="span 8"
+          />
+          <Box
+            title="Grades & Evaluations"
+            subtitle="3 Assignments Due"
+            boxLink="View entire grades list"
+            image={gradeImg}
+            bgColor="#fffccc"
+            gridRow="span 8"
+          />
+          <Box
+            title="Recent Notifications"
+            subtitle="You have new messages."
+            boxLink="View all notifications"
+            image={notificationImg}
+            bgColor="#ffcccc"
+            gridRow="span 8"
+          />
+        </div>
+
+        <div className="row">
+          <Box
+            title="Student Performance Analysis"
+            chart={<BarChart data={sampleData} />}
+            // image={img3}
+            gridColumn="span 8"
+            gridRow="span 3"
+          />
+          <Box
+            assignments={
+              <ScrollList
+                icon={<FontAwesomeIcon icon={faPlus} />}
+                title="Upcoming Assignments"
+                data={upcomingAssignments}
+                direction="column"
+                type="list"
+              />
+            }
+            gridRow="span 3"
+          />
+        </div>
+
+        {/* row 3 */}
+        <div className="row">
+          <Box
+            title="Education Distribution"
+            chart={<PieChart data={educationdata} />}
+            gridRow="span 8"
+          />
+          <Box
+            title="Academic Calendar"
+            chart={<LineChart data={lineChartData}/>}
+            gridColumn="span 8"
+            gridRow="span 8"
+          />
+        </div>
+      </>
+    ),
+    student: (
       <>
         <div className="row">
           <Box
@@ -65,69 +106,6 @@ const DashboardContent = ({ userRole }) => {
             image={img3}
             bgColor="#fffccc"
             gridRow="span 6"
-          />
-        </div>
-      </>
-    ),
-    student: (
-      <>
-        <div className="row">
-          <Box
-            title="Total Enrolled Courses"
-            contentBox="5 Courses"
-            boxLink="View entire course list"
-            image={coursesImg}
-            bgColor="#cffccc"
-            gridRow="span 7"
-          />
-          <Box
-            title="Grades & Evaluations"
-            contentBox="3 Assignments Due"
-            boxLink="View entire grades list"
-            image={gradeImg}
-            bgColor="#fffccc"
-            gridRow="span 7"
-          />
-          <Box
-            title="Recent Notifications"
-            contentBox="You have new messages."
-            boxLink="View all notifications"
-            image={notificationImg}
-            bgColor="#ffcccc"
-            gridRow="span 7"
-          />
-        </div>
-
-        <div className="row">
-          <Box
-            title="Student Performance Analysis"
-            chart={<BarChart data={sampleData} />}
-            image={img3}
-            gridColumn="span 8"
-            gridRow="span 4"
-          />
-          <Box
-            title="Upcoming Assignments"
-            assignments={<ScrollList data={upcomingAssignments} direction="column" type="list"/>}
-            gridRow="span 4"
-          />
-        </div>
-
-        {/* row 3 */}
-        <div className="row">
-          <Box
-            title="Test"
-            contentBox="This is a test1"
-            assignments={<ScrollList data={upcomingAssignments} direction="row" type="card"/>}
-            image={img}
-            gridRow="span 10"
-          />
-          <Box
-            title="Test"
-            contentBox="This is a test2"
-            image={img}
-            gridColumn="span 8"
-            gridRow="span 10"
           />
         </div>
       </>

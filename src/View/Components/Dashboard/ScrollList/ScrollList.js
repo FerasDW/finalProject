@@ -3,7 +3,7 @@ import ScrollListItem from "./ScrollListItem";
 import CourseCard from "../../Courses/CourseCard/CourseCard";
 
 // sort the data based on the sortBy value
-const ScrollList = ({ data, direction, type, sortBy }) => {
+const ScrollList = ({ data, direction, type, sortBy, title, icon }) => {
   const sortedData = [...data].sort((a, b) => {
     if (type === "card") {
       if (sortBy === "alphabetical" && a.title && b.title) {
@@ -19,13 +19,18 @@ const ScrollList = ({ data, direction, type, sortBy }) => {
 
   return (
     <div className="scroll-list" style={{ flexDirection: direction }}>
-      {sortedData.map((item) => (
+      <div className="header">
+        {title && <div className="title">{<span>{title}</span>}</div>}
+        {icon && <div className="icon">{icon}</div>}
+      </div>
+
+      {sortedData.map((item) =>
         type === "card" ? (
           <CourseCard key={item.id} cardInfo={item} />
         ) : (
           <ScrollListItem key={item.id} item={item} />
         )
-      ))}
+      )}
     </div>
   );
 };

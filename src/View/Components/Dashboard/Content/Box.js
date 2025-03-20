@@ -3,6 +3,7 @@ import React from "react";
 
 const Box = ({
   title,
+  subtitle,
   contentBox,
   image,
   chart,
@@ -31,9 +32,9 @@ const Box = ({
     >
       <div className="box-info">
         <div className="box-title">{title}</div>
-
+        {subtitle && <div className="box-subtitle">{subtitle}</div>}
         <div className="box-content">
-          {contentBox && <div className="box-subtitle">{contentBox}</div>}
+          {contentBox && <div className="box-content">{contentBox}</div>}
           {assignments && <div className="box-assignments">{assignments}</div>}
           {card && <div className="box-card">{card}</div>}
           {chart && <div className="box-chart">{chart}</div>}

@@ -1,0 +1,33 @@
+.community-page {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  .main-content {
+    margin-top: 20px;
+  }
+  
+  .primary-btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .primary-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .courses-list, .study-groups, .activities, .courses-management, .discussions, .announcements, .user-management, .content-management, .activity-reports {
+    margin-bottom: 20px;
+  }
+  

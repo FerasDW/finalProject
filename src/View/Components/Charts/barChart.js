@@ -10,14 +10,11 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
     <ResponsiveBar
         data={data}
         keys={[
-            'hot dog',
-            'burger',
-            'sandwich',
-            'kebab',
-            'fries',
-            'donut'
+            'First year',
+            'Second year',
+            'Third year'
         ]}
-        indexBy="country"
+        indexBy="Group"
         margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
         padding={0.3}
         groupMode="grouped"
@@ -26,7 +23,6 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
         colors={{ scheme: 'paired' }}
         defs={[
             {
-                id: 'dots',
                 type: 'patternDots',
                 background: 'inherit',
                 color: '#38bcb2',
@@ -35,7 +31,6 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
                 stagger: true
             },
             {
-                id: 'lines',
                 type: 'patternLines',
                 background: 'inherit',
                 color: '#eed312',
@@ -49,7 +44,7 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
                 match: {
                     id: 'fries'
                 },
-                id: 'dots'
+                id: 'lines'
             },
             {
                 match: {
@@ -73,7 +68,7 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
             tickSize: 5,
             tickPadding: 5,
             tickRotation: 0,
-            legend: 'country',
+            legend: 'Group',
             legendPosition: 'middle',
             legendOffset: 32,
             truncateTickAt: 0
@@ -124,7 +119,7 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
         ]}
         role="application"
         ariaLabel="Nivo bar chart demo"
-        barAriaLabel={e=>e.id+": "+e.formattedValue+" in country: "+e.indexValue}
+        barAriaLabel={e=>e.id+": "+e.formattedValue+" in Group: "+e.indexValue}
     />
 )
 
