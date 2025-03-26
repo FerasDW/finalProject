@@ -1,0 +1,64 @@
+.leftBar {
+  width: 100%;
+  max-width: 250px;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: #f5f5f5;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+
+
+.leftBar .leftBarMenus {
+  width: 100%;
+  padding: 20px;
+}
+
+.leftBar .leftBarMenus hr {
+  margin: 20px 0px;
+  border: none;
+  height: 0.5px;
+}
+
+.leftBar .leftBarMenus .menu {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.leftBar .leftBarMenus .menu span {
+  font-size: 12px;
+}
+
+.leftBar .leftBarMenus .menu .user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leftBar .leftBarMenus .menu .user img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.leftBar .leftBarMenus .menu .user span {
+  font-size: 14px;
+}
+
+.leftBar .leftBarMenus .menu .item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.leftBar .leftBarMenus .menu .item img {
+  width: 30px;
+}
+
+.leftBar .leftBarMenus .menu .item span {
+  font-size: 14px;
+}

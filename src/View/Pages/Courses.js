@@ -8,6 +8,8 @@ export default function Courses() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [selectedGroup, setSelectedGroup] = useState("all");
+  
+  const [allCourses, setAllCourses] = useState(coursesList); // Editable full list
   const [filteredCourses, setFilteredCourses] = useState(coursesList);
   const [useFilters, setUseFilters] = useState(true); // Determines whether filters or search is used
 
@@ -16,7 +18,7 @@ export default function Courses() {
     if (!useFilters) {
       // If there is a search query, ignore filters and display search results only
       setFilteredCourses(
-        coursesList.filter(
+        allCourses.filter(
           (course) =>
             course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             course.code.toLowerCase().includes(searchQuery.toLowerCase())
@@ -25,7 +27,7 @@ export default function Courses() {
     } else {
       // Apply filters only and ignore the search query
       setFilteredCourses(
-        coursesList.filter(
+        allCourses.filter(
           (course) =>
             (selectedYear === "all" || course.year === selectedYear) &&
             (selectedSemester === "all" || course.semester === selectedSemester) &&
@@ -33,7 +35,7 @@ export default function Courses() {
         )
       );
     }
-  }, [searchQuery, selectedYear, selectedSemester, selectedGroup, useFilters]);
+  }, [searchQuery, selectedYear, selectedSemester, selectedGroup, useFilters, allCourses]);
 
   // When the search button is clicked, update the search query and disable filters
   const handleSearch = () => {
@@ -46,6 +48,21 @@ export default function Courses() {
     setUseFilters(true);
     setSearchQuery(""); // Reset search when filters change
   }, [selectedYear, selectedSemester, selectedGroup]);
+
+  // Handle course deletion
+  const handleDeleteCourse = (id) => {
+    // TODO: Replace this logic with API call to delete course from backend
+    // Example:
+    // fetch(`/api/courses/${id}`, { method: 'DELETE' })
+    //   .then(res => res.json())
+    //   .then(() => {
+    //     const updatedCourses = allCourses.filter(course => course.id !== id);
+    //     setAllCourses(updatedCourses);
+    //   });
+
+    const updatedCourses = allCourses.filter(course => course.id !== id);
+    setAllCourses(updatedCourses);
+  };
 
   return (
     <div className="courses-header">
@@ -91,7 +108,7 @@ export default function Courses() {
       </div>
 
       {/* Display filtered courses */}
-      <CoursesContent courses={filteredCourses} />
+      <CoursesContent courses={filteredCourses} onDeleteCourse={handleDeleteCourse} />
     </div>
   );
 }
