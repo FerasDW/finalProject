@@ -2,7 +2,7 @@
   display: flex;
   padding: 15px 15px 0 15px;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   flex-grow: 1;
 }
 .row {

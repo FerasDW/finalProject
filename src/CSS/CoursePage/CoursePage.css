@@ -47,3 +47,8 @@
     margin: 5px 0;
   }
   
+  .course-details-table td.split-border {
+    border-left: 1px solid #0066ff;
+    padding-left: 10px;
+  }
+  

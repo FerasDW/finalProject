@@ -5,10 +5,11 @@ import { AuthContext } from "../../Context/AuthContext.js";
 import { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import "../../CSS/MainLayout.css";
+import Loader from "../Pages/Loading.js";
 
 export default function MainLayout() {
   const { authData, loading } = useContext(AuthContext);
-  if (loading) return <p className="header">Loading...</p>;
+  if (loading) return <Loader />
 
   return (
     <div className="body">

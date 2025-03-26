@@ -3,14 +3,21 @@ import "./CourseCard.css";
 import DeleteButton from "../../Buttons/DeleteButton";
 import EditButton from "../../Buttons/EditButton";
 import { useNavigate } from "react-router-dom";
-import { height, width } from "@fortawesome/free-solid-svg-icons/fa0";
 
-const CourseCard = ({ cardInfo }) => {
+const CourseCard = ({ cardInfo, onDelete }) => {
   const navigate = useNavigate();
+
   const handleEdit = () => {
     // navigate(`/courses/${cardInfo.id}`);
     navigate("/coursepage", { state: { courseData: cardInfo } });
   };
+
+  const handleDelete = () => {
+    // TODO: Replace this with API call in the future to delete from backend
+    // fetch(`/api/courses/${cardInfo.id}`, { method: 'DELETE' }).then(...)
+    onDelete(cardInfo.id);
+  };
+
   return (
     <div className="card">
       <div className="top-section">
@@ -18,7 +25,7 @@ const CourseCard = ({ cardInfo }) => {
         <div className="icons">
           <div className="social-media">
             <EditButton onClick={handleEdit} />
-            <DeleteButton style={{ height: "10px", width: "5px" }} />
+            <DeleteButton onClick={handleDelete} />
           </div>
         </div>
       </div>

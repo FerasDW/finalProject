@@ -50,7 +50,7 @@ const BigCalendar = () => {
   };
 
   return (
-    <div>
+    <div className="calendar-container" style={{ height: "100%" , border: "1px solid #000"}}>
       <Calendar
         localizer={localizer}
         events={calendarEvents}

@@ -17,3 +17,6 @@ export const VERIFY_TOKEN = `${baseUrl}/verify-token`;
 export const RESEND_EMAIL = `${baseUrl}/resend-email`;
 export const UPDATE_PROFILE = `${baseUrl}/update-profile`;
 export const CHANGE_PASSWORD = `${baseUrl}/change-password`;
+
+
+export const GENERATE_REPORT = `${baseUrl}/generate-report`;

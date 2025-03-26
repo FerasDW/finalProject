@@ -1,7 +1,7 @@
 import "../../../../CSS/Dashboard/Content.css";
 import CourseCard from "../CourseCard/CourseCard";
 
-const CourseContent = ({ courses }) => {
+const CoursesContent = ({ courses, onDeleteCourse }) => {
   return (
     <div className="courses-grid">
       {courses.length > 0 ? (
@@ -16,6 +16,7 @@ const CourseContent = ({ courses }) => {
               Rating: course.rating,
               Lessons: course.lessons,
             }}
+            onDelete={onDeleteCourse}
           />
         ))
       ) : (
@@ -25,4 +26,4 @@ const CourseContent = ({ courses }) => {
   );
 };
 
-export default CourseContent;
+export default CoursesContent;
