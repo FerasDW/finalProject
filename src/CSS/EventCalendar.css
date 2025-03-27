@@ -2,6 +2,7 @@
     width: 100% !important;
     border: none !important;
     font-family: "Inter", sans-serif !important;
+    background:rgb(219, 199, 241);
   }
   
   .react-calendar__navigation__label__labelText {
@@ -12,4 +13,12 @@
     background-color: #c3ebfa !important;
     color: black !important;
   }
+
+.react-calendar__navigation button
+{
+  border: black 1px solid;
+}
+.react-calendar__month-view__weekdays div{
+  border: black 1px solid;
+}
   

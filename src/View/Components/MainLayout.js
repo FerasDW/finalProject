@@ -5,21 +5,24 @@ import { AuthContext } from "../../Context/AuthContext.js";
 import { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import "../../CSS/MainLayout.css";
+import Loader from "../Pages/Loading.js";
+import ChatUI from "./Forms/ChatBot.js";
 
 export default function MainLayout() {
   const { authData, loading } = useContext(AuthContext);
-  if (loading) return <p className="header">Loading...</p>;
+  if (loading) return <Loader />;
 
   return (
-    <div className="body">
+    <div className="body" > 
       <div className="main-layout">
         <div className="left-sidebar">
           <Sidebar menuItems={leftMenuItems[1100]} position="left" />
         </div>
 
-        <div className="main">
+        <div className="main" >
           <Topbar />
           <Outlet />
+          <ChatUI/>
         </div>
 
         <div className="right-sidebar">

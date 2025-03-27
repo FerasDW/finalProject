@@ -38,6 +38,48 @@ const calendarEvents = [
       allDay: false,
       start: new Date(2025, 2, 11, 10, 0),
       end: new Date(2025, 2, 11, 10, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 14, 10, 0),
+      end: new Date(2025, 2, 14, 10, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 11, 14, 45),
+      end: new Date(2025, 2, 11, 15, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 9, 10, 0),
+      end: new Date(2025, 2, 9, 10, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 10, 14, 0),
+      end: new Date(2025, 2, 10, 14, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 12, 11, 0),
+      end: new Date(2025, 2, 12, 11, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 11, 13, 0),
+      end: new Date(2025, 2, 11, 14, 45),
+    },
+    {
+      title: "Biology",
+      allDay: false,
+      start: new Date(2025, 2, 15, 14, 0),
+      end: new Date(2025, 2, 15, 14, 45),
     }
 ];
 
@@ -50,7 +92,7 @@ const BigCalendar = () => {
   };
 
   return (
-    <div>
+ 
       <Calendar
         localizer={localizer}
         events={calendarEvents}
@@ -65,7 +107,7 @@ const BigCalendar = () => {
         min={new Date(2025, 1, 0, 8, 0, 0)}
         max={new Date(2025, 1, 0, 17, 0, 0)}
       />
-    </div>
+    
   );
 };
 

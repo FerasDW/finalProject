@@ -1,5 +1,7 @@
 .rbc-calendar {
+  position: relative;
     height: 100% !important;
+    width: 100% !important;
   }
   
   .rbc-time-view, .rbc-month-view {
@@ -80,6 +82,7 @@
     margin: 10px !important;
     width: 99% !important;
   }
+
   
   .rbc-event:nth-child(1) {
     background-color: #e2f8ff !important;
