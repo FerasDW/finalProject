@@ -1,6 +1,8 @@
 import "../../../../CSS/Dashboard/ScrollList.css";
 import ScrollListItem from "./ScrollListItem";
 import CourseCard from "../../Courses/CourseCard/CourseCard";
+import CalendarItem from "./CalendarItem";
+import { BiBorderLeft } from "react-icons/bi";
 
 // sort the data based on the sortBy value
 const ScrollList = ({ data, direction, type, sortBy, title, icon }) => {
@@ -24,9 +26,17 @@ const ScrollList = ({ data, direction, type, sortBy, title, icon }) => {
         {icon && <div className="icon">{icon}</div>}
       </div>
 
-      {sortedData.map((item) => (
-        <ScrollListItem key={item.id} item={item} />
-      ))}
+
+      {sortedData.map((item) =>
+        type === "card" ? (
+          <CourseCard key={item.id} cardInfo={item} />
+        ) : type==="calendar"?(
+          <CalendarItem key={item.id} item={item} style={{
+            borderLeft: item.type === "test" ? "10px solid rgb(170, 168, 253)" : "10px solid rgb(255, 247, 160)",
+          }} />
+        ):<ScrollListItem key={item.id} item={item}  />
+      )}
+
     </div>
   );
 };

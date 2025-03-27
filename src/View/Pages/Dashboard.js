@@ -2,18 +2,16 @@ import DashboardContent from "../Components/Dashboard/Content/DashboardContent.j
 import "../../CSS/Dashboard/Dashboard.css";
 
 import { useContext } from "react";
-import { AuthContext } from "../../Context/AuthContext.js";
 
-export default function Dashboard() {
-
+import Loader from "./Loading.js";
+export default function Dashboard({ userRole }) {
   const { authData, loading } = useContext(AuthContext);
-  if (loading) return <p>Loading...</p>;
-  // if (!authData) return <p>You must be logged in to view this page.</p>;
-
+  if (loading) return <Loader />;
   return (
     <div className="dashboard">
-      {/* <DashboardContent userRole={authData.role} /> */}
-      <DashboardContent userRole={"1100"} />
+      
+      <DashboardContent userRole={"admin"} />
+
     </div>
   );
 }
