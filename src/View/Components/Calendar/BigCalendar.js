@@ -92,7 +92,11 @@ const BigCalendar = () => {
   };
 
   return (
+
  
+
+    
+
       <Calendar
         localizer={localizer}
         events={calendarEvents}

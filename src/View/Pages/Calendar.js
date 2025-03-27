@@ -1,14 +1,6 @@
 import BigCalendar from "../../View/Components/Calendar/BigCalendar";
-import EventCalendar from "../../View/Components/Calendar/EventCalendar";
-import ScrollList from "../Components/Dashboard/ScrollList/ScrollList";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import {upcomingAssignments} from "../../Static/dashboardData";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import DynamicTable from "../Components/Tables/Table";
-import MediaUpload from "../Components/Forms/UploadFile";
-import TextUpload from "../Components/Forms/inputForm";
-import Chatbot from "../Components/Forms/ChatBot";
 
+import "./calendar.css"
 
 export default function Calendar() {
     return (

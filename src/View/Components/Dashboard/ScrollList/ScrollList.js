@@ -22,9 +22,10 @@ const ScrollList = ({ data, direction, type, sortBy, title, icon }) => {
   return (
     <div className="scroll-list" style={{ flexDirection: direction }}>
       <div className="header">
-        {title && <div className="title">{<span>{title}</span>}</div>}
+        { <div className="title">Upcoming Assignments</div>}
         {icon && <div className="icon">{icon}</div>}
       </div>
+
 
       {sortedData.map((item) =>
         type === "card" ? (
@@ -35,6 +36,7 @@ const ScrollList = ({ data, direction, type, sortBy, title, icon }) => {
           }} />
         ):<ScrollListItem key={item.id} item={item}  />
       )}
+
     </div>
   );
 };

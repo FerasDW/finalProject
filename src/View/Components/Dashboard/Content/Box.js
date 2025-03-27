@@ -10,6 +10,7 @@ const Box = ({
   boxLink,
   assignments,
   card,
+  bgImage,
   bgColor = "#fff",
   gridColumn = "span 4",
   gridRow,
@@ -34,10 +35,11 @@ const Box = ({
         <div className="box-title">{title}</div>
         {subtitle && <div className="box-subtitle">{subtitle}</div>}
         <div className="box-content">
-          {contentBox && <div className="box-content">{contentBox}</div>}
+          {contentBox}
           {assignments && <div className="box-assignments">{assignments}</div>}
           {card && <div className="box-card">{card}</div>}
           {chart && <div className="box-chart">{chart}</div>}
+          {bgImage && <div className="box-bg-image">{bgImage}</div>}
         </div>
 
         {boxLink && (

@@ -7,9 +7,7 @@ const App = () => {
   return (
     <Router>
     <AuthProvider>
-      
         <GlobalRoutes />
-      
     </AuthProvider>
     </Router>
   );

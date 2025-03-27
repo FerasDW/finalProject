@@ -1,11 +1,15 @@
 .rbc-calendar {
-  position: relative;
-    height: 100% !important;
+
+  display: block;
     width: 100% !important;
+    height: 100% !important;
+    overflow: auto !important;
+
   }
   
   .rbc-time-view, .rbc-month-view {
     height: 100% !important;
+    
   }
   
   .rbc-time-content {
