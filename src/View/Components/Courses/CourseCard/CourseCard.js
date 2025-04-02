@@ -20,7 +20,7 @@ const CourseCard = ({ cardInfo, onDelete }) => {
 
   return (
     <div className="card">
-      <div className="top-section">
+      <div className="top-section" style={{ backgroundImage: `url(${cardInfo.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="border"></div>
         {cardInfo.image && (
           <img

@@ -9,9 +9,7 @@ const EventCalendar = () => {
   const [value, onChange] = useState(new Date());
 
   return (
-    <div className="bg-white p-4 rounded-md">
       <Calendar onChange={onChange} value={value} locale="en-US" />
-    </div>
   );
 };
 

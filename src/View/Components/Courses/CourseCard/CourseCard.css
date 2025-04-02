@@ -20,7 +20,7 @@
   border-radius: 15px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(45deg, rgb(4, 159, 187) 0%, rgb(80, 246, 255) 100%);
+  
   position: relative;
 }
 

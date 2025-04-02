@@ -130,11 +130,7 @@
   
 }
 
-.sidebar-left  .sidebar-item{
-  /* border-radius: 20px 0 0 20px; */
-  /* border-radius: 0 20px 20px 0; */
 
-}
 
 
 /* Sidebar item alignment for right-positioned sidebar */
@@ -149,8 +145,6 @@
 
 /* ------------------------------ SidebarItem States ------------------------------ */
 /* Hover effect for sidebar items */
-.sidebar-item:hover {
-}
 
 /* Active sidebar item */
 .sidebar-item.active {

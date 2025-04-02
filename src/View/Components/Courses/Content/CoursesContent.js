@@ -15,7 +15,11 @@ const CoursesContent = ({ courses, onDeleteCourse }) => {
               Students: course.students,
               Rating: course.rating,
               Lessons: course.lessons,
-              image: course.image,
+
+              
+
+              img: course.img,
+
             }}
             onDelete={onDeleteCourse}
           />

@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "../View/Pages/Auth/login.js";
+import Login from "../View/Pages/Auth/logIn.js";
 import Dashboard from "../View/Pages/Dashboard.js";
 import Courses from "../View/Pages/Courses.js";
 import CoursePage from "../View/Pages/CoursePage.js";
@@ -24,7 +24,12 @@ import GroupPage from "../View/Pages/Community/GroupPage.jsx";
 import Statistics from "../View/Pages/AdminReportPage.jsx";
 
 import ProtectedRoute from "./ProtectedRoute";
+
 import { SavedPostsProvider } from "../Context/SavedPostsContext.js";
+
+import NotFoundPage from "../View/Pages/Errors/404.jsx";
+import Messages from "../View/Pages/messages.jsx";
+
 
 function GlobalRoutes() {
   return (
@@ -48,6 +53,9 @@ function GlobalRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/coursepage" element={<CoursePage />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/pageNotFound" element={<NotFoundPage />} />
+        <Route path="/Messages" element={<Messages />} />
+        
       </Route>
 
       {/* Protected routes under CommunityLayout */}
