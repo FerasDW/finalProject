@@ -1,5 +1,6 @@
 import DashboardContent from "../Components/Dashboard/Content/DashboardContent.js";
 import "../../CSS/Dashboard/Dashboard.css";
+import { AuthContext } from "../../Context/AuthContext.js";
 
 import { useContext } from "react";
 
@@ -10,7 +11,7 @@ export default function Dashboard({ userRole }) {
   return (
     <div className="dashboard">
       
-      <DashboardContent userRole={"admin"} />
+      <DashboardContent userRole={"1100"} />
 
     </div>
   );

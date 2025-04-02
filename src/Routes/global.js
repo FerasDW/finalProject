@@ -15,6 +15,8 @@ import Profile from "../View/Pages/Community/Profile.jsx";
 import Statistics from "../View/Pages/AdminReportPage.jsx";
 
 import ProtectedRoute from "./ProtectedRoute";
+import NotFoundPage from "../View/Pages/Errors/404.jsx";
+import Messages from "../View/Pages/messages.jsx";
 
 function GlobalRoutes() {
   return (
@@ -36,6 +38,9 @@ function GlobalRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/coursepage" element={<CoursePage />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/pageNotFound" element={<NotFoundPage />} />
+        <Route path="/Messages" element={<Messages />} />
+        
       </Route>
 
       {/* Protected routes under CommunityLayout */}

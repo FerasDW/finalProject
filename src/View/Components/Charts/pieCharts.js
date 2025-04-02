@@ -12,7 +12,7 @@ const MyResponsivePie = ({ data /* see data tab */ }) => (
         innerRadius={0.5}
         padAngle={2}
         activeOuterRadiusOffset={8}
-        colors={{ scheme: 'dark2' }}
+        colors={["#8d8cf6", "#ff6b6b", "#fbc531"]}
         borderWidth={1}
         borderColor={{
             from: 'color',
