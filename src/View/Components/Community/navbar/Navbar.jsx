@@ -7,30 +7,26 @@ import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 // import { useContext } from "react";
 // import { DarkModeContext } from "../../context/darkModeContext";
 // import { AuthContext } from "../../../../Context/AuthContext";
 
-const Navbar = () => {
+import { currentUser } from "../../../../Static/communityData";
 
+const Navbar = () => {
   // const { toggle, darkMode } = useContext(DarkModeContext);
   // const { currentUser } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const currentUser = {
-    id: 1,
-    name: "Muhammed Taha",
-    profilePic:
-      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  };
 
   return (
     <div className="navbar">
       <div className="left">
-        <Link to="/dashboard" style={{ textDecoration: "none" }}>
+        <Link to="/community/home" style={{ textDecoration: "none" }}>
           <span>EduSphereSocial</span>
         </Link>
-        <HomeOutlinedIcon />
+        <HomeOutlinedIcon onClick={() => navigate("/dashboard")} style={{ cursor: "pointer" }} />
         {/* {darkMode ? (
           <WbSunnyOutlinedIcon onClick={toggle} />
         ) : (
@@ -47,10 +43,7 @@ const Navbar = () => {
         <EmailOutlinedIcon />
         <NotificationsOutlinedIcon />
         <div className="user">
-          <img
-            src={currentUser.profilePic}
-            alt=""
-          />
+          <img src={currentUser.profilePic} alt={currentUser.name} />
           <span>{currentUser.name}</span>
         </div>
       </div>

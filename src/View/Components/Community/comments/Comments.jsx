@@ -1,33 +1,10 @@
 import React, { useState } from "react";
 import "./comments.scss";
+import { commentUser, initialComments } from "../../../../Static/communityData";
 
 const Comments = () => {
-  const currentUser = {
-    id: 1,
-    name: "Muhammed Taha",
-    profilePic:
-      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg",
-  };
-
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      desc: "Lorem ipsum dolor sit amet consectetur adipisicing elit...",
-      name: "John Doe",
-      userId: 1,
-      profilePicture:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg",
-    },
-    {
-      id: 2,
-      desc: "Another comment here!",
-      name: "Jane Doe",
-      userId: 2,
-      profilePicture:
-        "https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg",
-    },
-  ]);
+  const [comments, setComments] = useState(initialComments); // Load from data file
 
   const handleSend = () => {
     if (newComment.trim() === "") return;
@@ -35,19 +12,19 @@ const Comments = () => {
     const newCommentObj = {
       id: Date.now(),
       desc: newComment,
-      name: currentUser.name,
-      userId: currentUser.id,
-      profilePicture: currentUser.profilePic,
+      name: commentUser.name,
+      userId: commentUser.id,
+      profilePicture: commentUser.profilePic,
     };
 
     setComments([newCommentObj, ...comments]);
-    setNewComment(""); // Clear input
+    setNewComment("");
   };
 
   return (
     <div className="comments">
       <div className="write">
-        <img src={currentUser.profilePic} alt="" />
+        <img src={commentUser.profilePic} alt="" />
         <input
           type="text"
           placeholder="write a comment"

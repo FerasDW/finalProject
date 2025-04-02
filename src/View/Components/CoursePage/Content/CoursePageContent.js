@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import MidPageNavbar from './MidPageNavBar';
 import Box from '../../Dashboard/Content/Box';
@@ -49,6 +50,7 @@ const CoursePageContent = () => {
         return null;
     }
   };
+
 
   return (
     <>

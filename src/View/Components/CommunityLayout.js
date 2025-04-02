@@ -14,7 +14,7 @@ export default function CommunityLayout() {
         </div>
 
         {/* Main Content in the center */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
+        <div style={{ flex: 1, overflowY: "auto", scrollbarWidth: "none" }}>
           <Outlet />
         </div>
 
