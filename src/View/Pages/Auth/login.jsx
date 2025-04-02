@@ -7,7 +7,7 @@ import { faUser, faLock } from "@fortawesome/free-solid-svg-icons";
 import "../../../index.css";
 import axios from "axios";
 import { LOGIN } from "../../../Api/Api.js";
-import { AuthContext } from "../../../Context/AuthContext.js";
+import { AuthContext } from "../../../Context/AuthContext.jsx";
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Error from "../../Components/Auth/Error.js";

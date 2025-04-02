@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "./Profile.css";
-import Box from "../Components/Dashboard/Content/Box";
+import Box from "../../Components/Dashboard/Content/Box";
 
 const Profile = () => {
   const [user, setUser] = useState({

@@ -1,7 +1,7 @@
-import MidPageNavbar from "../Components/CoursePage/Content/MidPageNavBar";
-import Table from "../Components/Tables/Table";
+import MidPageNavbar from "../../Components/CoursePage/Content/MidPageNavBar";
+import Table from "../../Components/Tables/Table";
 import React, { useState } from 'react';
-import { upcomingAssignments } from "../../Static/dashboardData.js";
+import { upcomingAssignments } from "../../../Static/dashboardData.js";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Box from "../Components/Dashboard/Content/Box";
+import Box from "../../Components/Dashboard/Content/Box";
 import Profile from "./Profile";
 import "./Settings.css";
 // import Security from "./Security";

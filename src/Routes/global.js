@@ -1,13 +1,13 @@
 import { Routes, Route } from "react-router-dom";
-import Login from "../View/Pages/Auth/logIn.js";
-import Dashboard from "../View/Pages/Dashboard.js";
-import Courses from "../View/Pages/Courses.js";
-import CoursePage from "../View/Pages/CoursePage.js";
-import MainLayout from "../View/Components/MainLayout.js";
-import Settings from "../View/Pages/Settings.js";
-import Calendar from "../View/Pages/Calendar.js";
-import HomeworkSubmitting from "../View/Pages/HomeworkSubmitting.js";
-import CommunityLayout from "../View/Components/CommunityLayout.js";
+import Login from "../View/Pages/Auth/login.jsx";
+import Dashboard from "../View/Pages/Global/Dashboard.jsx";
+import Courses from "../View/Pages/Courses/Courses.jsx";
+import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
+import MainLayout from "../View/Components/MainLayout.jsx";
+import Settings from "../View/Pages/UserProfile/Settings.jsx";
+import Calendar from "../View/Pages/Global/Calendar.jsx";
+import HomeworkSubmitting from "../View/Pages/Courses/HomeworkSubmitting.jsx";
+import CommunityLayout from "../View/Components/CommunityLayout.jsx";
 import Home from "../View/Pages/Community/Home.jsx";
 import Profile from "../View/Pages/Community/Profile.jsx";
 import Friends from "../View/Pages/Community/Friends.jsx";
@@ -19,16 +19,17 @@ import SavedPosts from "../View/Pages/Community/SavedPosts.jsx";
 import Challenges from "../View/Pages/Community/Challenges.jsx";
 import MyBadges from "../View/Pages/Community/MyBadges.jsx";
 import GroupPage from "../View/Pages/Community/GroupPage.jsx";
+import NotFoundPage from "../View/Pages/Errors/404.jsx";
+import Messages from "../View/Pages/Global/messages.jsx";
 
 // import Statistics from "../View/Pages/Statistics.jsx";
 import Statistics from "../View/Pages/AdminReportPage.jsx";
 
 import ProtectedRoute from "./ProtectedRoute";
 
-import { SavedPostsProvider } from "../Context/SavedPostsContext.js";
+import { SavedPostsProvider } from "../Context/SavedPostsContext.jsx";
 
-import NotFoundPage from "../View/Pages/Errors/404.jsx";
-import Messages from "../View/Pages/messages.jsx";
+
 
 
 function GlobalRoutes() {
@@ -36,6 +37,7 @@ function GlobalRoutes() {
     <Routes>
       {/* Public route (Login) */}
       <Route path="/" element={<Login />} />
+      <Route path="/pageNotFound" element={<NotFoundPage />} />
 
       {/* Protected routes under MainLayout */}
       <Route
@@ -53,7 +55,6 @@ function GlobalRoutes() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/coursepage" element={<CoursePage />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/pageNotFound" element={<NotFoundPage />} />
         <Route path="/Messages" element={<Messages />} />
         
       </Route>

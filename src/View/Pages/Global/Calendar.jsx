@@ -1,10 +1,10 @@
-import BigCalendar from "../../View/Components/Calendar/BigCalendar";
-import EventCalendar from "../../View/Components/Calendar/EventCalendar";
-import ScrollList from "../Components/Dashboard/ScrollList/ScrollList";
+import React from "react";
+import BigCalendar from "../../../View/Components/Calendar/BigCalendar";
+import EventCalendar from "../../../View/Components/Calendar/EventCalendar";
+import ScrollList from "../../Components/Dashboard/ScrollList/ScrollList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import {upcomingAssignments} from "../../Static/dashboardData.js";
-import "./calendar.css"
+import {upcomingAssignments} from "../../../Static/dashboardData.js";
 
 
 export default function Calendar() {
@@ -27,9 +27,6 @@ export default function Calendar() {
                 />
               </div>
             </div>
-            
         </div>
-        
-        
     );
 }

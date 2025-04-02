@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import coursesList from "../../Static/coursesData";
-import CoursesContent from "../Components/Courses/Content/CoursesContent";
+import coursesList from "../../../Static/coursesData";
+import CoursesContent from "../../Components/Courses/Content/CoursesContent";
 
 export default function Courses() {
   const [searchInput, setSearchInput] = useState("");
@@ -8,7 +8,6 @@ export default function Courses() {
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedSemester, setSelectedSemester] = useState("all");
   const [selectedGroup, setSelectedGroup] = useState("all");
-  
   const [allCourses, setAllCourses] = useState(coursesList); // Editable full list
   const [filteredCourses, setFilteredCourses] = useState(coursesList);
   const [useFilters, setUseFilters] = useState(true); // Determines whether filters or search is used

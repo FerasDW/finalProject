@@ -1,12 +1,12 @@
-import Sidebar from "../Components/Dashboard/Sidebar/Sidebar.js";
-import Topbar from "../Components/Dashboard/Topbar/Topbar.js";
+import Sidebar from "../Components/Dashboard/Sidebar/Sidebar.jsx";
+import Topbar from "../Components/Dashboard/Topbar/Topbar.jsx";
 import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList.js";
-import { AuthContext } from "../../Context/AuthContext.js";
+import { AuthContext } from "../../Context/AuthContext.jsx";
 import { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import "../../CSS/MainLayout.css";
-import Loader from "../Pages/Loading.js";
-import ChatUI from "../Components/Forms/ChatBot.js";
+import Loader from "../Pages/Global/Loading.jsx";
+import ChatUI from "../Components/Forms/ChatBot.jsx";
 
 
 export default function MainLayout() {

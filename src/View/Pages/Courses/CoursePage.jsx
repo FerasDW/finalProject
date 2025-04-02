@@ -1,8 +1,8 @@
 import React from "react";
-import CoursePageContent from "../Components/CoursePage/Content/CoursePageContent.js";
+import CoursePageContent from "../../Components/CoursePage/Content/CoursePageContent.jsx";
 
 import { useContext } from "react";
-import { AuthContext } from "../../Context/AuthContext.js";
+import { AuthContext } from "../../../Context/AuthContext.jsx";
 
 const CoursePage = () => {
 
