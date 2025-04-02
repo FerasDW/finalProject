@@ -1,0 +1,128 @@
+.groupsPage.horizontalLayout {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background-color: #f0f2f5;
+  
+    .groupFeed {
+      flex: 2;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      height: fit-content;
+  
+      h3 {
+        font-size: 18px;
+        color: #1876f2;
+        margin-bottom: 16px;
+      }
+  
+      .postItem {
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+  
+        strong {
+          color: #333;
+        }
+  
+        em {
+          color: #1876f2;
+          font-style: normal;
+          font-weight: 500;
+        }
+  
+        .date {
+          font-size: 12px;
+          color: #999;
+          margin-left: 8px;
+        }
+  
+        p {
+          font-size: 14px;
+          color: #444;
+          margin-top: 4px;
+        }
+  
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+    }
+  
+    .groupSidebar {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      height: fit-content;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  
+      h3 {
+        font-size: 18px;
+        color: #1876f2;
+        margin-bottom: 16px;
+      }
+  
+      .groupListCard {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #ddd;
+        margin-bottom: 16px;
+        background-color: #fff;
+  
+        .groupThumb {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+          }
+    
+          .groupInfo {
+            flex: 1;
+    
+            h4 {
+              margin: 0;
+              font-size: 15px;
+              color: #333;
+            }
+    
+            p {
+              font-size: 13px;
+              color: #666;
+              margin: 4px 0;
+            }
+    
+            small {
+              font-size: 11px;
+              color: #999;
+            }
+          }
+    
+          .joinBtn {
+            margin-top: 6px;
+            padding: 4px 10px;
+            font-size: 13px;
+            border: 1px solid #1876f2;
+            border-radius: 20px;
+            background: white;
+            color: #1876f2;
+            cursor: pointer;
+            white-space: nowrap;
+    
+            &.joined {
+              background: #1876f2;
+              color: white;
+            }
+    
+            &:hover {
+              opacity: 0.9;
+            }
+          }
+        }
+      }
+    }
+    

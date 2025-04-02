@@ -22,6 +22,13 @@ const CourseCard = ({ cardInfo, onDelete }) => {
     <div className="card">
       <div className="top-section">
         <div className="border"></div>
+        {cardInfo.image && (
+          <img
+            src={cardInfo.image}
+            alt={cardInfo.title}
+            className="course-image"
+          />
+        )}
         <div className="icons">
           <div className="social-media">
             <EditButton onClick={handleEdit} />
@@ -29,6 +36,7 @@ const CourseCard = ({ cardInfo, onDelete }) => {
           </div>
         </div>
       </div>
+
       <div className="bottom-section">
         <span className="title">{cardInfo.title}</span>
         <div className="row row1">

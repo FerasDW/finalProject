@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import './AdminReportPage.css';
+import './AdminReportPage.scss';
 import { GENERATE_REPORT } from '../../Api/Api.js';
 
 const AdminReportPage = () => {

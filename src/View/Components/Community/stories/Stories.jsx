@@ -1,52 +1,11 @@
 // import { useContext } from "react";
 // import { AuthContext } from "../../../../Context/AuthContext";
 import React, { useState } from "react";
-
+import { currentUser, stories } from "../../../../Static/communityData";
 import "./stories.scss";
 
 const Stories = () => {
-  // const {currentUser} = useContext(AuthContext)
-
-  const currentUser = {
-    id: 1,
-    name: "Muhammed Taha",
-    profilePic:
-      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  };
-
-  //TEMPORARY
-  const stories = [
-    {
-      id: 1,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-    {
-      id: 2,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-    {
-      id: 4,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-    {
-      id: 4,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-    {
-      id: 4,
-      name: "John Doe",
-      img: "https://images.pexels.com/photos/13916254/pexels-photo-13916254.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load",
-    },
-  ];
+  // const { currentUser } = useContext(AuthContext);
   const [openStoryIndex, setOpenStoryIndex] = useState(null);
 
   const handleOpenStory = (index) => {
@@ -69,7 +28,6 @@ const Stories = () => {
     }
   };
 
-
   return (
     <div className="stories">
       <div className="story">
@@ -78,7 +36,11 @@ const Stories = () => {
         <button>+</button>
       </div>
       {stories.map((story, index) => (
-        <div className="story" key={story.id} onClick={() => handleOpenStory(index)}>
+        <div
+          className="story"
+          key={story.id}
+          onClick={() => handleOpenStory(index)}
+        >
           <img src={story.img} alt="" />
           <span>{story.name}</span>
         </div>

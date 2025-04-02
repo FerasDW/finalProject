@@ -1,8 +1,5 @@
 import React from "react";
 import "../../../../CSS/CoursePage/CoursePage.css";
-
-
-
 import { contentConfig } from "../../../../Static/coursePageData";
 
 const CoursePageContent = ({ userRole }) => {

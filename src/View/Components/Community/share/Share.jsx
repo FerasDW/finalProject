@@ -14,11 +14,19 @@ const Share = ({ onShare }) => {
 
   const [desc, setDesc] = useState("");
   const [image, setImage] = useState(null);
+  const [file, setFile] = useState(null);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImage(URL.createObjectURL(file));
+    const selected = e.target.files[0];
+    if (selected) {
+      setImage(URL.createObjectURL(selected));
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files[0];
+    if (selected) {
+      setFile(selected);
     }
   };
 
@@ -32,11 +40,18 @@ const Share = ({ onShare }) => {
       profilePic: currentUser.profilePic,
       desc,
       img: image,
+      file: file
+        ? {
+            name: file.name,
+            url: URL.createObjectURL(file), // simulate upload
+          }
+        : null,
     };
 
     onShare(newPost);
     setDesc("");
     setImage(null);
+    setFile(null);
   };
 
   return (
@@ -58,20 +73,41 @@ const Share = ({ onShare }) => {
           </div>
         )}
 
+        {file && (
+          <div className="previewFile">
+            <p>📎 {file.name}</p>
+          </div>
+        )}
+
         <hr />
 
         <div className="bottom">
           <div className="left">
             <input
               type="file"
-              id="file"
+              id="imageUpload"
+              accept="image/*"
               style={{ display: "none" }}
               onChange={handleImageChange}
             />
-            <label htmlFor="file">
+            <label htmlFor="imageUpload">
               <div className="item">
                 <img src={ImageIcon} alt="" />
                 <span>Add Image</span>
+              </div>
+            </label>
+
+            <input
+              type="file"
+              id="fileUpload"
+              accept=".pdf,.doc,.docx,.ppt,.pptx"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
+            <label htmlFor="fileUpload">
+              <div className="item">
+                <img src={MapIcon} alt="" />
+                <span>Add File</span>
               </div>
             </label>
           </div>
