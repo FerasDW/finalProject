@@ -6,6 +6,7 @@ import { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import "../../CSS/MainLayout.css";
 import Loader from "../Pages/Loading.js";
+import ChatUI from "../Components/Forms/ChatBot.js";
 
 
 export default function MainLayout() {
