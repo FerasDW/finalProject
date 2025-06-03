@@ -1,128 +1,395 @@
 .groupsPage.horizontalLayout {
-    display: flex;
-    gap: 20px;
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f0f2f5;
+
+  .groupFeed {
+    flex: 2;
+    background: white;
+    border-radius: 12px;
     padding: 20px;
-    background-color: #f0f2f5;
-  
-    .groupFeed {
-      flex: 2;
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      height: fit-content;
-  
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    height: fit-content;
+
+    .feedHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
       h3 {
         font-size: 18px;
         color: #1876f2;
-        margin-bottom: 16px;
+        margin: 0;
       }
-  
-      .postItem {
-        padding: 12px 0;
-        border-bottom: 1px solid #eee;
-  
-        strong {
+    }
+  }
+
+  .groupSidebar {
+    flex: 1;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    .groupSidebarHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h3 {
+        font-size: 18px;
+        color: #1876f2;
+        margin: 0;
+      }
+
+      .createGroupBtn {
+        background-color: #1876f2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: #166fe5;
+        }
+      }
+    }
+
+    .groupListCard {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      margin-bottom: 16px;
+      background-color: #fff;
+
+      .groupThumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .groupInfo {
+        flex: 1;
+
+        h4 {
+          margin: 0;
+          font-size: 15px;
           color: #333;
         }
-  
-        em {
-          color: #1876f2;
-          font-style: normal;
-          font-weight: 500;
-        }
-  
-        .date {
-          font-size: 12px;
-          color: #999;
-          margin-left: 8px;
-        }
-  
+
         p {
-          font-size: 14px;
-          color: #444;
-          margin-top: 4px;
+          font-size: 13px;
+          color: #666;
+          margin: 4px 0;
         }
-  
-        &:last-child {
-          border-bottom: none;
+
+        small {
+          font-size: 11px;
+          color: #999;
+
+          .roleTag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 8px;
+            font-weight: 500;
+
+            &.founder {
+              background-color: #e4f0fc;
+              color: #1876f2;
+            }
+          }
+        }
+      }
+
+      .joinBtn {
+        margin-top: 6px;
+        padding: 4px 10px;
+        font-size: 13px;
+        border: 1px solid #1876f2;
+        border-radius: 20px;
+        background: white;
+        color: #1876f2;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+
+
+
+      .groupCardActions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .viewGroupBtn {
+          padding: 4px 10px;
+          font-size: 13px;
+          border: 1px solid #1876f2;
+          border-radius: 20px;
+          background: #1876f2;
+          color: white;
+          cursor: pointer;
+          white-space: nowrap;
+
+          &:hover {
+            background: #166fe5;
+          }
         }
       }
     }
-  
-    .groupSidebar {
-      flex: 1;
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      height: fit-content;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  
+
+    .joinedGroupsSection {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+
       h3 {
         font-size: 18px;
         color: #1876f2;
         margin-bottom: 16px;
       }
-  
-      .groupListCard {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 10px;
+    }
+
+    .noGroupsMessage {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+    }
+  }
+}
+
+// Create Group Popup Styles
+.popupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.createGroupPopup {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+
+  .popupHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 0 20px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+
+    h3 {
+      margin: 0;
+      font-size: 20px;
+      color: #333;
+    }
+
+    .closeBtn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+
+      &:hover {
+        background-color: #f0f0f0;
+      }
+    }
+  }
+
+  .createGroupForm {
+    padding: 0 20px 20px 20px;
+
+    .formGroup {
+      margin-bottom: 16px;
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #333;
+        font-size: 14px;
+      }
+
+      input, textarea, select {
+        width: 100%;
+        padding: 10px 12px;
         border: 1px solid #ddd;
-        margin-bottom: 16px;
-        background-color: #fff;
-  
-        .groupThumb {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 8px;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+        
+
+        &:focus {
+          outline: none;
+          border-color: #1876f2;
+          box-shadow: 0 0 0 2px rgba(24, 118, 242, 0.1);
+        }
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+    }
+
+    .imageUploadSection {
+      .imagePreview {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 15px;
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+
+        .previewImg {
+          width: 100px;
+          height: 100px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 2px solid #ddd;
+        }
+
+        .removeImageBtn {
+          background: #e74c3c;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 5px 12px;
+          font-size: 12px;
+          cursor: pointer;
+
+          &:hover {
+            background: #c0392b;
           }
-    
-          .groupInfo {
-            flex: 1;
-    
-            h4 {
-              margin: 0;
-              font-size: 15px;
-              color: #333;
-            }
-    
-            p {
-              font-size: 13px;
-              color: #666;
-              margin: 4px 0;
-            }
-    
-            small {
-              font-size: 11px;
-              color: #999;
-            }
-          }
-    
-          .joinBtn {
-            margin-top: 6px;
-            padding: 4px 10px;
-            font-size: 13px;
-            border: 1px solid #1876f2;
-            border-radius: 20px;
-            background: white;
-            color: #1876f2;
+        }
+      }
+
+      .imageUploadOptions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+
+        .uploadOption {
+          .fileUploadBtn {
+            display: inline-block;
+            background: #1876f2;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
             cursor: pointer;
-            white-space: nowrap;
-    
-            &.joined {
-              background: #1876f2;
-              color: white;
-            }
-    
+            font-size: 14px;
+            text-align: center;
+            transition: background-color 0.2s;
+
             &:hover {
-              opacity: 0.9;
+              background: #166fe5;
             }
+          }
+
+          input[type="url"] {
+            width: 100%;
+          }
+        }
+
+        .orDivider {
+          text-align: center;
+          color: #666666;
+          font-size: 12px;
+          font-weight: 500;
+          position: relative;
+
+          &::before,
+          &::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #ddd;
+          }
+
+          &::before {
+            left: 0;
+          }
+
+          &::after {
+            right: 0;
           }
         }
       }
     }
-    
+
+    .formActions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+
+      .cancelBtn {
+        background: #f0f2f5;
+        color: #333;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+          background: #e4e6eb;
+        }
+      }
+
+      .submitBtn {
+        background: #1876f2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 20px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+          background: #166fe5;
+        }
+      }
+    }
+  }
+}

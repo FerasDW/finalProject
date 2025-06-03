@@ -260,12 +260,14 @@ const dashboardContentData = {
         chartType: "bar",
         chartData: sampleData,
         gridColumn: "span 8",
+        gridRow: "span 1",
       },
     },
     {
       type: "assignments",
       props: {
         data: upcomingAssignments,
+        gridRow: "span 1",
       },
     },
     {
@@ -274,6 +276,7 @@ const dashboardContentData = {
         title: "Education Distribution",
         chartType: "pie",
         chartData: educationdata,
+        gridRow: "span 1",
       },
     },
     {
@@ -283,6 +286,7 @@ const dashboardContentData = {
         chartType: "line",
         chartData: lineChartData,
         gridColumn: "span 8",
+        gridRow: "span 1",
       },
     },
   ],

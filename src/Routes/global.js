@@ -28,9 +28,8 @@ import Statistics from "../View/Pages/AdminReportPage.jsx";
 import ProtectedRoute from "./ProtectedRoute";
 
 import { SavedPostsProvider } from "../Context/SavedPostsContext.jsx";
-
-
-
+import { FollowProvider } from "../Context/FollowContext.jsx";
+import { FriendProvider } from "../Context/FriendContext.jsx";
 
 function GlobalRoutes() {
   return (
@@ -56,7 +55,6 @@ function GlobalRoutes() {
         <Route path="/coursepage" element={<CoursePage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/Messages" element={<Messages />} />
-        
       </Route>
 
       {/* Protected routes under CommunityLayout */}
@@ -64,7 +62,11 @@ function GlobalRoutes() {
         element={
           // <ProtectedRoute>
           <SavedPostsProvider>
-            <CommunityLayout />
+            <FollowProvider>
+              <FriendProvider>
+                <CommunityLayout />
+              </FriendProvider>
+            </FollowProvider>
           </SavedPostsProvider>
           // </ProtectedRoute>
         }
@@ -84,5 +86,4 @@ function GlobalRoutes() {
     </Routes>
   );
 }
-
 export default GlobalRoutes;

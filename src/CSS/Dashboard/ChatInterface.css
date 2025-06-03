@@ -1,7 +1,7 @@
 .chat-interface {
     position: fixed;
     bottom: 0;
-    right: 258px;
+    right: 358px;
     width: 320px;
     height: 400px;
     background-color: white;
@@ -13,7 +13,7 @@
   }
   .chat-header {
     padding: 15px;
-    background-color: #d9eaff;
+    background-color: #0072ff !important;
     border-radius: 10px 10px 0 0;
     display: flex;
     justify-content: space-between;
@@ -27,13 +27,13 @@
   }
   .chat-contact-name {
     font-weight: 500;
-    color: #212529;
+    color: #ffffff;
   }
   .chat-close-button {
     background: none;
     border: none;
     font-size: 24px;
-    color: #6c757d;
+    color: #ffffff;
     cursor: pointer;
     padding: 0 5px;
   }

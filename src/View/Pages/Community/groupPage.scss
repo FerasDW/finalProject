@@ -1,30 +1,336 @@
 .groupPage {
+  padding: 20px;
+
+  .groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    background-color: white;
+    border-radius: 12px;
     padding: 20px;
-  
-    .groupHeader {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 20px;
-  
-      .groupBanner {
-        width: 100px;
-        height: 100px;
-        border-radius: 20px;
-        object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    .groupBanner {
+      width: 100px;
+      height: 100px;
+      border-radius: 20px;
+      object-fit: cover;
+    }
+
+    .groupInfo {
+      flex: 1;
+
+      h2 {
+        margin: 0;
+        color: #333;
       }
-  
-      .groupInfo {
-        h2 {
-          margin: 0;
+
+      p {
+        color: #666;
+        margin: 8px 0;
+      }
+
+      small {
+        color: #999;
+        font-size: 12px;
+      }
+
+      .groupActions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+
+        button {
+          padding: 6px 12px;
+          border-radius: 6px;
+          font-size: 14px;
+          cursor: pointer;
+          border: none;
+
+          &.membersBtn {
+            background-color: #f0f2f5;
+            color: #444;
+
+            &:hover {
+              background-color: #e4e6eb;
+            }
+          }
+
+          &.editGroupBtn {
+            background-color: #1876f2;
+            color: white;
+
+            &:hover {
+              background-color: #166fe5;
+            }
+          }
         }
       }
     }
-  
-    .groupPosts {
+  }
+
+  .groupPosts {
+    background-color: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    .postsHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
       h3 {
-        margin-bottom: 10px;
+        margin: 0;
+        color: #1876f2;
+      }
+
+      .createPostBtn {
+        background-color: #1876f2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 14px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: #166fe5;
+        }
+      }
+    }
+
+    .emptyPostsMessage {
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      padding: 20px 0;
+    }
+  }
+
+  /* نافذة منبثقة لعرض الأعضاء */
+  .modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  .membersModal,
+  .editGroupModal,
+  .createPostModal {
+    background-color: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+    h2 {
+      color: #1876f2;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .selectedGroup {
+      background-color: #f0f2f5;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #444;
+
+        strong {
+          color: #1876f2;
+        }
+      }
+    }
+
+    .membersList {
+      margin-bottom: 20px;
+
+      .memberItem {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .memberInfo {
+          display: flex;
+          flex-direction: column;
+
+          .memberName {
+            font-weight: 500;
+            color: #333;
+          }
+
+          .roleTag {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-top: 4px;
+            font-weight: 500;
+
+            &.founder {
+              background-color: #e4f0fc;
+              color: #1876f2;
+            }
+
+            &.cofounder {
+              background-color: #e8f5e9;
+              color: #2e7d32;
+            }
+
+            &.member {
+              background-color: #f5f5f5;
+              color: #757575;
+            }
+          }
+
+          small {
+            font-size: 11px;
+            color: #999;
+            margin-top: 2px;
+          }
+        }
+
+        .promoteBtn,
+        .removeBtn {
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          cursor: pointer;
+          border: none;
+          white-space: nowrap;
+        }
+
+        .promoteBtn {
+          background-color: #e8f5e9;
+          color: #2e7d32;
+          margin-left: 8px;
+
+          &:hover {
+            background-color: #c8e6c9;
+          }
+        }
+
+        .removeBtn {
+          background-color: #ffebee;
+          color: #c62828;
+
+          &:hover {
+            background-color: #ffcdd2;
+          }
+        }
+      }
+    }
+
+    .closeBtn {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
+      background-color: #f0f2f5;
+      color: #444;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+
+      &:hover {
+        background-color: #e4e6eb;
+      }
+    }
+
+    .formGroup {
+      margin-bottom: 16px;
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #444;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+
+        &:focus {
+          outline: none;
+          border-color: #1876f2;
+        }
+      }
+
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+    }
+
+    .modalActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+
+      button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+
+        &.cancelBtn {
+          background-color: #f0f2f5;
+          color: #444;
+
+          &:hover {
+            background-color: #e4e6eb;
+          }
+        }
+
+        &.saveBtn,
+        &.createBtn {
+          background-color: #1876f2;
+          color: white;
+
+          &:hover {
+            background-color: #166fe5;
+          }
+
+          &:disabled {
+            background-color: #e4e6eb;
+            color: #bec3c9;
+            cursor: not-allowed;
+          }
+        }
       }
     }
   }
-  
+}

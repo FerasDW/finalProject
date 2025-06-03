@@ -9,7 +9,7 @@ export default function Dashboard({ userRole }) {
   if (loading) return <Loader />;
   return (
     <div className="dashboard">
-      <DashboardContent userRole={"1100"} />  {/* ✅ Pass the userRole prop */}  
+      <DashboardContent userRole={"1100"} />
     </div>
   );
 }
