@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../../../../Context/AuthContext.jsx";
 import SidebarItem from "./SidebarItem";
 import ChatInterface from "../ChatInterface/ChatInterface";
 import "../../../../CSS/Dashboard/Sidebar.css";
@@ -12,6 +13,8 @@ const Sidebar = ({ menuItems, position = "left" }) => {
   const navigate = useNavigate();
   // const [selectedItem, setselectedItem] = useState(null);
 
+  const { authData } = useContext(AuthContext);
+  const currentUserId = authData?.id;
   const handleItemClick = (title) => {
     const contact = menuItems.find((item) => item.title === title);
     if (position === "right") {
@@ -88,17 +91,13 @@ const Sidebar = ({ menuItems, position = "left" }) => {
           ))}
         </nav>
       </div>
-      {selected &&
-        position === "right" &&
-        selected !== "Home" && ( // should fixed !!
-          <ChatInterface
-            contact={selected}
-            onClose={() => {
-              // setselectedItem(null);
-              setSelected(null);
-            }}
-          />
-        )}
+      {selected && position === "right" && selected !== "Home" && (
+        <ChatInterface
+          contact={selected}
+          currentUserId={currentUserId}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 };

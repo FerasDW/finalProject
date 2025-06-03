@@ -1,26 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Send } from 'react-feather';
 import '../../../../CSS/Dashboard/ChatInterface.css';
-const ChatInterface = ({ contact, onClose }) => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello!", sender: "user" },
-    { id: 2, text: "Hi there!", sender: "contact" },
-  ]);
+import { useChat } from '../../../../Context/ChatContext';
+
+const ChatInterface = ({ contact, onClose, currentUserId }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  const {
+    messagesMap,
+    getMessagesForContact,
+    sendMessage,
+    loadMessages,
+    markMessagesAsRead,
+  } = useChat();
+
+  // Load messages from API when contact changes
+  useEffect(() => {
+    if (!contact?.id) return;
+
+    // Load messages and mark them as read    
+    loadMessages(contact.id);
+    markMessagesAsRead(contact.id);
+  }, [contact?.id]);
+
+  // Update displayed messages when messagesMap updates
+  useEffect(() => {
+    if (!contact?.id) return;
+    const updatedMessages = getMessagesForContact(contact.id);
+    setMessages(updatedMessages);
+  }, [messagesMap, contact?.id]);
+
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      setMessages([
-        ...messages,
-        {
-          id: messages.length + 1,
-          text: newMessage,
-          sender: 'user'
-        }
-      ]);
+      sendMessage(contact.id, newMessage);
       setNewMessage('');
     }
   };
+
   return (
     <div className="chat-interface">
       <div className="chat-header">
@@ -30,18 +48,20 @@ const ChatInterface = ({ contact, onClose }) => {
         </div>
         <button className="chat-close-button" onClick={onClose}>×</button>
       </div>
+
       <div className="chat-messages">
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
-            key={message.id}
+            key={index}
             className={`chat-message ${
-              message.sender === 'user' ? 'sent' : 'received'
+              message.senderId === currentUserId ? 'sent' : 'received'
             }`}
           >
-            <div className="message-content">{message.text}</div>
+            <div className="message-content">{message.content}</div>
           </div>
         ))}
       </div>
+
       <form className="chat-input-container" onSubmit={handleSendMessage}>
         <input
           type="text"
@@ -57,4 +77,5 @@ const ChatInterface = ({ contact, onClose }) => {
     </div>
   );
 };
+
 export default ChatInterface;

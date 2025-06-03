@@ -14,7 +14,6 @@ const TextUpload = () => {
 
   const handleSubmit = () => {
     if (inputValue.trim() === '') return alert("Please enter something!");
-    console.log('Submitted value:', inputValue);
     // Here you could send the value to a backend or another function
     setInputValue('');
   };
