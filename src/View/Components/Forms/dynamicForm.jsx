@@ -1,28 +1,162 @@
-import { useForm } from 'react-hook-form';
-import React from 'react';
-const DynamicForm = ({ fields, onSubmit }) => {
-  const {
-    register,//register is method that we get from the useform hook, it allows us to register inputs
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
+import React, { useState, useEffect } from 'react';
+import InputField from './InputField';
+import './dynamicForm.css';
+
+const DynamicForm = ({
+  title = 'Form',
+  fields = [],
+  onSubmit,
+  onCancel,
+  submitText = 'Submit',
+  cancelText = 'Cancel',
+  showCancel = true,
+  loading = false,
+  className = '',
+  initialData = {} // Add this prop
+}) => {
+  const [formData, setFormData] = useState(initialData || {});
+  const [errors, setErrors] = useState({});
+
+  // Update formData when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData);
+    }
+  }, [initialData]);
+
+  const handleInputChange = (e) => {
+    const { name, type, value, checked, files } = e.target;
+
+    let finalValue;
+    if (type === 'checkbox') {
+      finalValue = checked;
+    } else if (type === 'radio') {
+      finalValue = value;
+    } else if (type === 'file') {
+      finalValue = files?.[0] ?? null;
+    } else {
+      finalValue = value;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: finalValue
+    }));
+
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    fields.forEach(field => {
+      const value = formData[field.name];
+
+      if (field.required) {
+        const isEmpty =
+          (field.type === 'file' && !value) ||
+          (typeof value === 'string' && value.trim() === '') ||
+          (typeof value === 'undefined') ||
+          (typeof value === 'boolean' && !value);
+
+        if (isEmpty) {
+          newErrors[field.name] = `${field.label || field.name} is required`;
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit?.(formData);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({});
+    setErrors({});
+    onCancel?.();
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      {fields.map(({ name, label, type, placeholder }, index) => (// Each field is an object with name, label, type, and placeholder
-        <div key={index} style={{ marginBottom: '1rem' }}>
-          <label htmlFor={name}>{label}</label>
-          <input
-            id={name}
-            type={type}
-            placeholder={placeholder}
-            {...register(name, { required: true })}//> {/* register method is used to register the input with react-hook-form */}
-          />
-          {errors[name] && <p style={{ color: 'red' }}>This field is required</p>}
+    <div className={`dynamic-form-container ${className}`}>
+      <div className="dynamic-form">
+        {/* Header */}
+        <div className="form-header">
+          <h2 className="form-title">{title}</h2>
         </div>
-      ))}
-      <button type="submit">Submit</button>
-    </form>
+
+        {/* Content */}
+        <div className="form-content">
+          <div className="fields-container">
+            {fields.map((field, index) => (
+              <InputField
+                key={field.name || index}
+                label={field.label}
+                type={field.type || 'text'}
+                name={field.name}
+                value={
+                  field.type === 'checkbox' || field.type === 'radio' || field.type === 'file'
+                    ? undefined
+                    : formData[field.name] || ''
+                }
+                checked={
+                  field.type === 'checkbox'
+                    ? formData[field.name] === true
+                    : field.type === 'radio'
+                    ? formData[field.name] === field.value
+                    : undefined
+                }
+                onChange={handleInputChange}
+                placeholder={field.placeholder}
+                required={field.required}
+                error={errors[field.name]}
+                disabled={loading}
+                accept={field.accept}
+                options={field.options}
+              />
+            ))}
+          </div>
+
+          {/* Buttons */}
+          <div className="form-buttons">
+            {showCancel && (
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={loading}
+                className="btn btn-cancel"
+              >
+                {cancelText}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="btn btn-submit"
+            >
+              {loading && (
+                <div className="loading-spinner">
+                  <div className="spinner"></div>
+                </div>
+              )}
+              <span className={loading ? 'loading-text' : ''}>{submitText}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

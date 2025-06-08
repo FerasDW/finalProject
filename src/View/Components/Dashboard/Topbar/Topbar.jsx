@@ -1,34 +1,59 @@
-import { Moon, Sun, Bell, Search, User } from "react-feather";
+import { Bell, User, Settings } from "react-feather";
 import { useContext } from "react";
 import { AuthContext } from "../../../../Context/AuthContext";
 import "../../../../CSS/Dashboard/Topbar.css";
-import SwitchMode from "../../Buttons/SwitchModeButton.js";
-import SearchInput from "../../Buttons/SearchInput.js";
-const Topbar = () => {
-  const { authData, loading } = useContext(AuthContext); // ✅ Get loading state
 
-  // ✅ If still loading, show nothing (or a loading spinner)
-  if (loading) return <p className="header">Loading...</p>;
-  console.log(authData);
+const Topbar = () => {
+  const { authData, loading } = useContext(AuthContext);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="topbar">
+        <div className="loading-skeleton">
+          <div className="skeleton-text"></div>
+          <div className="skeleton-icons">
+            <div className="skeleton-icon"></div>
+            <div className="skeleton-icon"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="topbar">
-      <div
-        className="Username"
-        style={{ display: "flex", flexDirection: "row" }}
-      >
-        <p>{authData ? authData.username : "Guest"}</p>
+      <div className="topbar-left">
+        <div className="user-info">
+          <div className="user-avatar">
+            <User size={20} />
+          </div>
+          <div className="user-details">
+            <span className="username">
+              {authData ? authData.username : "Guest"}
+            </span>
+            <span className="user-status">
+              {authData ? "Online" : "Not logged in"}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="topbarIcons">
-        {/* SEARCH BAR */}
-        {/* <div>
-          <SwitchMode />
-        </div> */}
-        {/* <SearchInput /> */}
+      <div className="topbar-center">
+        {/* Search removed */}
+      </div>
 
-        <SwitchMode />
-        <Bell />
-        <User />
+      <div className="topbar-right">
+        <div className="topbar-icons">
+          <button className="icon-button notification-button" title="Notifications">
+            <Bell size={20} />
+            <span className="notification-badge">3</span>
+          </button>
+          
+          <button className="icon-button" title="Settings">
+            <Settings size={20} />
+          </button>
+        </div>
       </div>
     </div>
   );

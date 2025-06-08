@@ -1,7 +1,7 @@
 import "../../../../CSS/Dashboard/Content.css";
 import CourseCard from "../CourseCard/CourseCard";
 
-const CoursesContent = ({ courses, onDeleteCourse }) => {
+const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
   return (
     <div className="courses-grid">
       {courses.length > 0 ? (
@@ -12,16 +12,13 @@ const CoursesContent = ({ courses, onDeleteCourse }) => {
               id: course.id,
               code: course.code,
               title: course.title,
-              Students: course.students,
-              Rating: course.rating,
-              Lessons: course.lessons,
-
-              
-
+              students: course.students,
+              rating: course.rating,
+              lessons: course.lessons,
               img: course.img,
-
             }}
             onDelete={onDeleteCourse}
+            onEdit={onEditCourse}
           />
         ))
       ) : (

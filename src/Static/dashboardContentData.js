@@ -219,44 +219,45 @@ export const lineChartData = [
 ];
 
 const dashboardContentData = {
+  // Admin Dashboard - System oversight and management
   1100: [
     {
       type: "box",
       props: {
-        title: "Total Enrolled Courses",
-        subtitle: "5 Courses",
-        boxLink: "View entire course list",
+        title: "User Management",
+        subtitle: "1,245 Active Users",
+        boxLink: "Manage all users",
+        image: logoImg,
+        bgColor: "#e6f3ff",
+        gridRow: "span 8",
+      },
+    },
+    {
+      type: "box",
+      props: {
+        title: "System Analytics",
+        subtitle: "View system performance",
+        boxLink: "View detailed analytics",
+        image: statImg,
+        bgColor: "#fff2e6",
+        gridRow: "span 8",
+      },
+    },
+    {
+      type: "box",
+      props: {
+        title: "Institution Overview",
+        subtitle: "12 Departments Active",
+        boxLink: "Manage departments",
         image: coursesImg,
-        bgColor: "#cffccc",
-        gridRow: "span 8",
-      },
-    },
-    {
-      type: "box",
-      props: {
-        title: "Grades & Evaluations",
-        subtitle: "3 Assignments Due",
-        boxLink: "View entire grades list",
-        image: gradeImg,
-        bgColor: "#fffccc",
-        gridRow: "span 8",
-      },
-    },
-    {
-      type: "box",
-      props: {
-        title: "Recent Notifications",
-        subtitle: "You have new messages.",
-        boxLink: "View all notifications",
-        image: notificationImg,
-        bgColor: "#ffcccc",
+        bgColor: "#f0f8f0",
         gridRow: "span 8",
       },
     },
     {
       type: "chart",
       props: {
-        title: "Student Performance Analysis",
+        title: "Department Enrollment Statistics",
         chartType: "bar",
         chartData: sampleData,
         gridColumn: "span 8",
@@ -273,7 +274,7 @@ const dashboardContentData = {
     {
       type: "chart",
       props: {
-        title: "Education Distribution",
+        title: "System Usage Distribution",
         chartType: "pie",
         chartData: educationdata,
         gridRow: "span 1",
@@ -282,7 +283,7 @@ const dashboardContentData = {
     {
       type: "chart",
       props: {
-        title: "Academic Calendar",
+        title: "Annual Enrollment Trends",
         chartType: "line",
         chartData: lineChartData,
         gridColumn: "span 8",
@@ -290,51 +291,149 @@ const dashboardContentData = {
       },
     },
   ],
+  
+  // Lecturer Dashboard - Teaching focused
   1200: [
     {
       type: "box",
       props: {
-        title: "User Management",
-        contentBox: "Manage users and their permissions.",
-        boxLink: "Go to user management",
-        image: logoImg,
-        bgColor: "#cffccc",
-        gridRow: "span 6",
+        title: "My Classes",
+        subtitle: "4 Active Classes",
+        boxLink: "View all classes",
+        image: coursesImg,
+        bgColor: "#f0f8f0",
+        gridRow: "span 8",
       },
     },
     {
       type: "box",
       props: {
-        title: "System Reports",
-        contentBox: "View detailed system reports.",
-        boxLink: "View reports",
-        image: statImg,
+        title: "Pending Grades",
+        subtitle: "23 Assignments to Grade",
+        boxLink: "Grade assignments",
+        image: gradeImg,
         bgColor: "#fffccc",
-        gridRow: "span 6",
+        gridRow: "span 8",
       },
     },
-  ],
-  1300: [
     {
       type: "box",
       props: {
-        title: "Class Management",
-        contentBox: "Manage your classes and schedules.",
-        boxLink: "Go to class management",
-        image: logoImg,
-        bgColor: "#cffccc",
-        gridRow: "span 6",
+        title: "Student Communications",
+        subtitle: "5 New Messages",
+        boxLink: "View messages",
+        image: notificationImg,
+        bgColor: "#ffcccc",
+        gridRow: "span 8",
       },
     },
     {
       type: "chart",
       props: {
-        title: "Student Performance",
+        title: "Class Performance Overview",
         chartType: "bar",
         chartData: sampleData,
-        image: statImg,
         gridColumn: "span 8",
-        gridRow: "span 4",
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "assignments",
+      props: {
+        data: upcomingAssignments,
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "chart",
+      props: {
+        title: "Student Grade Distribution",
+        chartType: "pie",
+        chartData: educationdata,
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "chart",
+      props: {
+        title: "Class Progress Trends",
+        chartType: "line",
+        chartData: lineChartData,
+        gridColumn: "span 8",
+        gridRow: "span 1",
+      },
+    },
+  ],
+  
+  // Student Dashboard - Learning focused
+  1300: [
+    {
+      type: "box",
+      props: {
+        title: "My Enrolled Courses",
+        subtitle: "5 Active Courses",
+        boxLink: "View all courses",
+        image: coursesImg,
+        bgColor: "#cffccc",
+        gridRow: "span 8",
+      },
+    },
+    {
+      type: "box",
+      props: {
+        title: "My Grades",
+        subtitle: "Latest: A- in Math",
+        boxLink: "View all grades",
+        image: gradeImg,
+        bgColor: "#fffccc",
+        gridRow: "span 8",
+      },
+    },
+    {
+      type: "box",
+      props: {
+        title: "Notifications",
+        subtitle: "3 New Announcements",
+        boxLink: "View all notifications",
+        image: notificationImg,
+        bgColor: "#ffcccc",
+        gridRow: "span 8",
+      },
+    },
+    {
+      type: "chart",
+      props: {
+        title: "My Academic Progress",
+        chartType: "line",
+        chartData: lineChartData,
+        gridColumn: "span 8",
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "assignments",
+      props: {
+        data: upcomingAssignments,
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "chart",
+      props: {
+        title: "Course Distribution",
+        chartType: "pie",
+        chartData: educationdata,
+        gridRow: "span 1",
+      },
+    },
+    {
+      type: "chart",
+      props: {
+        title: "Study Performance Analysis",
+        chartType: "bar",
+        chartData: sampleData,
+        gridColumn: "span 8",
+        gridRow: "span 1",
       },
     },
   ],

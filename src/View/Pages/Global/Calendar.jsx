@@ -5,27 +5,29 @@ import ScrollList from "../../Components/Dashboard/ScrollList/ScrollList";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import {upcomingAssignments} from "../../../Static/dashboardData.js";
-
+import "./calendar.css";
 
 export default function Calendar() {
     return (
-        <div style={{ display: "flex" ,flexDirection:"row",width:"100%", justifyContent:"space-around",marginTop:"50px",height:"100vh"}}>
-            <div className="big-calendar" style={{width:"70%",height:"auto"}}> 
+        <div className="calendar-page-container">
+            <div className="big-calendar"> 
                 <BigCalendar  />
             </div>
-            <div className="event-schedule" style={{width:"20%",top:"0",display:"flex",flexDirection:"column",gap:"20px"}}> 
+            <div className="event-schedule"> 
                 
-                <EventCalendar />
+                <div>
+                    <EventCalendar />
+                </div>
 
-                <div style={{height:"250px"}}>
+                <div>
                     <ScrollList
-                    icon={<FontAwesomeIcon icon={faPlus} />}
-                    title="Upcoming Assignments"
-                    data={upcomingAssignments}
-                    direction="column"
-                    type="calendar"
-                />
-              </div>
+                        icon={<FontAwesomeIcon icon={faPlus} />}
+                        title="Upcoming Assignments"
+                        data={upcomingAssignments}
+                        direction="column"
+                        type="calendar"
+                    />
+                </div>
             </div>
         </div>
     );

@@ -1,18 +1,26 @@
 import "./leftBar.scss";
-import { useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   currentUser,
   leftBarMenuItems,
 } from "../../../../Static/communityData";
-
 const LeftBar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
+  const handleNameClick = (userId) => {
+    // Navigate to user's profile
+    navigate(`/community/profile/${userId}`);
+  };
   return (
     <div className="leftBar">
       <div className="leftBarMenus">
         <div className="menu">
-          <div className="user">
+          <div
+            onClick={() => handleNameClick(currentUser.id)}
+            style={{ cursor: "pointer" }}
+            className="user"
+          >
             <img src={currentUser.profilePic} alt={currentUser.name} />
             <span>{currentUser.name}</span>
           </div>

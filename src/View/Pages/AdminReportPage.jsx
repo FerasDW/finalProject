@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminReportPage.scss';
 import { GENERATE_REPORT } from '../../Api/Api.js';
+import StudentTable from "../Components/Tables/Table";
 
 const AdminReportPage = () => {
   const [queryText, setQueryText] = useState('');
@@ -9,6 +10,83 @@ const AdminReportPage = () => {
   const [resultData, setResultData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [recentReports, setRecentReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+
+  // Mock data for recent reports (replace with API call later)
+  const mockRecentReports = [
+    {
+      id: 1,
+      description: "Show all employees hired in the last 6 months",
+      createdDate: "2024-06-07",
+      createdTime: "14:30",
+      recordCount: 45,
+      status: "Completed",
+      createdBy: "Admin User"
+    },
+    {
+      id: 2,
+      description: "Generate salary report for Q2 2024",
+      createdDate: "2024-06-06",
+      createdTime: "09:15",
+      recordCount: 120,
+      status: "Completed",
+      createdBy: "Admin User"
+    },
+    {
+      id: 3,
+      description: "List all departments with budget allocation",
+      createdDate: "2024-06-05",
+      createdTime: "16:45",
+      recordCount: 8,
+      status: "Completed",
+      createdBy: "Admin User"
+    },
+    {
+      id: 4,
+      description: "Show student enrollment by grade level",
+      createdDate: "2024-06-04",
+      createdTime: "11:20",
+      recordCount: 350,
+      status: "Completed",
+      createdBy: "Admin User"
+    },
+    {
+      id: 5,
+      description: "Generate attendance report for May 2024",
+      createdDate: "2024-06-03",
+      createdTime: "13:10",
+      recordCount: 892,
+      status: "Completed",
+      createdBy: "Admin User"
+    }
+  ];
+
+  // Load recent reports on component mount
+  useEffect(() => {
+    fetchRecentReports();
+  }, []);
+
+  // Function to fetch recent reports from backend
+  const fetchRecentReports = async () => {
+    setLoadingReports(true);
+    try {
+      // TODO: Replace with actual API call
+      // const response = await axios.get(`${API_BASE_URL}/reports/recent`);
+      // setRecentReports(response.data.data || []);
+      
+      // For now, use mock data
+      setTimeout(() => {
+        setRecentReports(mockRecentReports);
+        setLoadingReports(false);
+      }, 500);
+    } catch (err) {
+      console.error("Error fetching recent reports:", err);
+      // Fallback to mock data on error
+      setRecentReports(mockRecentReports);
+      setLoadingReports(false);
+    }
+  };
 
   const handleGenerateReport = async () => {
     if (!queryText.trim() || queryText === lastQuery) {
@@ -22,6 +100,21 @@ const AdminReportPage = () => {
       console.log("RESPONSE FROM BACKEND:", response.data);
       setResultData(response.data.data || []);
       setLastQuery(queryText);
+      
+      // TODO: After successful report generation, refresh recent reports
+      // fetchRecentReports();
+      
+      // TODO: Save the new report to recent reports
+      // const newReport = {
+      //   description: queryText,
+      //   createdDate: new Date().toISOString().split('T')[0],
+      //   createdTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+      //   recordCount: response.data.data?.length || 0,
+      //   status: "Completed",
+      //   createdBy: "Admin User" // Get from auth context
+      // };
+      // await axios.post(`${API_BASE_URL}/reports/save`, newReport);
+      
     } catch (err) {
       console.error("ERROR:", err);
       setError('Failed to generate report. Please try again.');
@@ -52,6 +145,46 @@ const AdminReportPage = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  // Action buttons for recent reports table
+  const reportActionButtons = [
+    (row) => (
+      <button 
+        key="view" 
+        className="action-btn view-btn"
+        onClick={() => {
+          // TODO: Implement view report functionality
+          console.log("View report:", row);
+        }}
+      >
+        View
+      </button>
+    ),
+    (row) => (
+      <button 
+        key="download" 
+        className="action-btn download-btn"
+        onClick={() => {
+          // TODO: Implement download report functionality
+          console.log("Download report:", row);
+        }}
+      >
+        Download
+      </button>
+    ),
+    (row) => (
+      <button 
+        key="regenerate" 
+        className="action-btn regenerate-btn"
+        onClick={() => {
+          // TODO: Implement regenerate report functionality
+          setQueryText(row.description);
+        }}
+      >
+        Regenerate
+      </button>
+    )
+  ];
 
   return (
     <div className="admin-report-page">
@@ -112,7 +245,7 @@ const AdminReportPage = () => {
                   </svg>
                   <span>Generate Report</span>
                 </>
-              )}
+                )}
             </button>
           </div>
 
@@ -193,6 +326,30 @@ const AdminReportPage = () => {
               </div>
             </>
           )}
+        </div>
+
+        {/* Recent Reports Section - Now outside the content card */}
+        <div className="recent-reports-card">
+          <div className="recent-reports-section">
+            <div className="section-header">
+              <h2 className="section-title">Recent Reports</h2>
+              <p className="section-subtitle">Your last 10 generated reports</p>
+            </div>
+            
+            {loadingReports ? (
+              <div className="loading-spinner">
+                <div className="spinner"></div>
+                <span>Loading recent reports...</span>
+              </div>
+            ) : (
+              <div className="table-wrapper">
+                <StudentTable 
+                  data={recentReports} 
+                  actionButtons={reportActionButtons}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

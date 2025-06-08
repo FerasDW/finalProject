@@ -1,3 +1,5 @@
+// CourseDetails.jsx - Updated to use dynamic course data
+
 import React from "react";
 import "../../../CSS/CoursePage/CourseDetails.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,22 +18,35 @@ import {
 import CourseDetailRow from "./Content/courseDetailRow";
 import ProgressBar from "../Charts/Bar";
 
-const CourseDetails = (props) => {
+const CourseDetails = ({ courseData }) => {
+  // Use courseData prop or fallback to default values
+  const details = courseData || {
+    courseCode: "N/A",
+    courseTitle: "Course Title Not Available",
+    instructor: "Unknown Instructor",
+    enrolledStudents: 0,
+    classTiming: "TBD",
+    faculty: "Unknown Faculty",
+    language: "English",
+    assignments: 0,
+    practicalType: "General Course",
+    finalExam: "TBD",
+    prerequisite: "None"
+  };
+
   return (
     <div className="course-details-container">
       <div className="course-description">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis
-        incidunt dolorum excepturi illo consequatur? Aut, commodi in laboriosam
-        ab animi nam pariatur officia labore optio voluptate mollitia delectus
-        natus architecto. Accusamus dolores deleniti repudiandae explicabo quo
-        sint nulla doloremque pariatur repellat dicta rem, dolor nam neque quis
-        nisi eveniet saepe amet magnam cumque delectus sed provident fugiat
-        officiis. Odio quidem facere hic in beatae quos laudantium maxime vitae,
-        placeat asperiores iste commodi fugit magnam exercitationem voluptatem
-        ducimus assumenda quibusdam? Aliquam obcaecati ullam reiciendis sint
-        neque consequuntur temporibus explicabo eligendi eius amet nam
-        accusantium, omnis vitae veniam iusto, assumenda minus est delectus
-        totam qui necessitatibus nemo
+        <h3>{details.courseTitle}</h3>
+        <p>Course Code: {details.courseCode}</p>
+        <p>
+          This comprehensive course covers essential concepts and practical 
+          applications in {details.courseTitle.toLowerCase()}. Students will 
+          engage in hands-on learning experiences and develop critical skills 
+          necessary for success in this field. The course combines theoretical 
+          foundations with practical implementation to ensure a well-rounded 
+          educational experience.
+        </p>
         <div className="progress-bar">
           <ProgressBar progress={80} />
         </div>
@@ -40,11 +55,11 @@ const CourseDetails = (props) => {
       <div className="course-data">
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faUserGroup} />}
-          title="40 Students"
+          title={`${details.enrolledStudents} Students`}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faClock} />}
-          title="3h 45m"
+          title={details.classTiming}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faStar} />}
@@ -52,32 +67,31 @@ const CourseDetails = (props) => {
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faChalkboardUser} />}
-          title="Instructor: John Doe"
+          title={`Instructor: ${details.instructor}`}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faBuilding} />}
-          title="Faculty of Science"
+          title={details.faculty}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faLanguage} />}
-          title="Language: English"
+          title={`Language: ${details.language}`}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faTasks} />}
-          title="Assignments: 5 total"
+          title={`Assignments: ${details.assignments} total`}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faFlask} />}
-          title="Type: Practical Lab"
+          title={`Type: ${details.practicalType}`}
         />
-
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faPencilAlt} />}
-          title="Final Exam: Included"
+          title={`Final Exam: ${details.finalExam}`}
         />
         <CourseDetailRow
           icon={<FontAwesomeIcon icon={faLink} />}
-          title="Prerequisite: Intro to Biology"
+          title={`Prerequisite: ${details.prerequisite}`}
         />
       </div>
     </div>

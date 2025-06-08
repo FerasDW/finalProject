@@ -1,16 +1,18 @@
-import React from "react";
 import "./CourseCard.css";
 import DeleteButton from "../../Buttons/DeleteButton";
 import EditButton from "../../Buttons/EditButton";
 import { useNavigate } from "react-router-dom";
 
-const CourseCard = ({ cardInfo, onDelete }) => {
+const CourseCard = ({ cardInfo, onDelete, onEdit }) => {
   const navigate = useNavigate();
 
-  const handleEdit = () => {
-    // navigate(`/courses/${cardInfo.id}`);
-    navigate("/coursepage", { state: { courseData: cardInfo } });
+  const handleCourseClick = () => {
+    navigate(`/course/${cardInfo.id}`);
   };
+
+  const handleEdit = () => {
+  onEdit(cardInfo);
+};
 
   const handleDelete = () => {
     // TODO: Replace this with API call in the future to delete from backend
@@ -38,18 +40,24 @@ const CourseCard = ({ cardInfo, onDelete }) => {
       </div>
 
       <div className="bottom-section">
-        <span className="title">{cardInfo.title}</span>
+        <span 
+          className="title course-title-clickable" 
+          onClick={handleCourseClick}
+          style={{ cursor: 'pointer' }}
+        >
+          {cardInfo.title}
+        </span>
         <div className="row row1">
           <div className="item">
-            <span className="big-text">{cardInfo.Students}</span>
+            <span className="big-text">{cardInfo.students}</span>
             <span className="regular-text">Students</span>
           </div>
           <div className="item">
-            <span className="big-text">{cardInfo.Rating}</span>
+            <span className="big-text">{cardInfo.rating}</span>
             <span className="regular-text">Rating</span>
           </div>
           <div className="item">
-            <span className="big-text">{cardInfo.Lessons}</span>
+            <span className="big-text">{cardInfo.lessons}</span>
             <span className="regular-text">Lessons</span>
           </div>
         </div>

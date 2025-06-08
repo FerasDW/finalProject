@@ -1,12 +1,8 @@
-.myCVPage {
+.cv-page {
   padding: 20px;
 
-  h2 {
-    margin-bottom: 20px;
-    color: #1876f2;
-  }
-
-  .cvTabs {
+  // Tabs
+  .cv-tabs {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
@@ -19,6 +15,11 @@
       color: #333;
       cursor: pointer;
       font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #ddd;
+      }
 
       &.active {
         background: #1876f2;
@@ -27,236 +28,374 @@
     }
   }
 
-  .cvCard {
+  // Base card styles
+  .cv-card {
     background: white;
     padding: 30px;
     border-radius: 12px;
-    max-width: 600px;
+    max-width: 800px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 
-    p {
-      font-size: 14px;
-      margin: 10px 0;
-    }
-
-    .uploadLabel {
-      display: inline-block;
-      padding: 10px 16px;
-      background-color: #1876f2;
-      color: white;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: center;
-    }
-
-    .downloadBtn {
-      padding: 10px 16px;
-      font-size: 14px;
-      border: 1px solid #1876f2;
-      border-radius: 8px;
-      background: white;
-      color: #1876f2;
-      font-weight: 500;
-      cursor: pointer;
-
-      &:hover {
-        background-color: #e6f0ff;
-      }
-    }
-
-    .createNowBtn {
-      padding: 10px 16px;
-      background: #1876f2;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-
-      &:hover {
-        opacity: 0.95;
-      }
-    }
-
-    .aiBtn {
-      padding: 10px 16px;
-      background-color: #5b21b6;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-
-      &:hover {
-        opacity: 0.95;
-      }
-    }
-
-    button {
-      text-align: center;
-    }
-  }
-
-  .cvOptions {
-    display: flex;
-    flex-direction: column;
-    align-items:flex-start;
-    gap: 12px;
-  
     h3 {
-      color: #444;
-      margin-bottom: 10px;
-    }
-  
-    button,
-    .uploadLabel {
-      width: auto;
-      padding: 10px 20px;
-      background-color: #1876f2;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: center;
-  
-      &:hover {
-        opacity: 0.95;
-      }
-    }
-  
-    .aiBtn {
-      background-color: #5b21b6;
-    }
-  }
-  
-
-  .cvPreview {
-    h3 {
-      margin: 0;
+      margin: 0 0 10px 0;
       color: #1876f2;
-    }
-
-    .subtitle {
-      font-style: italic;
-      color: #666;
-      margin-bottom: 10px;
     }
 
     h4 {
-      margin: 12px 0 4px;
-      font-size: 15px;
+      color: #1876f2;
+      margin: 16px 0 8px 0;
+      font-size: 16px;
     }
 
     p {
-      margin-bottom: 8px;
-    }
-
-    .editBtn {
-      margin-top: 20px;
-      border: none;
-      background: none;
-      color: #1876f2;
       font-size: 14px;
-      cursor: pointer;
-      text-decoration: underline;
+      margin: 8px 0;
+      line-height: 1.5;
+      color: #666;
     }
   }
 
-  .cvForm {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 600px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+  // Empty state
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
 
-    input,
-    textarea {
-      padding: 10px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      resize: vertical;
+    h3 {
+      color: #444;
+      margin-bottom: 16px;
     }
 
-    .saveCvBtn {
-      align-self: flex-start;
-      margin-top: 10px;
-      padding: 8px 16px;
-      background: #1876f2;
-      color: white;
+    p {
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  // CV Preview
+  .cv-preview {
+    .cv-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+
+      h3 {
+        margin: 0;
+        color: #1876f2;
+      }
+    }
+
+    .cv-title {
+      font-style: italic;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .cv-summary {
+      color: #333;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .cv-section {
+      margin: 16px 0;
+
+      h4 {
+        margin: 0 0 8px 0;
+        font-size: 15px;
+      }
+
+      p {
+        color: #333;
+        margin: 0;
+      }
+    }
+
+    hr {
       border: none;
-      border-radius: 6px;
+      border-top: 1px solid #eee;
+      margin: 20px 0;
+    }
+
+    canvas {
       cursor: pointer;
+      max-width: 300px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin: 16px 0;
+      display: block;
+      transition: box-shadow 0.2s ease;
 
       &:hover {
-        opacity: 0.95;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
     }
   }
 
-  .formWithSidebar {
+  // Form styles
+  .form-with-sidebar {
     display: flex;
     gap: 30px;
     align-items: flex-start;
     
-
-    .cvForm {
+    .cv-form {
       flex: 2;
-      
-    }
-
-    .aiHelperBox {
-      background: #f9f9f9;
-      color: #0056b3;
-
+      background: white;
+      padding: 0px;
       border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-      max-width: 320px;
-    
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+
+      input,
       textarea {
         width: 100%;
-        margin-bottom: 8px;
-        padding: 8px;
+        padding: 12px;
+        font-size: 14px;
+        border: 1px solid #ddd;
         border-radius: 6px;
-        border: 1px solid #ccc;
+        margin-bottom: 16px;
         resize: vertical;
-      }
-    
-      button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 8px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    
-        &:hover {
-          background-color: #0056b3;
+        transition: border-color 0.2s ease;
+        box-sizing: border-box;
+
+
+
+        &::placeholder {
+          color: #999;
         }
-    
-        &:disabled {
-          background-color: #999;
-          cursor: not-allowed;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+      }
+    }
+
+    .ai-helper {
+      flex: 1;
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      max-width: 350px;
+
+      h3 {
+        margin: 0 0 16px 0;
+        color: #1876f2;
+      }
+
+      .ai-features {
+        .feature-item {
+          margin-bottom: 12px;
+          border: 1px solid #e9ecef;
+          border-radius: 6px;
+          overflow: hidden;
+
+          .feature-header {
+            padding: 12px 16px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: background-color 0.2s ease;
+
+            &:hover {
+              background: #e9ecef;
+            }
+          }
+
+          .feature-content {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+
+            .ai-feature-content {
+              p {
+                font-size: 12px;
+                margin-bottom: 12px;
+                color: #555;
+              }
+
+              textarea {
+                width: 100%;
+                margin-bottom: 12px;
+                padding: 8px;
+                border-radius: 6px;
+                border: 1px solid #ddd;
+                resize: vertical;
+                box-sizing: border-box;
+                font-size: 13px;
+
+                &:focus {
+                  border-color: #1876f2;
+                  outline: none;
+                  box-shadow: 0 0 0 2px rgba(24, 118, 242, 0.1);
+                }
+              }
+
+              button {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 13px;
+                transition: background-color 0.2s ease;
+
+                &:hover {
+                  background-color: #0056b3;
+                }
+
+                &:disabled {
+                  background-color: #999;
+                  cursor: not-allowed;
+                }
+              }
+            }
+          }
         }
       }
     }
-    
   }
-  
+
+  // Manage CV specific styles
+  .upload-section {
+    margin-bottom: 32px;
+
+    h4 {
+      margin: 0 0 12px 0;
+    }
+
+    .upload-label {
+      display: inline-block;
+      padding: 12px 20px;
+      background-color: #1876f2;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #1565c0;
+      }
+    }
+  }
+
+  .file-preview {
+    margin-top: 24px;
+
+    h4 {
+      margin: 0 0 12px 0;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      cursor: pointer;
+      max-width: 300px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin: 16px 0;
+      display: block;
+      transition: box-shadow 0.2s ease;
+
+      &:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    .file-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+  }
+
+  // Button styles
+  .btn-primary {
+    padding: 10px 20px;
+    background: #1876f2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #1565c0;
+    }
+  }
+
+  .btn-secondary {
+    padding: 10px 20px;
+    background: white;
+    color: #1876f2;
+    border: 1px solid #1876f2;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #e6f0ff;
+    }
+  }
+
+  .btn-danger {
+    padding: 10px 20px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #c82333;
+    }
+  }
+
+  // Edit button - Fixed styling
+  .edit-btn {
+    padding: 6px 12px;
+    background: transparent;
+    color: #1876f2;
+    border: 1px solid #1876f2;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #1876f2;
+      color: white;
+    }
+  }
 }
 
-.pdfModal {
+// PDF Modal
+.pdf-modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -264,7 +403,7 @@
   height: 100%;
   z-index: 9999;
 
-  .pdfOverlay {
+  .pdf-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -273,27 +412,41 @@
     background-color: rgba(0, 0, 0, 0.6);
   }
 
-  .pdfContent {
+  .pdf-content {
     position: absolute;
     top: 50%;
     left: 50%;
     width: 80%;
     max-width: 900px;
+    height: 80vh;
     transform: translate(-50%, -50%);
     background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 
-    .closeBtn {
+    .close-btn {
       float: right;
       background: #f44336;
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 8px 16px;
       cursor: pointer;
       border-radius: 4px;
       font-size: 14px;
+      margin-bottom: 16px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: #d32f2f;
+      }
+    }
+
+    iframe {
+      width: 100%;
+      height: calc(100% - 60px);
+      border: none;
+      border-radius: 4px;
     }
   }
 }

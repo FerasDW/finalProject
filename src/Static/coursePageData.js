@@ -1,137 +1,480 @@
-// coursePageData.js
+// coursePageData.js - Updated with dynamic data structure
 
 import React from "react";
 import Box from "../View/Components/Dashboard/Content/Box";
 import PieChart from "../View/Components/Charts/pieCharts";
+import BarChart from "../View/Components/Charts/barChart";
 import CourseDetails from "../View/Components/CoursePage/CourseDetails";
 
-export const courseDetailsData = [
-  { label: "Course Code", value: "62187" },
-  { label: "Course Type", value: "Lecture" },
-  { label: "Course Title", value: "Mobile Application Development" },
-  { label: "Instructor", value: "Dr. Badarna Murad", isButton: true },
-  { label: "Minimum Passing Grade", value: "56" },
-  { label: "Enrolled Students: 99", value: "view all", isButton: true },
-  { label: "Class Timing", value: "Thursday 14:00 - 16:30" },
-  { label: "Location", value: "Room 7010, Emek Yezreel Campus" },
-];
+// Course-specific data - each course has its own data
+export const courseSpecificData = {
+  // Certificate IT - Computer Fundamentals
+  101: {
+    courseDetails: {
+      courseCode: "CERT101",
+      courseType: "Lecture",
+      courseTitle: "Computer Fundamentals",
+      instructor: "Dr. Ahmad Hassan",
+      minPassingGrade: "50",
+      enrolledStudents: 30,
+      classTiming: "Monday 09:00 - 11:00",
+      location: "Room 101, IT Building",
+      faculty: "Certificate Program",
+      language: "English",
+      assignments: 4,
+      practicalType: "Computer Lab",
+      finalExam: "Included",
+      prerequisite: "None"
+    },
+    chartData: {
+      attendance: [
+        { id: "Attended", label: "Attended", value: 85 },
+        { id: "Missed", label: "Missed", value: 15 }
+      ],
+      progress: [
+        { id: "attendant", value: 45 },
+        { id: "not attendant", value: 35 },
+        { id: "approved", value: 20 }
+      ],
+      barChartData: [
+        {
+          Group: "Week 1",
+          "Attended": 28,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 2,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 2",
+          "Attended": 26,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 4,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 3",
+          "Attended": 29,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 1,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        }
+      ]
+    },
+    materials: [
+      {
+        title: "Course Readings",
+        files: [
+          { title: "Introduction to Computers", link: "/files/intro-computers.pdf" },
+          { title: "Hardware Basics", link: "/files/hardware-basics.pdf" }
+        ]
+      },
+      {
+        title: "Lecture Files",
+        files: [
+          { title: "Lecture 1 - Computer History", link: "/files/lecture1-history.pdf" },
+          { title: "Lecture 2 - Operating Systems", link: "/files/lecture2-os.pdf" }
+        ]
+      }
+    ],
+    announcements: [
+      {
+        title: "Computer Assembly Lab - March 25, 2025",
+        content: "Hands-on computer assembly session scheduled. Please bring your lab notebooks."
+      },
+      {
+        title: "Mid-term Exam - April 5, 2025",
+        content: "Mid-term examination covers chapters 1-6. Review sessions available on request."
+      }
+    ]
+  },
+  
+  // Business Diploma - Introduction to Business
+  201: {
+    courseDetails: {
+      courseCode: "DIP101",
+      courseType: "Lecture",
+      courseTitle: "Introduction to Business",
+      instructor: "Prof. Sarah Al-Mahmoud",
+      minPassingGrade: "55",
+      enrolledStudents: 60,
+      classTiming: "Tuesday 10:00 - 12:00",
+      location: "Room 205, Business Hall",
+      faculty: "Business Administration",
+      language: "English",
+      assignments: 6,
+      practicalType: "Case Study Analysis",
+      finalExam: "Included",
+      prerequisite: "None"
+    },
+    chartData: {
+      attendance: [
+        { id: "Attended", label: "Attended", value: 78 },
+        { id: "Missed", label: "Missed", value: 22 }
+      ],
+      progress: [
+        { id: "attendant", value: 40 },
+        { id: "not attendant", value: 30 },
+        { id: "approved", value: 30 }
+      ],
+      barChartData: [
+        {
+          Group: "Week 1",
+          "Attended": 55,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 5,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 2",
+          "Attended": 48,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 12,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 3",
+          "Attended": 52,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 8,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        }
+      ]
+    },
+    materials: [
+      {
+        title: "Course Readings",
+        files: [
+          { title: "Business Environment", link: "/files/business-env.pdf" },
+          { title: "Types of Business Organizations", link: "/files/business-types.pdf" }
+        ]
+      },
+      {
+        title: "Case Studies",
+        files: [
+          { title: "Case Study 1 - Startup Analysis", link: "/files/case1-startup.pdf" },
+          { title: "Case Study 2 - Market Entry", link: "/files/case2-market.pdf" }
+        ]
+      }
+    ],
+    announcements: [
+      {
+        title: "Business Plan Presentation - April 15, 2025",
+        content: "Students will present their business plan projects. Each presentation should be 10-15 minutes."
+      },
+      {
+        title: "Guest Speaker - Entrepreneur Session",
+        content: "Local entrepreneur will share insights on starting a business. Don't miss this opportunity!"
+      }
+    ]
+  },
 
-export const enrolledStudentsData = {
-  label: "Enrolled Students",
-  value: "100",
-  buttonText: "view all",
+  // Information Systems - Programming Fundamentals
+  302: {
+    courseDetails: {
+      courseCode: "CS101",
+      courseTitle: "Programming Fundamentals",
+      courseType: "Lecture + Lab",
+      instructor: "Dr. Omar Khalil",
+      minPassingGrade: "60",
+      enrolledStudents: 45,
+      classTiming: "Wednesday 14:00 - 17:00",
+      location: "Room 301, Computer Science Building",
+      faculty: "Information Systems",
+      language: "English",
+      assignments: 8,
+      practicalType: "Programming Lab",
+      finalExam: "Included + Project",
+      prerequisite: "Mathematics for IT"
+    },
+    chartData: {
+      attendance: [
+        { id: "Attended", label: "Attended", value: 89 },
+        { id: "Missed", label: "Missed", value: 11 }
+      ],
+      progress: [
+        { id: "attendant", value: 55 },
+        { id: "not attendant", value: 25 },
+        { id: "approved", value: 20 }
+      ],
+      barChartData: [
+        {
+          Group: "Week 1",
+          "Attended": 42,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 3,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 2",
+          "Attended": 40,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 5,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 3",
+          "Attended": 43,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 2,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 4",
+          "Attended": 41,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 4,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        }
+      ]
+    },
+    materials: [
+      {
+        title: "Course Readings",
+        files: [
+          { title: "Python Programming Basics", link: "/files/python-basics.pdf" },
+          { title: "Algorithm Design", link: "/files/algorithm-design.pdf" }
+        ]
+      },
+      {
+        title: "Lab Materials",
+        files: [
+          { title: "Lab 1 - Variables and Data Types", link: "/files/lab1-variables.pdf" },
+          { title: "Lab 2 - Control Structures", link: "/files/lab2-control.pdf" },
+          { title: "Programming Examples", link: "/files/code-examples.zip" }
+        ]
+      }
+    ],
+    announcements: [
+      {
+        title: "Programming Contest - April 20, 2025",
+        content: "Annual programming contest open to all students. Prizes for top 3 winners!"
+      },
+      {
+        title: "Final Project Guidelines Released",
+        content: "Final project requirements are now available. Projects must be submitted by May 10, 2025."
+      }
+    ]
+  },
+
+  // Nursing - Fundamentals of Nursing
+  401: {
+    courseDetails: {
+      courseCode: "NUR101",
+      courseType: "Lecture + Clinical",
+      courseTitle: "Fundamentals of Nursing",
+      instructor: "Prof. Dr. Fatima Al-Zahra",
+      minPassingGrade: "65",
+      enrolledStudents: 65,
+      classTiming: "Thursday 08:00 - 12:00",
+      location: "Room 401, Nursing Building + Clinical Sites",
+      faculty: "Nursing",
+      language: "English",
+      assignments: 5,
+      practicalType: "Clinical Practice",
+      finalExam: "Theory + Practical",
+      prerequisite: "None"
+    },
+    chartData: {
+      attendance: [
+        { id: "Attended", label: "Attended", value: 92 },
+        { id: "Missed", label: "Missed", value: 8 }
+      ],
+      progress: [
+        { id: "attendant", value: 60 },
+        { id: "not attendant", value: 25 },
+        { id: "approved", value: 15 }
+      ],
+      barChartData: [
+        {
+          Group: "Week 1",
+          "Attended": 63,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 2,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 2",
+          "Attended": 61,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 4,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 3",
+          "Attended": 64,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 1,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        }
+      ]
+    },
+    materials: [
+      {
+        title: "Course Readings",
+        files: [
+          { title: "Nursing Fundamentals Textbook Ch.1-5", link: "/files/nursing-fund-1-5.pdf" },
+          { title: "Patient Care Guidelines", link: "/files/patient-care.pdf" }
+        ]
+      },
+      {
+        title: "Clinical Materials",
+        files: [
+          { title: "Clinical Skills Checklist", link: "/files/skills-checklist.pdf" },
+          { title: "Medication Administration Guide", link: "/files/medication-guide.pdf" },
+          { title: "Infection Control Protocols", link: "/files/infection-control.pdf" }
+        ]
+      }
+    ],
+    announcements: [
+      {
+        title: "Clinical Rotation Schedule - Week of March 28, 2025",
+        content: "Clinical rotations will be at City General Hospital. Please arrive by 7:30 AM in proper uniform."
+      },
+      {
+        title: "Skills Lab Assessment - April 8, 2025",
+        content: "Practical skills assessment covering vital signs, patient positioning, and basic care procedures."
+      }
+    ]
+  },
+
+  // Information Systems - Data Structures & Algorithms
+  311: {
+    courseDetails: {
+      courseCode: "CS201",
+      courseType: "Lecture + Lab",
+      courseTitle: "Data Structures & Algorithms",
+      instructor: "Dr. Rashid Al-Khatib",
+      minPassingGrade: "60",
+      enrolledStudents: 38,
+      classTiming: "Monday 10:00 - 13:00",
+      location: "Room 205, Computer Science Building",
+      faculty: "Information Systems",
+      language: "English",
+      assignments: 6,
+      practicalType: "Algorithm Implementation Lab",
+      finalExam: "Included + Project",
+      prerequisite: "Programming Fundamentals"
+    },
+    chartData: {
+      attendance: [
+        { id: "Attended", label: "Attended", value: 87 },
+        { id: "Missed", label: "Missed", value: 13 }
+      ],
+      progress: [
+        { id: "attendant", value: 50 },
+        { id: "not attendant", value: 30 },
+        { id: "approved", value: 20 }
+      ],
+      barChartData: [
+        {
+          Group: "Week 1",
+          "Attended": 35,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 3,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 2",
+          "Attended": 33,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 5,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        },
+        {
+          Group: "Week 3",
+          "Attended": 36,
+          "AttendedColor": "hsl(167, 70%, 50%)",
+          "Missed": 2,
+          "MissedColor": "hsl(0, 70%, 50%)"
+        }
+      ]
+    },
+    materials: [
+      {
+        title: "Course Readings",
+        files: [
+          { title: "Data Structures Fundamentals", link: "/files/data-structures.pdf" },
+          { title: "Algorithm Analysis", link: "/files/algorithm-analysis.pdf" }
+        ]
+      },
+      {
+        title: "Lab Materials",
+        files: [
+          { title: "Lab 1 - Arrays and Linked Lists", link: "/files/lab1-arrays.pdf" },
+          { title: "Lab 2 - Stacks and Queues", link: "/files/lab2-stacks.pdf" },
+          { title: "Algorithm Implementation Examples", link: "/files/algo-examples.zip" }
+        ]
+      }
+    ],
+    announcements: [
+      {
+        title: "Algorithm Competition - May 1, 2025",
+        content: "Inter-university algorithm competition. Registration deadline: April 15, 2025."
+      },
+      {
+        title: "Mid-term Project Submission",
+        content: "Implement sorting algorithms project due April 12, 2025. Include time complexity analysis."
+      }
+    ]
+  }
 };
 
-export const courseData = [
-  { id: "attendant", value: 40 },
-  { id: "not attendant", value: 30 },
-  { id: "approved", value: 30 },
-];
+// Dynamic content configuration based on course ID
+export const getContentConfig = (courseId, userRole = "1100") => {
+  const courseData = courseSpecificData[courseId];
+  
+  if (!courseData) {
+    return null; // Return null if course not found
+  }
 
-
-export const contentConfig = {
-  1100: (
-    <>
-      <div className="row" style={{marginTop:"10px"}}>
-        <Box
-          title="Course Details"
-          contentBox={<CourseDetails />}
-          gridRow="span 1"
-          gridColumn="span 8"
-        />
-        <Box
-          title="Progress studies percentage"
-          chart={<PieChart data={courseData} />}
-          gridRow="span 1"
-          gridColumn="span 4"
-        />
+  if (userRole === "1100") {
+    return (
+      <>
+        <div className="row" style={{marginTop:"10px"}}>
+          <Box
+            title="Course Details"
+            contentBox={<CourseDetails courseData={courseData.courseDetails} />}
+            gridRow="span 1"
+            gridColumn="span 8"
+          />
+          <Box
+            title="Progress studies percentage"
+            chart={<PieChart data={courseData.chartData.progress} />}
+            gridRow="span 1"
+            gridColumn="span 4"
+          />
         </div>
-        
-      
-    </>
-  ),
-  student: (
-    <>
-      {/* <div className="row">
-        <Box
-          title="Course Information"
-          contentBox={<CourseDetails />}
-          gridRow="span 12"
-          bgColor="#fffccc"
-          gridColumn="span 12"
-        />
-        <Box
-          contentBox={<Announcements />}
-          bgColor="#e0e0e0"
-          gridColumn="span 6"
-          gridRow="span 6"
-        />
-        <Box
-          contentBox={<Materials />}
-          bgColor="#f5f5f5"
-          gridColumn="span 6"
-          gridRow="span 6"
-        />
-        <Box
-          contentBox={<EnrolledStudents />}
-          gridColumn="span 6"
-          gridRow="span 2"
-        />
-      </div> */}
-    </>
-  ),
+      </>
+    );
+  }
+  return null;
 };
-export const courseMaterials = [
-  {
-    title: "Course Readings",
-    files: [
-      { title: "Book Chapter 1", link: "/files/chapter1.pdf" },
-      { title: "Book Chapter 2", link: "/files/chapter2.pdf" },
-    ],
-  },
-  {
-    title: "Lecture Files",
-    files: [
-      { title: "Lecture 1 - Introduction", link: "/files/lecture1.pdf" },
-      { title: "Lecture 2 - UI Design", link: "/files/lecture2.pdf" },
-      { title: "Lecture 3 - Advanced Concepts", link: "/files/lecture3.pdf" },
-    ],
-  },
-  {
-    title: "Assistant Files",
-    files: [{ title: "Lecture 1 - Introduction", link: "/files/lecture1.pdf" }],
-  },
-  {
-    title: "Project Guidelines",
-    files: [
-      { title: "Project Guidelines", link: "/files/project-guidelines.pdf" },
-    ],
-  },
-];
 
-export const announcements = [
-  {
-    title: "Midterm Exam scheduled for April 15, 2025",
-    content:
-      "  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Nulla facilisi. Mauris ultrices eros in cursus turpis massa. Nullam eget felis eget nunc lobortis. Vivamus arcu felis bibendum ut tristique et egestas. Sed viverra ipsum nunc aliquet bibendum enim facilisis gravida neque. Integer malesuada nunc vel risus commodo viverra. Lectus sit amet est placerat in egestas erat imperdiet. Amet massa vitae tortor condimentum lacinia quis vel. Dui id ornare arcu odio ut sem nulla pharetra diam. ",
-  },
-  {
-    title: "New Assignment uploaded! Due: March 25, 2025",
-    content: "Details about the new assignment...",
-  },
-  {
-    title: "No lecture on March 20, 2025",
-    content: "Information regarding the canceled lecture...",
-  },
-  {
-    title: "No lecture on March 20, 2025",
-    content: "Information regarding the canceled lecture...",
-  },
-];
+// Helper function to get course-specific chart data
+export const getCourseChartData = (courseId, chartType = 'attendance') => {
+  const courseData = courseSpecificData[courseId];
+  if (!courseData) return [];
+  
+  switch (chartType) {
+    case 'attendance':
+      return courseData.chartData.attendance;
+    case 'progress':
+      return courseData.chartData.progress;
+    case 'bar':
+      return courseData.chartData.barChartData;
+    default:
+      return [];
+  }
+};
 
-export const assignments = [
-  { title: "Assignment 1", content: "Due: March 25, 2025" },
-  { title: "Assignment 2", content: "Due: April 10, 2025" },
-  { title: "Midterm Exam", content: "Date: April 15, 2025" },
-  { title: "Final Project", content: "Submission: May 30, 2025" },
-];
+// Helper function to get course materials
+export const getCourseMaterials = (courseId) => {
+  const courseData = courseSpecificData[courseId];
+  return courseData ? courseData.materials : [];
+};
+
+// Helper function to get course announcements
+export const getCourseAnnouncements = (courseId) => {
+  const courseData = courseSpecificData[courseId];
+  return courseData ? courseData.announcements : [];
+};

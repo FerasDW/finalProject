@@ -1,0 +1,134 @@
+.input-field {
+  margin-bottom: 1.5rem;
+}
+
+.input-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #374151;
+  transition: color 0.2s ease;
+}
+
+.input-label.focused {
+  color: #6366F1;
+}
+
+.input-label.error {
+  color: #DC2626;
+}
+
+.required {
+  color: #EF4444;
+  margin-left: 0.25rem;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input {
+  width: 98%;
+  padding: 10px 8px;
+  border-radius: 0.5rem;
+  border: 2px solid #E5E7EB;
+  background-color: #FFFFFF;
+  color: #1F2937;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input::placeholder {
+  color: #9CA3AF;
+}
+
+.input:hover:not(.disabled) {
+  border-color: #D1D5DB;
+}
+
+.input.focused {
+  border-color: #6366F1;
+  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.1), 0 4px 6px -2px rgba(99, 102, 241, 0.05);
+}
+
+.input.error {
+  border-color: #FCA5A5;
+}
+
+.input.error.focused {
+  border-color: #EF4444;
+}
+
+.input.disabled {
+  background-color: #F9FAFB;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-glow {
+  position: absolute;
+  pointer-events: none;
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Glow shape per input type */
+.glow-text,
+.glow-password,
+.glow-email,
+.glow-file {
+  inset: 0;
+  border-radius: 0.5rem;
+  width: 101%;
+}
+
+.glow-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  top: 0;
+  left: 0;
+  border-radius: 0.25rem;
+}
+
+.glow-radio {
+  width: 1.25rem;
+  height: 1.25rem;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+}
+
+.error-message {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #DC2626;
+  display: flex;
+  align-items: center;
+}
+
+.error-icon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 640px) {
+  .input {
+    padding: 15px 5px;
+    font-size: 1rem;
+  }
+
+  .input-field {
+    margin-bottom: 1.25rem;
+  }
+}
+
+/* iPad Responsive */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .input {
+    padding: 15px 5px;
+  }
+}

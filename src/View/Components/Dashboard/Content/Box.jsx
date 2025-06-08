@@ -1,5 +1,6 @@
 import "../../../../CSS/Dashboard/Box.css";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Box = ({
   title,
@@ -14,21 +15,63 @@ const Box = ({
   bgColor = "#fff",
   gridColumn = "span 4",
   gridRow,
-  // display = "flex",
-  // alignItems = "center",
-  // justifyContent = "column",
 }) => {
+  const navigate = useNavigate();
+
+  // Handle box link navigation
+  const handleBoxLinkClick = (e) => {
+    e.preventDefault(); // Prevent default anchor behavior
+    
+    // Map boxLink text to routes
+    switch (boxLink) {
+      // Admin box links
+      case "Manage all users":
+        navigate("/admin/users");
+        break;
+      case "View detailed analytics":
+        navigate("/admin/analytics");
+        break;
+      case "Manage departments":
+        navigate("/admin/departments");
+        break;
+      
+      // Lecturer box links
+      case "View all classes":
+        navigate("/lecturer/classes");
+        break;
+      case "Grade assignments":
+        navigate("/lecturer/grading");
+        break;
+      case "View messages":
+        navigate("/lecturer/messages");
+        break;
+      
+      // Student box links
+      case "View all courses":
+        navigate("/student/courses");
+        break;
+      case "View all grades":
+        navigate("/student/grades");
+        break;
+      case "View all notifications":
+        navigate("/student/notifications");
+        break;
+      
+      default:
+        console.log("No route defined for:", boxLink);
+        // Optional: Navigate to a default route or show an error
+        // navigate("/dashboard");
+        break;
+    }
+  };
+
   return (
     <div
       className="box-component"
       style={{
-        // display: display,
-        // alignItems: alignItems,
-        // justifyContent: justifyContent,
         gridColumn: gridColumn,
         gridRow: gridRow,
         backgroundColor: bgColor,
-        // padding: "20px",
       }}
     >
       <div className="box-info">
@@ -43,27 +86,18 @@ const Box = ({
         </div>
 
         {boxLink && (
-          <a href="#" className="box-link">
+          <a 
+            href="#" 
+            className="box-link"
+            onClick={handleBoxLinkClick}
+            style={{ cursor: "pointer" }}
+          >
             {boxLink}
           </a>
         )}
 
         {image && <img src={image} alt="Illustration" className="box-image" />}
       </div>
-
-      {/* Title, content, span, and image */}
-      {/* <div className="box-content">
-        <div className="box-info">
-          <div className="box-title">{title}</div>
-          <div className="box-subtitle">{contentBox || chart}</div>
-          <a href="#" className="box-link">
-            {boxLink}
-          </a>
-        </div>
-        <div className="box-image">
-          <img src={image} alt="Illustration" className="box-image" />
-        </div>
-      </div> */}
     </div>
   );
 };

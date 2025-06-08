@@ -23,16 +23,11 @@ const Navbar = () => {
   return (
     <div className="navbar">
       <div className="left">
-        <Link to="/community/home" style={{ textDecoration: "none" }}>
+        <Link to="/community/home" style={{ textDecoration: "none", color: "#5271ff"}}>
           <span>EduSphereSocial</span>
         </Link>
         <HomeOutlinedIcon onClick={() => navigate("/dashboard")} style={{ cursor: "pointer" }} />
-        {/* {darkMode ? (
-          <WbSunnyOutlinedIcon onClick={toggle} />
-        ) : (
-          <DarkModeOutlinedIcon onClick={toggle} />
-        )} */}
-        <GridViewOutlinedIcon />
+        {/* <GridViewOutlinedIcon /> */}
         <div className="search">
           <SearchOutlinedIcon />
           <input type="text" placeholder="Search..." />
@@ -42,10 +37,10 @@ const Navbar = () => {
         <PersonOutlinedIcon />
         <EmailOutlinedIcon />
         <NotificationsOutlinedIcon />
-        <div className="user">
+        {/* <div className="user">
           <img src={currentUser.profilePic} alt={currentUser.name} />
           <span>{currentUser.name}</span>
-        </div>
+        </div> */}
       </div>
     </div>
   );
