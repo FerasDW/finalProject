@@ -1,6 +1,5 @@
-import "./challenges.scss";
+import "../../../CSS/Pages/Community/challenges.scss";
 import { useState } from "react";
-import InteractiveQuiz from "./InteractiveQuiz";
 
 const interactiveChallenges = [
   {

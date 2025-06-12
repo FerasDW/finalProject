@@ -3,9 +3,9 @@ import {
   localGroupsList,
   localGroupPosts,
 } from "../../../Static/communityData";
-import Posts from "../../Components/Community/posts/Posts";
-import Share from "../../Components/Community/share/Share";
-import "./groupPage.scss";
+import Posts from "../../Components/Community/Posts";
+import Share from "../../Components/Community/Share";
+import "../../../CSS/Pages/Community/groupPage.scss";
 import { useState, useEffect } from "react";
 
 const GroupPage = () => {

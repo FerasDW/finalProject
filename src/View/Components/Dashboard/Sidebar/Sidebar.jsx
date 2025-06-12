@@ -2,7 +2,7 @@ import React, { useState, useContext } from "react";
 import { AuthContext } from "../../../../Context/AuthContext.jsx";
 import SidebarItem from "./SidebarItem";
 import ChatInterface from "../ChatInterface/ChatInterface";
-import "../../../../CSS/Dashboard/Sidebar.css";
+import "../../../../CSS/Components/Global/Sidebar.css";
 import Logo from "../../../../Assets/Images/Logo/PNG/LogoSquare@0.5x.png";
 import { AlignJustify } from "react-feather";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,12 @@ const Sidebar = ({ menuItems, position = "left" }) => {
       switch (title) {
         case "Home":
           navigate("/dashboard");
+          break;
+        case "Lecturers":
+          navigate("/Lecturers");
+          break;
+        case "Students":
+          navigate("/Students");
           break;
 
         case "Courses":

@@ -1,5 +1,5 @@
 // src/View/Pages/Community/Profile.jsx
-import "./profile.scss";
+import "../../../CSS/Pages/Community/profile.scss";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { users, mockPosts } from "../../../Static/communityData";
@@ -15,7 +15,7 @@ import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import CheckIcon from "@mui/icons-material/Check";
 
-import Posts from "../../Components/Community/posts/Posts";
+import Posts from "../../Components/Community/Posts";
 
 import { useFollow } from "../../../Context/FollowContext";
 import { useFriends } from "../../../Context/FriendContext";

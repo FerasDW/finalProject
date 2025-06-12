@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom"
-import LeftBar from "../Components/Community/leftBar/LeftBar.jsx";
-import RightBar from "../Components/Community/rightBar/RightBar.jsx";
-import Navbar from "../Components/Community/navbar/Navbar.jsx";
+import LeftBar from "../Components/Community/LeftBar.jsx";
+import RightBar from "../Components/Community/RightBar.jsx";
+import Navbar from "../Components/Community/Navbar.jsx";
 
 export default function CommunityLayout() {
   return (

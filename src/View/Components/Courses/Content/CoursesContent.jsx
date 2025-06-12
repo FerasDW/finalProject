@@ -1,4 +1,4 @@
-import "../../../../CSS/Dashboard/Content.css";
+import "../../../../CSS/Pages/Dashboard/Content.css";
 import CourseCard from "../CourseCard/CourseCard";
 
 const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
@@ -9,6 +9,7 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
           <CourseCard
             key={course.id}
             cardInfo={{
+              // Pass all course data based on your actual course structure
               id: course.id,
               code: course.code,
               title: course.title,
@@ -16,6 +17,11 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
               rating: course.rating,
               lessons: course.lessons,
               img: course.img,
+              year: course.year,
+              semester: course.semester,
+              group: course.group,
+              academicYear: course.academicYear,
+              
             }}
             onDelete={onDeleteCourse}
             onEdit={onEditCourse}

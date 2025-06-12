@@ -10,7 +10,6 @@ import { LOGIN } from "../../../Api/Api.js";
 import { AuthContext } from "../../../Context/AuthContext.jsx";
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import Error from "../../Components/Auth/Error.js";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -83,7 +82,6 @@ export default function Login() {
               <button type="submit" className="btn">
                 {loading ? "Logging in..." : "Submit"}
               </button>
-              {error && <Error />}
             </form>
 
             <div className="form-images">

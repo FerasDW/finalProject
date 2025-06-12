@@ -1,13 +1,15 @@
 import {
   Home,
   BookOpen,
+  GraduationCap,
+  UserCog,
   Calendar,
   Mail,
   Users,
   BarChart2,
   Settings,
-  LogOut,
-} from "react-feather";
+  LogOut
+} from "lucide-react";
 import maleFace1 from "../Assets/Images/Logo/PNG/maleFace1.png";
 import maleFace2 from "../Assets/Images/Logo/PNG/maleFace2.png";
 import femaleFace1 from "../Assets/Images/Logo/PNG/femaleFace1.png";
@@ -18,13 +20,15 @@ export const leftMenuItems = {
     // Admin left sidebar menu
     1100: [
       { title: "Home", icon: <Home /> },
-      { title: "Courses", icon: <BookOpen /> },
-      { title: "Calendar", icon: <Calendar /> },
-      { title: "Messages", icon: <Mail /> },
-      { title: "Community", icon: <Users /> },
-      { title: "Statistics", icon: <BarChart2 /> },
-      { title: "Settings", icon: <Settings /> },
-      { title: "Logout", icon: <LogOut /> },
+    { title: "Courses", icon: <BookOpen /> },
+    { title: "Lecturers", icon: <UserCog /> },        // 👨‍🏫 Updated to UserCog for lecturers
+    { title: "Students", icon: <GraduationCap /> },   // 🎓 Updated to GraduationCap for students
+    { title: "Calendar", icon: <Calendar /> },
+    { title: "Messages", icon: <Mail /> },
+    { title: "Community", icon: <Users /> },
+    { title: "Statistics", icon: <BarChart2 /> },
+    { title: "Settings", icon: <Settings /> },
+    { title: "Logout", icon: <LogOut /> },
     ],
   
     // Student left sidebar menu

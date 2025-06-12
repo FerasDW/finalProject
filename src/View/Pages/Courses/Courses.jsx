@@ -1,164 +1,199 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import coursesList from "../../../Static/coursesData";
 import CoursesContent from "../../Components/Courses/Content/CoursesContent";
-import DynamicForm from "../../Components/Forms/DynamicForm.jsx";
+import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
+import DynamicFilter from "../../Components/DynamicFilter.jsx";
 import { courseFields } from "../../../Static/formsInputs";
-import "../../../CSS/Courses/courses.css";
+import "../../../CSS/Pages/Courses/courses.css"; // Assuming you have a CSS file for styles
 
 export default function Courses() {
+  const currentYear = new Date().getFullYear().toString();
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedYear, setSelectedYear] = useState("all");
-  const [selectedSemester, setSelectedSemester] = useState("all");
-  const [selectedGroup, setSelectedGroup] = useState("all");
-  const [allCourses, setAllCourses] = useState(coursesList);
-  const [filteredCourses, setFilteredCourses] = useState(coursesList);
+  const [filters, setFilters] = useState({
+    group: "all",
+    year: "all",
+    semester: "all",
+    academicYear: currentYear,
+  });
+  const [allCourses, setAllCourses] = useState(
+    [...coursesList].sort((a, b) => {
+      const yearA = a.academicYear || 0;
+      const yearB = b.academicYear || 0;
+      return yearB - yearA;
+    })
+  );
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [visibleCourses, setVisibleCourses] = useState([]);
   const [useFilters, setUseFilters] = useState(true);
-
-  // Popup state
   const [showPopup, setShowPopup] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
+  const observer = useRef();
+  const loadMoreRef = useRef();
 
-  // Open popup for adding new course
+  // Fixed useMemo with null/undefined checks
+  const courseYears = useMemo(() => {
+    const years = allCourses
+      .map(c => c.academicYear)
+      .filter(year => year !== null && year !== undefined)
+      .map(year => year.toString());
+    return [...new Set(years)];
+  }, [allCourses]);
+
+  const groupOptions = useMemo(() => {
+    const groups = allCourses
+      .map(c => c.group)
+      .filter(group => group !== null && group !== undefined);
+    return [...new Set(groups)];
+  }, [allCourses]);
+
+  useEffect(() => {
+    const filtered = allCourses.filter(course => {
+      if (!useFilters) {
+        return (
+          course.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          course.code?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      return (
+        (filters.group === "all" || course.group === filters.group) &&
+        (filters.year === "all" || course.year?.toString() === filters.year) &&
+        (filters.semester === "all" || course.semester?.toString() === filters.semester) &&
+        (filters.academicYear === "all" || course.academicYear?.toString() === filters.academicYear)
+      );
+    });
+    
+    setFilteredCourses(filtered);
+    setVisibleCourses(filtered.slice(0, 4));
+  }, [filters, searchQuery, useFilters, allCourses]);
+
+  const handleSearch = () => {
+    setUseFilters(false);
+    setSearchQuery(searchInput);
+  };
+
+  const handleFilterChange = (name, value) => {
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setUseFilters(true);
+    setSearchQuery("");
+  };
+
+  const loadMore = () => {
+    setVisibleCourses(prev => [
+      ...prev,
+      ...filteredCourses.slice(prev.length, prev.length + 4),
+    ]);
+  };
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    observer.current = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && visibleCourses.length < filteredCourses.length) {
+        loadMore();
+      }
+    });
+    observer.current.observe(loadMoreRef.current);
+    return () => observer.current.disconnect();
+  }, [visibleCourses, filteredCourses]);
+
   const handleAddCourse = () => {
     setEditingCourse(null);
     setShowPopup(true);
   };
 
-  // Open popup for editing existing course
   const handleEditCourse = (course) => {
-    const courseForForm = {
-      id: course.id, // 🔥 ADD THIS LINE - This was missing!
+    console.log("Editing course:", course);
+    // Create a properly formatted course object for editing
+    const courseToEdit = {
+      ...course,
+      // Ensure all fields have proper values for the form
+      id: course.id,
       title: course.title || "",
       code: course.code || "",
-      year: course.year || "1",
-      semester: course.semester || "1",
-      group: course.group || "No group",
-      students: course.students || 0,
-      lessons: course.lessons || 0,
-      rating: course.rating || 0,
-      img: course.img?.default || "",
+      group: course.group || "",
+      year: course.year?.toString() || "1",
+      semester: course.semester?.toString() || "1",
+      academicYear: course.academicYear?.toString() || currentYear,
+      description: course.description || "",
+      credits: course.credits || 0,
+      instructor: course.instructor || "",
+      // Add any other fields that your form expects
     };
-
-    setEditingCourse(courseForForm);
+    
+    setEditingCourse(courseToEdit);
     setShowPopup(true);
   };
 
-  // Submit handler for DynamicForm
+  const handleDeleteCourse = (id) => {
+    const updatedCourses = allCourses.filter(course => course.id !== id);
+    setAllCourses(updatedCourses);
+  };
+
   const handleSubmit = (formData) => {
-    let updatedCourse;
-
     if (editingCourse) {
-      // Edit mode
-      updatedCourse = {
-        ...editingCourse,
-        ...formData,
-      };
-
-      const updatedList = allCourses.map(
-        (c) => (c.id === editingCourse.id ? updatedCourse : c)
+      // Update existing course
+      const updatedList = allCourses.map(c =>
+        c.id === editingCourse.id ? { 
+          ...c, 
+          ...formData,
+          // Ensure numeric fields are properly converted
+          year: parseInt(formData.year) || 1,
+          semester: parseInt(formData.semester) || 1,
+          academicYear: parseInt(formData.academicYear) || parseInt(currentYear),
+          credits: parseInt(formData.credits) || 0
+        } : c
       );
       setAllCourses(updatedList);
-      alert("Course updated successfully!");
     } else {
-      // Add mode
-      updatedCourse = {
+      // Add new course
+      const newCourse = {
+        ...formData,
         id: Date.now(),
         students: 0,
         rating: 0,
         lessons: 0,
-        img: "", // You can assign a default image if needed
-        ...formData,
+        img: "",
+        // Ensure numeric fields are properly converted
+        year: parseInt(formData.year) || 1,
+        semester: parseInt(formData.semester) || 1,
+        academicYear: parseInt(formData.academicYear) || parseInt(currentYear),
+        credits: parseInt(formData.credits) || 0
       };
-      setAllCourses([updatedCourse, ...allCourses]);
-      alert("Course added successfully!");
+      setAllCourses([newCourse, ...allCourses]);
     }
-
     setShowPopup(false);
     setEditingCourse(null);
   };
 
-  // Handle course deletion
-  const handleDeleteCourse = (id) => {
-    const updatedCourses = allCourses.filter((course) => course.id !== id);
-    setAllCourses(updatedCourses);
-  };
-
-  // Reset filters/search
-  useEffect(() => {
-    setUseFilters(true);
-    setSearchQuery("");
-  }, [selectedYear, selectedSemester, selectedGroup]);
-
-  // Update course list based on filters or search
-  useEffect(() => {
-    if (!useFilters) {
-      setFilteredCourses(
-        allCourses.filter(
-          (course) =>
-            course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            course.code.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    } else {
-      setFilteredCourses(
-        allCourses.filter(
-          (course) =>
-            (selectedYear === "all" || course.year === selectedYear) &&
-            (selectedSemester === "all" ||
-              course.semester === selectedSemester) &&
-            (selectedGroup === "all" || course.group === selectedGroup)
-        )
-      );
-    }
-  }, [
-    searchQuery,
-    selectedYear,
-    selectedSemester,
-    selectedGroup,
-    useFilters,
-    allCourses,
-  ]);
-
-  // Get unique groups
-  const getUniqueGroups = () => {
-    const groups = [...new Set(allCourses.map((course) => course.group))];
-    return groups.sort();
-  };
-
-  // Get available years based on group
-  const getAvailableYears = () => {
-    if (selectedGroup === "all") {
-      const allYears = [...new Set(allCourses.map((course) => course.year))];
-      return allYears.sort();
-    } else {
-      const groupCourses = allCourses.filter(
-        (course) => course.group === selectedGroup
-      );
-      const availableYears = [
-        ...new Set(groupCourses.map((course) => course.year)),
-      ];
-      return availableYears.sort();
-    }
-  };
-
-  // Reset year when group changes
-  useEffect(() => {
-    if (selectedGroup !== "all") {
-      const availableYears = getAvailableYears();
-      if (selectedYear !== "all" && !availableYears.includes(selectedYear)) {
-        setSelectedYear("all");
-        setSelectedSemester("all");
-      }
-    }
-  }, [selectedGroup]);
+  const filterFields = [
+    { 
+      label: "Group", 
+      name: "group", 
+      options: ["all", ...groupOptions]
+    },
+    { 
+      label: "Year", 
+      name: "year", 
+      options: ["all", "1", "2", "3", "4"] 
+    },
+    { 
+      label: "Semester", 
+      name: "semester", 
+      options: ["all", "1", "2"] 
+    },
+    { 
+      label: "Academic Year", 
+      name: "academicYear", 
+      options: ["all", ...courseYears.sort((a, b) => b - a)]
+    },
+  ];
 
   return (
     <div className="courses-header">
       <div className="header-content">
-        <div className="header-title">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2>Course Management</h2>
-
           {/* Add Course Button */}
           <button
             className="add-course-btn"
@@ -178,51 +213,9 @@ export default function Courses() {
           </button>
         </div>
 
-        {/* Filters */}
         <div className="filter-container">
-          <div className="filter-group">
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Programs</option>
-              {getUniqueGroups().map((group) => (
-                <option key={group} value={group}>
-                  {group}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Years</option>
-              {getAvailableYears().map((year) => (
-                <option key={year} value={year}>
-                  {["1", "2", "3", "4"].includes(year) ? `Year ${year}` : year}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedSemester}
-              onChange={(e) => setSelectedSemester(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">All Semesters</option>
-              <option value="1">First Semester</option>
-              <option value="2">Second Semester</option>
-            </select>
-          </div>
-
-          {/* Search */}
-          <div
-            className="right-side"
-            style={{ display: "flex", flexDirection: "row", gap: "10px" }}
-          >
+          <DynamicFilter filters={filterFields} values={filters} onChange={handleFilterChange} />
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <input
               type="text"
               placeholder="Search by course name or code..."
@@ -230,38 +223,19 @@ export default function Courses() {
               onChange={(e) => setSearchInput(e.target.value)}
               className="filter-select"
             />
-            <button
-              className="search-btn"
-              onClick={() => {
-                setSearchQuery(searchInput);
-                setUseFilters(false);
-              }}
-            >
-              Search
-            </button>
+            <button className="search-btn" onClick={handleSearch}>Search</button>
           </div>
         </div>
-
-        {/* Filter Info */}
-        {selectedGroup !== "all" && (
-          <div style={{ padding: "10px", fontSize: "14px", color: "#666" }}>
-            Showing courses for: <strong>{selectedGroup}</strong>
-            {selectedGroup === "Certificate IT" && " (1 Year Program)"}
-            {selectedGroup === "Business Diploma" && " (2 Year Program)"}
-            {selectedGroup === "Information Systems" && " (3 Year Program)"}
-            {selectedGroup === "Nursing" && " (4 Year Program)"}
-          </div>
-        )}
       </div>
 
-      {/* Display filtered courses */}
       <CoursesContent
-        courses={filteredCourses}
+        courses={visibleCourses}
         onDeleteCourse={handleDeleteCourse}
         onEditCourse={handleEditCourse}
       />
 
-      {/* 💥 Simple Popup Form */}
+      <div ref={loadMoreRef} style={{ height: "30px" }}></div>
+
       {showPopup && (
         <div className="popup-overlay" onClick={() => setShowPopup(false)}>
           <div className="popup-content" onClick={(e) => e.stopPropagation()}>
@@ -269,7 +243,7 @@ export default function Courses() {
             <DynamicForm
               fields={courseFields}
               onSubmit={handleSubmit}
-              onCancel={() => setShowPopup(false)} // Add this line
+              onCancel={() => setShowPopup(false)}
               submitText={editingCourse ? "Update Course" : "Add Course"}
               initialData={editingCourse}
             />

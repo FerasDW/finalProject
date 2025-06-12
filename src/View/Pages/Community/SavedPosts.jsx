@@ -1,6 +1,6 @@
-import Post from "../../Components/Community/post/Post";
+import Post from "../../Components/Community/Post";
 import { useSavedPosts } from "../../../Context/SavedPostsContext";
-import "./savedPosts.scss";
+import "../../../CSS/Pages/Community/savedPosts.scss";
 
 const SavedPosts = () => {
   const { savedPosts } = useSavedPosts();

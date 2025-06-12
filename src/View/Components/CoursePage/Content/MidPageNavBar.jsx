@@ -1,6 +1,6 @@
 // 📁 src/components/MidPageNavbar.jsx
 import React from 'react';
-import './MidPageNavbar.css';
+import '../../../../CSS/Components/Global/MidPageNavbar.css'; // Adjust the path as necessary
 
 const MidPageNavbar = ({ activeSection, setActiveSection, selectedYear, setSelectedYear ,sections}) => {
   const currentYear = new Date().getFullYear();

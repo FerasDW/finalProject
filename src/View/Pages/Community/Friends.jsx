@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { suggestedFriends } from "../../../Static/communityData";
 import { useNavigate } from "react-router-dom";
-import "./friends.scss";
+import "../../../CSS/Pages/Community/friends.scss";
 import { useFriends } from "../../../Context/FriendContext";
 
 const Friends = () => {

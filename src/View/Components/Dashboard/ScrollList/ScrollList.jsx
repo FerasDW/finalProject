@@ -1,4 +1,4 @@
-import "../../../../CSS/Dashboard/ScrollList.css";
+import "../../../../CSS/Components/Global/ScrollList.css";
 import ScrollListItem from "./ScrollListItem";
 import CourseCard from "../../Courses/CourseCard/CourseCard";
 import CalendarItem from "./CalendarItem";

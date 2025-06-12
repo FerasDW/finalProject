@@ -1,4 +1,4 @@
-import "../../../../CSS/Dashboard/Box.css";
+import "../../../../CSS/Components/Global/Box.css";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 

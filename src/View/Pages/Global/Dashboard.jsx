@@ -1,5 +1,5 @@
 import DashboardContent from "../../Components/Dashboard/Content/DashboardContent.jsx";
-import "../../../CSS/Dashboard/Dashboard.css";
+import "../../../CSS/Pages/Dashboard/Dashboard.css"; // Assuming you have a CSS file for styles
 import { AuthContext } from "../../../Context/AuthContext.jsx";
 import { useContext } from "react";
 

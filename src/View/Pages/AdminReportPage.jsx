@@ -21,8 +21,6 @@ const AdminReportPage = () => {
       createdDate: "2024-06-07",
       createdTime: "14:30",
       recordCount: 45,
-      status: "Completed",
-      createdBy: "Admin User"
     },
     {
       id: 2,
@@ -30,8 +28,6 @@ const AdminReportPage = () => {
       createdDate: "2024-06-06",
       createdTime: "09:15",
       recordCount: 120,
-      status: "Completed",
-      createdBy: "Admin User"
     },
     {
       id: 3,
@@ -39,8 +35,6 @@ const AdminReportPage = () => {
       createdDate: "2024-06-05",
       createdTime: "16:45",
       recordCount: 8,
-      status: "Completed",
-      createdBy: "Admin User"
     },
     {
       id: 4,
@@ -48,8 +42,6 @@ const AdminReportPage = () => {
       createdDate: "2024-06-04",
       createdTime: "11:20",
       recordCount: 350,
-      status: "Completed",
-      createdBy: "Admin User"
     },
     {
       id: 5,
@@ -57,8 +49,6 @@ const AdminReportPage = () => {
       createdDate: "2024-06-03",
       createdTime: "13:10",
       recordCount: 892,
-      status: "Completed",
-      createdBy: "Admin User"
     }
   ];
 
@@ -200,7 +190,7 @@ const AdminReportPage = () => {
               <polyline points="10,9 9,9 8,9"/>
             </svg>
           </div>
-          <h1 className="header-title">Report Generator</h1>
+          <h1 className="report-header-title">Report Generator</h1>
           <p className="header-subtitle">
             Generate custom reports by entering your query below. Our system will process your request and provide downloadable results.
           </p>
@@ -346,6 +336,7 @@ const AdminReportPage = () => {
                 <StudentTable 
                   data={recentReports} 
                   actionButtons={reportActionButtons}
+                  showAddButton={false}
                 />
               </div>
             )}

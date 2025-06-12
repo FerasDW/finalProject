@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import "../../../CSS/Tables/Table.css";
 
-const StudentTable = ({ data: initialData = [], actionButtons = [] }) => {
+const StudentTable = ({ data: initialData = [], actionButtons = [] ,showAddButton}) => {
   const [data, setData] = useState(initialData);
   const [filteredData, setFilteredData] = useState(initialData);
   const [currentPage, setCurrentPage] = useState(1);
@@ -12,6 +12,10 @@ const StudentTable = ({ data: initialData = [], actionButtons = [] }) => {
   const rowsPerPage = 10;
 
   const headers = data.length > 0 ? Object.keys(data[0]) : [];
+  useEffect(() => {
+  setData(initialData);
+}, [initialData]);
+
 
   useEffect(() => {
     let temp = [...data];
@@ -57,20 +61,16 @@ const StudentTable = ({ data: initialData = [], actionButtons = [] }) => {
   };
 
   return (
-    <div className="container">
+    <div className="t-container">
       <div className="header-row">
-        <div className="school-select">
-          <label>Select school</label>
-          <select>
-            <option>Big Ben</option>
-          </select>
-        </div>
+        
         <div className="actions">
           {selectedRows.length > 0 && (
             <button className="delete-button" onClick={deleteSelected}>Delete selected</button>
           )}
-          <button className="icon-button"><Filter /></button>
-          <button className="add-button">+ Add</button>
+          {/* <button className="icon-button"><Filter /></button> */}
+          {showAddButton && <button className="add-button">+ Add</button>}
+
         </div>
       </div>
 

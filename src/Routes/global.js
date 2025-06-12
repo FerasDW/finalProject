@@ -5,10 +5,13 @@ import MainLayout from "../View/Components/MainLayout.jsx";
 import Dashboard from "../View/Pages/Global/Dashboard.jsx";
 import Courses from "../View/Pages/Courses/Courses.jsx";
 import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
+import Lecturers from "../View/Pages/LecturersInfoDashboard.jsx";
+import Students from "../View/Pages/StudentInfoDashboard.jsx";
 import Calendar from "../View/Pages/Global/Calendar.jsx";
 import Messages from "../View/Pages/Global/messages.jsx";
 import Statistics from "../View/Pages/AdminReportPage.jsx";
 import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
+import StudentProfile from "../View/Pages/StudentProfile.jsx";
 
 // Importing Community Layout and its pages
 import CommunityLayout from "../View/Components/CommunityLayout.jsx";
@@ -20,8 +23,6 @@ import GroupPage from "../View/Pages/Community/GroupPage.jsx";
 import JobBoard from "../View/Pages/Community/JobBoard.jsx";
 import MyCV from "../View/Pages/Community/MyCV.jsx";
 import SavedPosts from "../View/Pages/Community/SavedPosts.jsx";
-import Challenges from "../View/Pages/Community/Challenges.jsx";
-import MyBadges from "../View/Pages/Community/MyBadges.jsx";
 import NotFoundPage from "../View/Pages/Errors/404.jsx";
 import ProfileA from "../View/Pages/UserProfile/Profile.jsx";
 
@@ -51,12 +52,16 @@ function GlobalRoutes() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/courses" element={<Courses />} />
+        <Route path="/Lecturers" element={<Lecturers />} />
+        <Route path="/Students" element={<Students />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/portfolio" element={<Portfolio />} /> 
-        <Route path="/coursepage" element={<CoursePage />} />
+        {/* <Route path="/coursepage" element={<CoursePage />} /> */}
+        <Route path="/course/:id" element={<CoursePage />} />
         <Route path="/profileA" element={<ProfileA />} />
         <Route path="/Messages" element={<Messages />} />
+        <Route path="/StudentProfile" element={<StudentProfile />} />
 
         {/* NEW ROUTES for dashboard box links */}
         <Route path="/grades" element={<Grades />} />
@@ -86,8 +91,6 @@ function GlobalRoutes() {
         <Route path="/community/job-board" element={<JobBoard />} />
         <Route path="/community/my-cv" element={<MyCV />} />
         <Route path="/community/saved-posts" element={<SavedPosts />} />
-        <Route path="/community/skill-challenges" element={<Challenges />} />
-        <Route path="/community/my-badges" element={<MyBadges />} />
       </Route>
     </Routes>
   );

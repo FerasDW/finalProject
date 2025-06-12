@@ -1,4 +1,4 @@
-import "../../../../CSS/Dashboard/ScrollList.css";
+import "../../../../CSS/Components/Global/ScrollList.css";
 const ScrollListItem = ({ item }) => {
     return (
         <div className="scroll-list-item">

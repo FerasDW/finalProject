@@ -27,7 +27,7 @@ const Messages = () =>
             (row) => <button onClick={() => handleDelete(row)}><img src="../../Assets/Icons/Edit.jpg" alt="Delete" style={{ width: 50, height: 50 }} /></button>,
           ]}/>;
       case 'announcement':
-        return <Table />;
+        return <Table data={upcomingAssignments} showAddButton={true} />;
       case 'templates':
         return <Table />;
       default:

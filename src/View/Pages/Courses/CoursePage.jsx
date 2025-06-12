@@ -5,6 +5,7 @@ import { useParams, useLocation } from "react-router-dom";
 import CoursePageContent from "../../Components/CoursePage/Content/CoursePageContent.jsx";
 import coursesList from "../../../Static/coursesData";
 import { AuthContext } from "../../../Context/AuthContext.jsx";
+import '../../../CSS/Pages/CoursePage/CoursePage.css';// Assuming you have a CSS file for styles
 
 const CoursePage = () => {
   const { id } = useParams(); // Get course ID from URL

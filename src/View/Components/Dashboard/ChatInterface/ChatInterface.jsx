@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Send } from 'react-feather';
-import '../../../../CSS/Dashboard/ChatInterface.css';
+import '../../../../CSS/Components/Global/ChatInterface.css';
 import { useChat } from '../../../../Context/ChatContext';
 
 const ChatInterface = ({ contact, onClose, currentUserId }) => {

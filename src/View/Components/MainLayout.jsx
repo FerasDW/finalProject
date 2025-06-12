@@ -140,7 +140,7 @@ import { leftMenuItems, rightMenuItems } from "../../Static/SidebarList.js";
 import { AuthContext } from "../../Context/AuthContext.jsx";
 import { useContext } from "react";
 import { Outlet } from "react-router-dom";
-import "../../CSS/MainLayout.css";
+import "../../CSS/Components/Global/MainLayout.css";
 import Loader from "../Pages/Global/Loading.jsx";
 import ChatUI from "../Components/Forms/ChatBot.jsx";
 

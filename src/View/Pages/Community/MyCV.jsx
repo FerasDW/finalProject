@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import DynamicForm from "../../../View/Components/Forms/DynamicForm";
+import DynamicForm from "../../../View/Components/Forms/dynamicForm";
 import { cvFormFields } from "../../../Static/formsInputs"
-import "./mycv.scss";
+import "../../../CSS/Pages/Community/mycv.scss";
 
 const MyCV = () => {
   const [activeTab, setActiveTab] = useState("mycv");

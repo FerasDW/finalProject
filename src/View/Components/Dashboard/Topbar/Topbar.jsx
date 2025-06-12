@@ -1,7 +1,7 @@
 import { Bell, User, Settings } from "react-feather";
 import { useContext } from "react";
 import { AuthContext } from "../../../../Context/AuthContext";
-import "../../../../CSS/Dashboard/Topbar.css";
+import "../../../../CSS/Components/Global/Topbar.css";
 
 const Topbar = () => {
   const { authData, loading } = useContext(AuthContext);

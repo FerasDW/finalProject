@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { jobPosts } from "../../../Static/communityData";
-import "./jobBoard.scss";
+import "../../../CSS/Pages/Community/jobBoard.scss";
 
 const JobBoard = () => {
   // ============================================================================

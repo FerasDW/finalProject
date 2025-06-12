@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import '../../../CSS/Forms/chatBot.css';
+import React, { useState } from "react";
+import "../../../CSS/Forms/chatBot.css";
 
 const ChatUI = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [inputFocused, setInputFocused] = useState(false); // 👈 handles opacity
 
@@ -11,22 +11,28 @@ const ChatUI = () => {
     if (!message.trim()) return;
 
     const newMsg = {
-      sender: 'user',
+      sender: "user",
       text: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
 
     setChatLog([...chatLog, newMsg]);
-    setMessage('');
+    setMessage("");
 
     setTimeout(() => {
-      setChatLog(prev => [
+      setChatLog((prev) => [
         ...prev,
         {
-          sender: 'bot',
-          text: 'Thanks for your message! I\'m here to help you.',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
+          sender: "bot",
+          text: "Thanks for your message! I'm here to help you.",
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
       ]);
     }, 800);
 
@@ -34,13 +40,13 @@ const ChatUI = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSend();
+    if (e.key === "Enter") handleSend();
   };
 
   return (
     <>
       {/* Chat Popup */}
-      <div className={`chat-ui-container ${isOpen ? 'open' : ''}`}>
+      <div className={`chat-ui-container ${isOpen ? "open" : ""}`}>
         {/* Chat Header */}
         <div className="chat-header">
           <img
@@ -52,7 +58,12 @@ const ChatUI = () => {
             <h4>WappGPT</h4>
             <span className="status">🟢 Online</span>
           </div>
-          <button className="close-btn" onClick={() => setIsOpen(false)}>✕</button>
+          <button
+            className="close-btn"
+            onClick={() => (setIsOpen(false), setInputFocused(false))}
+          >
+            ✕
+          </button>
         </div>
 
         {/* Chat Body */}
@@ -62,7 +73,7 @@ const ChatUI = () => {
               <p>{msg.text}</p>
               <div className="meta">
                 <span className="time">{msg.time}</span>
-                {msg.sender === 'user' && <span className="check">✔</span>}
+                {msg.sender === "user" && <span className="check">✔</span>}
               </div>
             </div>
           ))}
@@ -90,7 +101,7 @@ const ChatUI = () => {
 
       {/* Floating Input Bar */}
       {!isOpen && (
-        <div className={`chat-input-bar ${inputFocused ? 'focused' : ''}`}>
+        <div className={`chat-input-bar ${inputFocused ? "focused" : ""}`}>
           <img
             src="https://img.icons8.com/?size=100&id=uZrQP6cYos2I&format=png&color=000000"
             alt="bot"
@@ -102,7 +113,7 @@ const ChatUI = () => {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => setInputFocused(true)}  // 👈 Set to 1 on focus
+            onFocus={() => setInputFocused(true)} // 👈 Set to 1 on focus
             onBlur={() => setInputFocused(false)} // 👈 Return to 0.3 on blur
           />
           <button onClick={handleSend}>Send</button>

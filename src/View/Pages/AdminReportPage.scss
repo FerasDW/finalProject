@@ -5,9 +5,8 @@
   background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
   padding: 2rem 1rem;
 
-  .admin-report-container {
-    max-width: 1200px; // Increased max-width for better table accommodation
-    margin: 0 auto;
+  .admin-report-container { // Increased max-width for better table accommodation
+    margin: 0 20px;
 
     // Header Section
     .header-section {
@@ -31,7 +30,7 @@
         }
       }
 
-      .header-title {
+      .report-header-title {
         font-size: 2.25rem;
         font-weight: 700;
         color: #111827;
@@ -364,7 +363,7 @@
 
         // Table wrapper to control overflow
         .table-wrapper {
-          overflow-x: auto;
+          overflow-x: hidden;
           border-radius: 0.75rem;
           border: 1px solid #e5e7eb;
           

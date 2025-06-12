@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Stories from "../../Components/Community/stories/Stories";
-import Posts from "../../Components/Community/posts/Posts";
-import Share from "../../Components/Community/share/Share";
-import "./home.scss";
+import Stories from "../../Components/Community/Stories";
+import Posts from "../../Components/Community/Posts";
+import Share from "../../Components/Community/Share";
+import "../../../CSS/Pages/Community/home.scss";
 import { mockPosts, currentUser } from "../../../Static/communityData";
 import { useFriends } from "../../../Context/FriendContext";
 

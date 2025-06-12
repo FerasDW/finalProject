@@ -1,0 +1,143 @@
+/* Overview Cards Component - Updated to use BaseCard */
+.overview-cards-container {
+  width: 100%;
+}
+
+.overview-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Stat Card Styles */
+.overview-stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.overview-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.overview-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.overview-card-label {
+  opacity: 0.9;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.overview-card-value {
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1;
+  color: white;
+}
+
+.overview-card-icon {
+  opacity: 0.7;
+}
+
+.overview-card-icon svg {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Progress Card Styles */
+.progress-card {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.progress-icon-bar {
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 2px;
+}
+
+.progress-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.progress-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.progress-trend {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 700;
+}
+
+.progress-trend svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  background: #e5e7eb;
+  border-radius: 50px;
+  height: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-fill-blue {
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+  height: 100%;
+  border-radius: 50px;
+  transition: width 1s ease;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.progress-fill-green {
+  background: linear-gradient(90deg, #10b981, #047857);
+  height: 100%;
+  border-radius: 50px;
+  transition: width 1s ease;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+@media (max-width: 768px) {
+  .overview-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-card {
+    grid-column: span 1;
+  }
+}

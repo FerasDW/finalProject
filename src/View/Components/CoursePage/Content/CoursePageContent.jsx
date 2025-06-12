@@ -8,6 +8,7 @@ import PieChart from '../../Charts/pieCharts';
 import BarChart from '../../Charts/barChart';
 import StudentTable from '../../Tables/Table';
 import Card from "./CourseMaterialCards";
+import  studentsData  from '../../../../Static/students.js'; // Assuming studentsData is imported from a static file
 import { 
   getContentConfig, 
   getCourseChartData, 
@@ -72,7 +73,7 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
           </>
         );
       case 'students':
-        return <StudentTable courseId={courseId} />;
+        return <StudentTable data={studentsData} showAddButton={true}/>;
       case 'files':
         return <Card materials={courseMaterials} />;
       default:

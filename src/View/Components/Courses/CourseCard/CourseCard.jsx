@@ -1,4 +1,4 @@
-import "./CourseCard.css";
+import "../../../../CSS/Components/Courses/CourseCard.css";
 import DeleteButton from "../../Buttons/DeleteButton";
 import EditButton from "../../Buttons/EditButton";
 import { useNavigate } from "react-router-dom";

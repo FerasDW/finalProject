@@ -3,9 +3,9 @@ import {
   localGroupsList,
   localGroupPosts,
 } from "../../../Static/communityData";
-import "./groups.scss";
+import "../../../CSS/Pages/Community/groups.scss";
 import { useNavigate } from "react-router-dom";
-import Posts from "../../Components/Community/posts/Posts";
+import Posts from "../../Components/Community/Posts";
 
 const Groups = () => {
   const navigate = useNavigate();
