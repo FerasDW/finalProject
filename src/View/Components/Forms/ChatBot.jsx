@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../../../CSS/Forms/chatBot.css";
+import "../../../CSS/Components/Forms/chatBot.css";
 
 const ChatUI = () => {
   const [isOpen, setIsOpen] = useState(false);

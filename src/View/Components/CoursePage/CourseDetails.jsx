@@ -1,7 +1,7 @@
 // CourseDetails.jsx - Updated to use dynamic course data
 
 import React from "react";
-import "../../../CSS/CoursePage/CourseDetails.css";
+import "../../../CSS/Pages/CoursePage/CourseDetails.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserGroup,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
-import "../../../CSS/Tables/Table.css";
+import "../../../CSS/Components/Tables/Table.css";
 
 const StudentTable = ({ data: initialData = [], actionButtons = [] ,showAddButton}) => {
   const [data, setData] = useState(initialData);
