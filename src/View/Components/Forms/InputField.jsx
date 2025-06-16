@@ -1,137 +1,182 @@
-// InputField.jsx
-import React, { useState } from 'react';
-import './inputField.css';
+import React from 'react';
+import { 
+  AlertCircle, 
+  Calendar, 
+  Clock, 
+  BookOpen, 
+  Users, 
+  FileText, 
+  GraduationCap,
+  Mail,
+  Phone,
+  MapPin
+} from 'lucide-react';
+import styles from './inputField.module.css';
 
-const InputField = ({
-  label,
+const InputField = ({ 
+  label, 
   type = 'text',
-  name,
-  value,
-  checked,
-  onChange,
-  placeholder,
+  name, 
+  value, 
+  checked, 
+  onChange, 
+  placeholder, 
   required = false,
-  error,
+  error, 
   disabled = false,
-  accept,
-  options = [], // For select fields
-  className = ''
+  accept, 
+  options = [],
+  rows = 4,
+  className = '',
+  ...props
 }) => {
-  const [focused, setFocused] = useState(false);
+  const inputId = `input-${name}`;
+  
+  // Get field-specific icons
+  const getFieldIcon = (fieldName, fieldType) => {
+    const iconMap = {
+      'title': FileText,
+      'name': Users,
+      'course': BookOpen,
+      'instructor': Users,
+      'teacher': Users,
+      'dueDate': Calendar,
+      'dueTime': Clock,
+      'date': Calendar,
+      'time': Clock,
+      'priority': AlertCircle,
+      'type': GraduationCap,
+      'email': Mail,
+      'phone': Phone,
+      'address': MapPin,
+      'location': MapPin,
+      'message': FileText,
+      'description': FileText,
+      'notes': FileText,
+      'content': FileText
+    };
+    
+    // Type-based icons
+    if (fieldType === 'date') return Calendar;
+    if (fieldType === 'time') return Clock;
+    if (fieldType === 'email') return Mail;
+    if (fieldType === 'tel' || fieldType === 'phone') return Phone;
+    
+    // Name-based icons
+    return iconMap[fieldName?.toLowerCase()] || FileText;
+  };
+
+  const FieldIcon = getFieldIcon(name, type);
 
   const renderInput = () => {
-    const baseClass = `input ${type} ${error ? 'error' : ''} ${focused ? 'focused' : ''} ${disabled ? 'disabled' : ''}`;
+    const baseClasses = error ? 
+      `${styles.input} ${styles.inputError}` : 
+      styles.input;
 
     switch (type) {
       case 'select':
         return (
           <select
+            id={inputId}
             name={name}
             value={value || ''}
             onChange={onChange}
             required={required}
             disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={baseClass}
+            className={error ? `${styles.select} ${styles.selectError}` : styles.select}
+            {...props}
           >
-            <option value="">{placeholder || `Select ${label}`}</option>
-            {options.map((option, index) => (
-              <option key={index} value={option.value}>
+            {options.map(option => (
+              <option key={option.value} value={option.value}>
                 {option.label}
               </option>
             ))}
           </select>
         );
 
+      case 'radio':
+        return (
+          <div className={styles.radioContainer}>
+            {options.map(option => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => onChange({ 
+                  target: { name, value: option.value, type: 'radio' }
+                })}
+                className={`${styles.radioButton} ${
+                  checked === option.value ? styles.radioButtonSelected : ''
+                }`}
+                style={{
+                  backgroundColor: checked === option.value ? 
+                    (option.color || '#4f46e5') : 'white',
+                  borderColor: checked === option.value ? 
+                    (option.color || '#4f46e5') : '#e5e7eb',
+                  color: checked === option.value ? 'white' : '#6b7280'
+                }}
+                disabled={disabled}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        );
+
+      case 'checkbox':
+        return (
+          <div className={styles.checkboxContainer}>
+            <input
+              id={inputId}
+              type="checkbox"
+              name={name}
+              checked={checked || false}
+              onChange={onChange}
+              required={required}
+              disabled={disabled}
+              className={styles.checkbox}
+              {...props}
+            />
+            <label htmlFor={inputId} className={styles.checkboxLabel}>
+              {placeholder}
+            </label>
+          </div>
+        );
+
       case 'textarea':
         return (
           <textarea
+            id={inputId}
             name={name}
             value={value || ''}
             onChange={onChange}
             placeholder={placeholder}
             required={required}
             disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={baseClass}
-            rows={4}
+            rows={rows}
+            className={error ? `${styles.textarea} ${styles.textareaError}` : styles.textarea}
+            {...props}
           />
-        );
-
-      case 'checkbox':
-        return (
-          <input
-            type="checkbox"
-            name={name}
-            checked={checked || false}
-            onChange={onChange}
-            required={required}
-            disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={`${baseClass} checkbox-input`}
-          />
-        );
-
-      case 'radio':
-        return (
-          <div className="radio-group">
-            {options.map((option, index) => (
-              <label key={index} className="radio-label">
-                <input
-                  type="radio"
-                  name={name}
-                  value={option.value}
-                  checked={checked}
-                  onChange={onChange}
-                  required={required}
-                  disabled={disabled}
-                  className={`${baseClass} radio-input`}
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
         );
 
       case 'file':
         return (
           <input
+            id={inputId}
             type="file"
             name={name}
             onChange={onChange}
+            required={required}
+            disabled={disabled}
             accept={accept}
-            required={required}
-            disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={baseClass}
-          />
-        );
-
-      case 'number':
-        return (
-          <input
-            type="number"
-            name={name}
-            value={value || ''}
-            onChange={onChange}
-            placeholder={placeholder}
-            required={required}
-            disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={baseClass}
-            min="0"
-            step="0.1"
+            className={baseClasses}
+            {...props}
           />
         );
 
       default:
         return (
           <input
+            id={inputId}
             type={type}
             name={name}
             value={value || ''}
@@ -139,42 +184,28 @@ const InputField = ({
             placeholder={placeholder}
             required={required}
             disabled={disabled}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            className={baseClass}
+            className={baseClasses}
+            {...props}
           />
         );
     }
   };
 
   return (
-    <div className={`input-field ${className}`}>
-      {label && (
-        <label className={`input-label ${error ? 'error' : ''} ${focused ? 'focused' : ''}`}>
-          {label}
-          {required && <span className="required">*</span>}
-        </label>
-      )}
-
-      <div className="input-wrapper">
-        {renderInput()}
-
-        {focused && !error && type !== 'checkbox' && type !== 'radio' && (
-          <div className={`input-glow glow-${type}`} />
-        )}
-      </div>
-
+    <div className={`${styles.fieldContainer} ${className}`}>
+      <label htmlFor={inputId} className={styles.fieldLabel}>
+        <FieldIcon style={{ width: '16px', height: '16px', color: '#6b7280' }} />
+        {label} 
+        {required && <span className={styles.requiredMark}>*</span>}
+      </label>
+      
+      {renderInput()}
+      
       {error && (
-        <p className="error-message">
-          <svg className="error-icon" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {error}
-        </p>
+        <div className={styles.errorMessage}>
+          <AlertCircle style={{ width: '14px', height: '14px', color: '#ef4444' }} />
+          <span className={styles.errorText}>{error}</span>
+        </div>
       )}
     </div>
   );

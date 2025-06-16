@@ -170,22 +170,22 @@ export default function Courses() {
     { 
       label: "Group", 
       name: "group", 
-      options: ["all", ...groupOptions]
+      options: [ ...groupOptions]
     },
     { 
       label: "Year", 
       name: "year", 
-      options: ["all", "1", "2", "3", "4"] 
+      options: ["1", "2", "3", "4"] 
     },
     { 
       label: "Semester", 
       name: "semester", 
-      options: ["all", "1", "2"] 
+      options: [ "1", "2"] 
     },
     { 
       label: "Academic Year", 
       name: "academicYear", 
-      options: ["all", ...courseYears.sort((a, b) => b - a)]
+      options: [ ...courseYears.sort((a, b) => b - a)]
     },
   ];
 
@@ -222,6 +222,7 @@ export default function Courses() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="filter-select"
+              style={{ width: "220px" }}
             />
             <button className="search-btn" onClick={handleSearch}>Search</button>
           </div>

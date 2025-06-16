@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { X, Plus, CheckCircle2 } from 'lucide-react';
 import InputField from './InputField';
-import './dynamicForm.css';
+import styles from './dynamicForm.module.css';
 
 const DynamicForm = ({
   title = 'Form',
@@ -12,7 +13,9 @@ const DynamicForm = ({
   showCancel = true,
   loading = false,
   className = '',
-  initialData = {} // Add this prop
+  initialData = {},
+  validationRules = {},
+  ...props
 }) => {
   const [formData, setFormData] = useState(initialData || {});
   const [errors, setErrors] = useState({});
@@ -43,6 +46,7 @@ const DynamicForm = ({
       [name]: finalValue
     }));
 
+    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -57,15 +61,38 @@ const DynamicForm = ({
     fields.forEach(field => {
       const value = formData[field.name];
 
+      // Required field validation
       if (field.required) {
         const isEmpty =
           (field.type === 'file' && !value) ||
           (typeof value === 'string' && value.trim() === '') ||
           (typeof value === 'undefined') ||
-          (typeof value === 'boolean' && !value);
+          (value === null) ||
+          (field.type === 'checkbox' && !value);
 
         if (isEmpty) {
           newErrors[field.name] = `${field.label || field.name} is required`;
+        }
+      }
+
+      // Custom validation rules
+      if (value && validationRules[field.name]) {
+        const rule = validationRules[field.name];
+        if (typeof rule === 'function') {
+          const error = rule(value, formData);
+          if (error) {
+            newErrors[field.name] = error;
+          }
+        } else if (rule.pattern && !rule.pattern.test(value)) {
+          newErrors[field.name] = rule.message || `Invalid ${field.label || field.name}`;
+        }
+      }
+
+      // Built-in email validation
+      if (field.type === 'email' && value) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(value)) {
+          newErrors[field.name] = 'Please enter a valid email address';
         }
       }
     });
@@ -88,71 +115,94 @@ const DynamicForm = ({
   };
 
   return (
-    <div className={`dynamic-form-container ${className}`}>
-      <div className="dynamic-form">
+    <div className={`${styles.formContainer} ${className}`} {...props}>
+      <div className={styles.formModal}>
         {/* Header */}
-        <div className="form-header">
-          <h2 className="form-title">{title}</h2>
+        <div className={styles.formHeader}>
+          <div className={styles.headerContent}>
+            <h2 className={styles.formTitle}>
+              <Plus style={{ width: '20px', height: '20px', color: '#4f46e5' }} />
+              {title}
+            </h2>
+            
+            <button
+              onClick={handleCancel}
+              className={styles.closeButton}
+              type="button"
+            >
+              <X style={{ width: '18px', height: '18px', color: '#6b7280' }} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="form-content">
-          <div className="fields-container">
-            {fields.map((field, index) => (
-              <InputField
-                key={field.name || index}
-                label={field.label}
-                type={field.type || 'text'}
-                name={field.name}
-                value={
-                  field.type === 'checkbox' || field.type === 'radio' || field.type === 'file'
-                    ? undefined
-                    : formData[field.name] || ''
-                }
-                checked={
-                  field.type === 'checkbox'
-                    ? formData[field.name] === true
-                    : field.type === 'radio'
-                    ? formData[field.name] === field.value
-                    : undefined
-                }
-                onChange={handleInputChange}
-                placeholder={field.placeholder}
-                required={field.required}
-                error={errors[field.name]}
-                disabled={loading}
-                accept={field.accept}
-                options={field.options}
-              />
-            ))}
-          </div>
+        <div className={styles.formContent}>
+          <div onSubmit={handleSubmit}>
+            <div className={styles.fieldsContainer}>
+              {fields.map((field, index) => (
+                <InputField
+                  key={field.name || index}
+                  label={field.label}
+                  type={field.type || 'text'}
+                  name={field.name}
+                  value={
+                    field.type === 'checkbox' || field.type === 'radio' || field.type === 'file'
+                      ? undefined
+                      : formData[field.name] || ''
+                  }
+                  checked={
+                    field.type === 'checkbox'
+                      ? formData[field.name] === true
+                      : field.type === 'radio'
+                      ? formData[field.name] === field.value
+                      : undefined
+                  }
+                  onChange={handleInputChange}
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  error={errors[field.name]}
+                  disabled={loading}
+                  accept={field.accept}
+                  options={field.options}
+                  rows={field.rows}
+                  {...field.props}
+                />
+              ))}
+            </div>
 
-          {/* Buttons */}
-          <div className="form-buttons">
-            {showCancel && (
+            {/* Buttons */}
+            <div className={styles.formButtons}>
+              {showCancel && (
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className={`${styles.btn} ${styles.btnCancel}`}
+                >
+                  <X style={{ width: '16px', height: '16px' }} />
+                  {cancelText}
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={handleCancel}
+                onClick={handleSubmit}
                 disabled={loading}
-                className="btn btn-cancel"
+                className={`${styles.btn} ${styles.btnSubmit}`}
               >
-                {cancelText}
+                {loading ? (
+                  <>
+                    <div className={styles.loadingSpinner} />
+                    <span className={styles.loadingText}>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 style={{ width: '16px', height: '16px' }} />
+                    {submitText}
+                  </>
+                )}
               </button>
-            )}
-
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="btn btn-submit"
-            >
-              {loading && (
-                <div className="loading-spinner">
-                  <div className="spinner"></div>
-                </div>
-              )}
-              <span className={loading ? 'loading-text' : ''}>{submitText}</span>
-            </button>
+            </div>
           </div>
         </div>
       </div>
