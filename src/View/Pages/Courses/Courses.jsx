@@ -5,9 +5,10 @@ import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
 import DynamicFilter from "../../Components/DynamicFilter.jsx";
 import { courseFields } from "../../../Static/formsInputs";
 import "../../../CSS/Pages/Courses/courses.css"; // Assuming you have a CSS file for styles
-
+import Popup from "../../Components/Cards/PopUp.jsx";
 export default function Courses() {
   const currentYear = new Date().getFullYear().toString();
+  const [isCoursePopupOpen, setCoursePopupOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
@@ -26,7 +27,6 @@ export default function Courses() {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [visibleCourses, setVisibleCourses] = useState([]);
   const [useFilters, setUseFilters] = useState(true);
-  const [showPopup, setShowPopup] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const observer = useRef();
   const loadMoreRef = useRef();
@@ -99,7 +99,7 @@ export default function Courses() {
 
   const handleAddCourse = () => {
     setEditingCourse(null);
-    setShowPopup(true);
+    setCoursePopupOpen(true);
   };
 
   const handleEditCourse = (course) => {
@@ -122,7 +122,7 @@ export default function Courses() {
     };
     
     setEditingCourse(courseToEdit);
-    setShowPopup(true);
+    setCoursePopupOpen(true);
   };
 
   const handleDeleteCourse = (id) => {
@@ -162,7 +162,7 @@ export default function Courses() {
       };
       setAllCourses([newCourse, ...allCourses]);
     }
-    setShowPopup(false);
+    setCoursePopupOpen(false);
     setEditingCourse(null);
   };
 
@@ -237,20 +237,18 @@ export default function Courses() {
 
       <div ref={loadMoreRef} style={{ height: "30px" }}></div>
 
-      {showPopup && (
-        <div className="popup-overlay" onClick={() => setShowPopup(false)}>
-          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-            <h3>{editingCourse ? "Edit Course" : "Add New Course"}</h3>
-            <DynamicForm
+      {isCoursePopupOpen &&  <Popup 
+        isOpen={isCoursePopupOpen} 
+        onClose={() => setCoursePopupOpen(false)}
+      >
+        <DynamicForm
               fields={courseFields}
               onSubmit={handleSubmit}
-              onCancel={() => setShowPopup(false)}
+              onCancel={() => setCoursePopupOpen(false)}
               submitText={editingCourse ? "Update Course" : "Add Course"}
               initialData={editingCourse}
             />
-          </div>
-        </div>
-      )}
+      </Popup>}
     </div>
   );
 }

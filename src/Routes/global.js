@@ -5,13 +5,13 @@ import MainLayout from "../View/Components/MainLayout.jsx";
 import Dashboard from "../View/Pages/Global/Dashboard.jsx";
 import Courses from "../View/Pages/Courses/Courses.jsx";
 import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
-import Lecturers from "../View/Pages/Lecturer/LecturersInfoDashboard.jsx";
-import Students from "../View/Pages/Student/StudentInfoDashboard.jsx";
 import Calendar from "../View/Pages/Global/Calendar.jsx";
-import Messages from "../View/Pages/Global/Messages.jsx";
+import Messages from "../View/Pages/Global/messages.jsx";
 import Statistics from "../View/Pages/Admin/AdminReportPage.jsx";
 import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
-import StudentProfile from "../View/Pages/Student/StudentProfile.jsx";
+import GenericDashboard from "../View/Pages/GenericDashboard.jsx";
+import GenericProfile from "../View/Pages/GenericProfile.jsx";
+import { Navigate } from "react-router-dom";
 
 // Importing Community Layout and its pages
 import CommunityLayout from "../View/Components/CommunityLayout.jsx";
@@ -30,7 +30,6 @@ import { SavedPostsProvider } from "../Context/SavedPostsContext.jsx";
 import { FollowProvider } from "../Context/FollowContext.jsx";
 import { FriendProvider } from "../Context/FriendContext.jsx";
 
-import Notifications from "../View/Pages/Notifications.jsx";
 import ProtectedRoute from "./ProtectedRoute";
 
 
@@ -50,9 +49,14 @@ function GlobalRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/courses" element={<Courses />} />
-        <Route path="/Lecturers" element={<Lecturers />} />
-        <Route path="/Students" element={<Students />} />
+        <Route path="/courses" element={<Courses />} /> <Route
+    path="/Students"
+    element={<GenericDashboard entityType="students" />}
+  />
+  <Route
+    path="/Lecturers"
+    element={<GenericDashboard entityType="lecturers" />}
+  />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/portfolio" element={<Portfolio />} /> 
@@ -60,9 +64,14 @@ function GlobalRoutes() {
         <Route path="/course/:id" element={<CoursePage />} />
         <Route path="/profileA" element={<ProfileA />} />
         <Route path="/Messages" element={<Messages />} />
-        <Route path="/StudentProfile" element={<StudentProfile />} />
-
-        <Route path="/notifications" element={<Notifications />} />
+       {/* Secure Profile Routes with Path Parameters */}
+          <Route path="/profile/:entityType/:id" element={<GenericProfile />} />
+          
+          {/* Redirect old query parameter URLs to new format */}
+          <Route 
+            path="/profile/:id" 
+            element={<Navigate to="/students" replace />} 
+          />
 
       </Route>
 
