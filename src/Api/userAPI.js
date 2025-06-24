@@ -9,3 +9,8 @@ export const fetchLecturers = async () => {
   const res = await axios.get("http://localhost:8080/api/users/lecturers");
   return res.data;
 };
+
+export const fetchAdmins = async () => {
+  const res = await axios.get("http://localhost:8080/api/users/admins");
+  return res.data;
+};

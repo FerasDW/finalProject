@@ -1,9 +1,9 @@
 // StudentsDashboard.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import styles from "./StudentDashboard.module.scss";
-import studentsData from "../../Static/students";
-import StudentTable from "../Components/Tables/Table";
+import styles from "../../../CSS/Pages/Student/StudentDashboard.module.scss";
+import studentsData from "../../../Static/students";
+import StudentTable from "../../Components/Tables/Table";
 import { Users, BookOpen, GraduationCap, CalendarDays, ArrowRight } from "lucide-react";
 
 export default function StudentsDashboard() {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './AdminReportPage.scss';
-import { GENERATE_REPORT } from '../../Api/Api.js';
-import StudentTable from "../Components/Tables/Table";
+import '../../../CSS/Pages/Admin/AdminReportPage.scss';
+import { GENERATE_REPORT } from '../../../Api/Api.js';
+import StudentTable from "../../Components/Tables/Table.jsx";
 
 const AdminReportPage = () => {
   const [queryText, setQueryText] = useState('');

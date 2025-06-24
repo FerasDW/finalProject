@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import StudentHeader from '../Components/StudentProfile/StudentHeader';
-import StudentInfoCard from '../Components/StudentProfile/StudentInfoCard';
-import MidPageNavbar from '../Components/CoursePage/Content/MidPageNavBar';
-import OverviewCards from '../Components/StudentProfile/OverviewCards';
-import RequestsList from '../Components/StudentProfile/RequestsList';
-import Table from '../Components/Tables/Table';
-import QuickActions from '../Components/StudentProfile/QuickActions';
+import StudentHeader from '../../Components/StudentProfile/StudentHeader';
+import StudentInfoCard from '../../Components/StudentProfile/StudentInfoCard';
+import MidPageNavbar from '../../Components/CoursePage/Content/MidPageNavBar';
+import OverviewCards from '../../Components/StudentProfile/OverviewCards';
+import RequestsList from '../../Components/StudentProfile/RequestsList';
+import Table from '../../Components/Tables/Table';
+import QuickActions from '../../Components/StudentProfile/QuickActions';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare, faTrash } from '@fortawesome/free-solid-svg-icons';
-import './StudentsProfile.css';
+import "../../../CSS/Pages/Student/StudentsProfile.css";
 
 const StudentProfile = () => {
   const [activeSection, setActiveSection] = useState('overview');// Default section

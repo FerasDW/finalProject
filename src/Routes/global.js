@@ -5,13 +5,13 @@ import MainLayout from "../View/Components/MainLayout.jsx";
 import Dashboard from "../View/Pages/Global/Dashboard.jsx";
 import Courses from "../View/Pages/Courses/Courses.jsx";
 import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
-import Lecturers from "../View/Pages/LecturersInfoDashboard.jsx";
-import Students from "../View/Pages/StudentInfoDashboard.jsx";
+import Lecturers from "../View/Pages/Lecturer/LecturersInfoDashboard.jsx";
+import Students from "../View/Pages/Student/StudentInfoDashboard.jsx";
 import Calendar from "../View/Pages/Global/Calendar.jsx";
-import Messages from "../View/Pages/Global/messages.jsx";
-import Statistics from "../View/Pages/AdminReportPage.jsx";
+import Messages from "../View/Pages/Global/Messages.jsx";
+import Statistics from "../View/Pages/Admin/AdminReportPage.jsx";
 import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
-import StudentProfile from "../View/Pages/StudentProfile.jsx";
+import StudentProfile from "../View/Pages/Student/StudentProfile.jsx";
 
 // Importing Community Layout and its pages
 import CommunityLayout from "../View/Components/CommunityLayout.jsx";
@@ -30,7 +30,6 @@ import { SavedPostsProvider } from "../Context/SavedPostsContext.jsx";
 import { FollowProvider } from "../Context/FollowContext.jsx";
 import { FriendProvider } from "../Context/FriendContext.jsx";
 
-import Grades from "../View/Pages/Grades.jsx";
 import Notifications from "../View/Pages/Notifications.jsx";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -63,8 +62,6 @@ function GlobalRoutes() {
         <Route path="/Messages" element={<Messages />} />
         <Route path="/StudentProfile" element={<StudentProfile />} />
 
-        {/* NEW ROUTES for dashboard box links */}
-        <Route path="/grades" element={<Grades />} />
         <Route path="/notifications" element={<Notifications />} />
 
       </Route>

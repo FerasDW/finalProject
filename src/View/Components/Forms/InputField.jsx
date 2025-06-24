@@ -86,6 +86,10 @@ const InputField = ({
             className={error ? `${styles.select} ${styles.selectError}` : styles.select}
             {...props}
           >
+            {/* Add default option */}
+            <option value="">
+              {placeholder || `Select ${label}...`}
+            </option>
             {options.map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -105,14 +109,14 @@ const InputField = ({
                   target: { name, value: option.value, type: 'radio' }
                 })}
                 className={`${styles.radioButton} ${
-                  checked === option.value ? styles.radioButtonSelected : ''
+                  value === option.value ? styles.radioButtonSelected : ''
                 }`}
                 style={{
-                  backgroundColor: checked === option.value ? 
+                  backgroundColor: value === option.value ? 
                     (option.color || '#4f46e5') : 'white',
-                  borderColor: checked === option.value ? 
+                  borderColor: value === option.value ? 
                     (option.color || '#4f46e5') : '#e5e7eb',
-                  color: checked === option.value ? 'white' : '#6b7280'
+                  color: value === option.value ? 'white' : '#6b7280'
                 }}
                 disabled={disabled}
               >

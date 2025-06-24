@@ -1,8 +1,9 @@
+// Table.jsx
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
 import "../../../CSS/Components/Tables/Table.css";
 
-const StudentTable = ({ data: initialData = [], actionButtons = [] ,showAddButton}) => {
+const StudentTable = ({ data: initialData = [], actionButtons = [] ,showAddButton, onAddClick}) => {
   const [data, setData] = useState(initialData);
   const [filteredData, setFilteredData] = useState(initialData);
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +70,7 @@ const StudentTable = ({ data: initialData = [], actionButtons = [] ,showAddButto
             <button className="delete-button" onClick={deleteSelected}>Delete selected</button>
           )}
           {/* <button className="icon-button"><Filter /></button> */}
-          {showAddButton && <button className="add-button">+ Add</button>}
+          {showAddButton && <button className="add-button" onClick={onAddClick}>+ Add</button>}
 
         </div>
       </div>

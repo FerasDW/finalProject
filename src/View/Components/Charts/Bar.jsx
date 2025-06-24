@@ -1,5 +1,3 @@
-import React from 'react';
-
 const ProgressBar = ({ progress }) => {
   const progressFillStyle = {
     height: '100%',
@@ -9,7 +7,7 @@ const ProgressBar = ({ progress }) => {
     alignItems: 'center',
     justifyContent: 'center',
     color: 'white',
-    width: `${progress}%` // dynamic width based on prop
+    width: `${progress}%`
   };
 
   const progressBarContainer = {
