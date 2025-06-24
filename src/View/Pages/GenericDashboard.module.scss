@@ -55,9 +55,8 @@
 }
 
 .filters {
-  margin-top: 2rem;
   display: flex;
-  flex-direction: column;
+  flex-direction: column !important;
   gap: 1rem;
 }
 

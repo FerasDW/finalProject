@@ -25,6 +25,7 @@
   transition: all 0.3s ease;
   flex-shrink: 1;
   box-sizing: border-box;
+  height: fit-content;
 }
 
 /* Event Schedule Section */
