@@ -8,7 +8,7 @@ import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
 import Lecturers from "../View/Pages/Lecturer/LecturersInfoDashboard.jsx";
 import Students from "../View/Pages/Student/StudentInfoDashboard.jsx";
 import Calendar from "../View/Pages/Global/Calendar.jsx";
-import Messages from "../View/Pages/Global/Messages.jsx";
+import Messages from "../View/Pages/Global/messages.jsx";
 import Statistics from "../View/Pages/Admin/AdminReportPage.jsx";
 import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
 import StudentProfile from "../View/Pages/Student/StudentProfile.jsx";

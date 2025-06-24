@@ -26,6 +26,13 @@ import {
   templateFormFields,
   announcementFormFields,
 } from "../../../Static/formsInputs.js";
+import {
+  getModalConfig,
+  renderModalField,
+  getModalTitle,
+  getModalSize,
+  getModalFooter,
+} from "../../../Static/Modals.js";
 
 // Styles
 import "../../../CSS/Pages/Messages/messages.css";
@@ -61,7 +68,6 @@ const Messages = () => {
   const [useTemplateFields, setUseTemplateFields] = useState([]);
   const [useTemplateFormTitle, setUseTemplateFormTitle] = useState("");
 
-
   // Message handlers
   const handleViewMessage = (row) => {
     const fullMessage = getFullMessageById(row.id);
@@ -73,6 +79,12 @@ const Messages = () => {
     const fullMessage = getFullMessageById(row.id);
     setSelectedMessage(fullMessage);
     setReplyModalOpen(true);
+  };
+
+  const handleReplySubmit = (formData) => {
+    console.log("Reply submitted:", formData);
+    // Handle reply submission logic here
+    setReplyModalOpen(false);
   };
 
   // Announcement handlers
@@ -220,24 +232,6 @@ const Messages = () => {
     }
   };
 
-  const handleDuplicateTemplate = (row) => {
-    const fullTemplate = currentFullTemplates.find((t) => t.id === row.id);
-    if (fullTemplate) {
-      const formData = {
-        name: fullTemplate.name + " (Copy)",
-        category: fullTemplate.category,
-        subject: fullTemplate.subject,
-        content: fullTemplate.content,
-        variables: fullTemplate.variables.join(", "),
-        targetAudience: fullTemplate.targetAudience,
-        status: "draft",
-      };
-      setSelectedTemplate(null);
-      setTemplateFormData(formData);
-      setCreateTemplateModalOpen(true);
-    }
-  };
-
   const handleTemplateSubmit = (formData) => {
     const variablesArray = formData.variables
       ? formData.variables.split(",").map((v) => v.trim()).filter((v) => v)
@@ -314,7 +308,7 @@ const Messages = () => {
     setSelectedTemplate(null);
   };
 
-    const handleUseTemplate = (row) => {
+  const handleUseTemplate = (row) => {
     const fullTemplate = currentFullTemplates.find((t) => t.id === row.id);
     if (!fullTemplate) return;
 
@@ -328,7 +322,7 @@ const Messages = () => {
     const dynamicFields = uniqueVariables.map((variable) => ({
       name: variable,
       label: variable.charAt(0).toUpperCase() + variable.slice(1),
-      type: "text", // You can enhance this later to detect types
+      type: "text",
       required: true,
     }));
 
@@ -337,6 +331,85 @@ const Messages = () => {
     setUseTemplateModalOpen(true);
   };
 
+  // Helper function to render view modal content
+  const renderViewModalContent = (modalType, data) => {
+    const config = getModalConfig(modalType);
+    if (!config || !data) return null;
+
+    return (
+      <div className="view-modal-container">
+        {config.fields.map((field, index) => {
+          const renderedField = renderModalField(field, data);
+          if (!renderedField) return null;
+
+          if (field.type === "content") {
+            return (
+              <div key={index}>
+                <strong>{renderedField.label}:</strong>
+                <div className={renderedField.className}>{renderedField.value}</div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={index} className="view-modal-info">
+              <strong>{renderedField.label}:</strong>{" "}
+              {renderedField.className ? (
+                <span className={renderedField.className}>{renderedField.value}</span>
+              ) : (
+                renderedField.value
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Helper function to render reply modal content
+  const renderReplyModalContent = () => {
+    const config = getModalConfig("replyMessage");
+    if (!config || !selectedMessage) return null;
+
+    return (
+      <div>
+        {config.showOriginalMessage && (
+          <div className="original-msg-box">
+            <strong>Original Message:</strong>
+            <div className="original-msg-text">{selectedMessage.message}</div>
+          </div>
+        )}
+        <div>
+          <label className="reply-label">Your Reply:</label>
+          <textarea
+            rows="6"
+            className="reply-textarea"
+            placeholder="Type your reply here..."
+          />
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to render modal footer
+  const renderModalFooter = (modalType, onCancel, onSubmit) => {
+    const footerConfig = getModalFooter(modalType);
+    if (!footerConfig) return null;
+
+    return (
+      <div className="reply-footer">
+        {footerConfig.buttons.map((button, index) => (
+          <button
+            key={index}
+            className={button.className}
+            onClick={button.action === "cancel" ? onCancel : onSubmit}
+          >
+            {button.text}
+          </button>
+        ))}
+      </div>
+    );
+  };
 
   // Section rendering
   const renderSection = () => {
@@ -401,11 +474,6 @@ const Messages = () => {
                   ✏️ Edit
                 </button>
               ),
-              (row) => (
-                <button onClick={() => handleDuplicateTemplate(row)} className="msg-duplicate-btn">
-                  📋 Duplicate
-                </button>
-              ),
             ]}
           />
         );
@@ -433,67 +501,23 @@ const Messages = () => {
       <Modal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        title="Message Details"
-        size="large"
+        title={getModalTitle("viewMessage", selectedMessage)}
+        size={getModalSize("viewMessage")}
       >
-        {selectedMessage && (
-          <div className="view-modal-container">
-            <div className="view-modal-info">
-              <strong>From:</strong> {selectedMessage.sender} ({selectedMessage.senderType})
-            </div>
-            <div className="view-modal-info">
-              <strong>Email:</strong> {selectedMessage.email}
-            </div>
-            <div className="view-modal-info">
-              <strong>Subject:</strong> {selectedMessage.subject}
-            </div>
-            <div className="view-modal-info">
-              <strong>Date:</strong> {selectedMessage.date} at {selectedMessage.time}
-            </div>
-            <div className="view-modal-info">
-              <strong>Priority:</strong>{" "}
-              <span className={`priority-${selectedMessage.priority}`}>
-                {selectedMessage.priority}
-              </span>
-            </div>
-            <div>
-              <strong>Message:</strong>
-              <div className="view-modal-content-box">{selectedMessage.message}</div>
-            </div>
-          </div>
-        )}
+        {renderViewModalContent("viewMessage", selectedMessage)}
       </Modal>
 
       <Modal
         isOpen={replyModalOpen}
         onClose={() => setReplyModalOpen(false)}
-        title={`Reply to ${selectedMessage?.sender}`}
-        size="large"
-        footer={
-          <div className="reply-footer">
-            <button onClick={() => setReplyModalOpen(false)} className="reply-cancel-btn">
-              Cancel
-            </button>
-            <button className="reply-send-btn">Send Reply</button>
-          </div>
-        }
-      >
-        {selectedMessage && (
-          <div>
-            <div className="original-msg-box">
-              <strong>Original Message:</strong>
-              <div className="original-msg-text">{selectedMessage.message}</div>
-            </div>
-            <div>
-              <label className="reply-label">Your Reply:</label>
-              <textarea
-                rows="6"
-                className="reply-textarea"
-                placeholder="Type your reply here..."
-              />
-            </div>
-          </div>
+        title={getModalTitle("replyMessage", selectedMessage)}
+        size={getModalSize("replyMessage")}
+        footer={renderModalFooter("replyMessage", 
+          () => setReplyModalOpen(false), 
+          handleReplySubmit
         )}
+      >
+        {renderReplyModalContent()}
       </Modal>
 
       {/* Announcement Modals */}
@@ -522,38 +546,10 @@ const Messages = () => {
       <Modal
         isOpen={viewAnnouncementModalOpen}
         onClose={() => setViewAnnouncementModalOpen(false)}
-        title="Announcement Details"
-        size="large"
+        title={getModalTitle("viewAnnouncement", selectedAnnouncement)}
+        size={getModalSize("viewAnnouncement")}
       >
-        {selectedAnnouncement && (
-          <div className="view-modal-container">
-            <div className="view-modal-info">
-              <strong>Title:</strong> {selectedAnnouncement.title}
-            </div>
-            <div className="view-modal-info">
-              <strong>Target Audience:</strong> {selectedAnnouncement.targetAudience}
-            </div>
-            <div className="view-modal-info">
-              <strong>Priority:</strong>
-              <span className={`priority-${selectedAnnouncement.priority}`}>
-                {selectedAnnouncement.priority}
-              </span>
-            </div>
-            <div className="view-modal-info">
-              <strong>Status:</strong> {selectedAnnouncement.status}
-            </div>
-            <div className="view-modal-info">
-              <strong>Created:</strong> {selectedAnnouncement.createdDate} at {selectedAnnouncement.createdTime}
-            </div>
-            <div className="view-modal-info">
-              <strong>Expires:</strong> {selectedAnnouncement.expiryDate}
-            </div>
-            <div>
-              <strong>Content:</strong>
-              <div className="view-modal-content-box">{selectedAnnouncement.content}</div>
-            </div>
-          </div>
-        )}
+        {renderViewModalContent("viewAnnouncement", selectedAnnouncement)}
       </Modal>
 
       {/* Template Modals */}
@@ -582,55 +578,24 @@ const Messages = () => {
       <Modal
         isOpen={viewTemplateModalOpen}
         onClose={() => setViewTemplateModalOpen(false)}
-        title="Template Details"
-        size="large"
+        title={getModalTitle("viewTemplate", selectedTemplate)}
+        size={getModalSize("viewTemplate")}
       >
-        {selectedTemplate && (
-          <div className="view-modal-container">
-            <div className="view-modal-info">
-              <strong>Name:</strong> {selectedTemplate.name}
-            </div>
-            <div className="view-modal-info">
-              <strong>Category:</strong> {selectedTemplate.category}
-            </div>
-            <div className="view-modal-info">
-              <strong>Target Audience:</strong> {selectedTemplate.targetAudience}
-            </div>
-            <div className="view-modal-info">
-              <strong>Status:</strong> {selectedTemplate.status}
-            </div>
-            <div className="view-modal-info">
-              <strong>Created:</strong> {selectedTemplate.createdDate}
-            </div>
-            <div className="view-modal-info">
-              <strong>Last Modified:</strong> {selectedTemplate.lastModified}
-            </div>
-            <div className="view-modal-info">
-              <strong>Variables:</strong> {selectedTemplate.variables.join(", ")}
-            </div>
-            <div className="view-modal-info">
-              <strong>Subject:</strong> {selectedTemplate.subject}
-            </div>
-            <div>
-              <strong>Content:</strong>
-              <div className="view-modal-content-box">{selectedTemplate.content}</div>
-            </div>
-          </div>
-        )}
+        {renderViewModalContent("viewTemplate", selectedTemplate)}
       </Modal>
-      {useTemplateModalOpen && (
-      <DynamicForm
-        title={`Use Template: ${useTemplateFormTitle}`}
-        fields={useTemplateFields}
-        onSubmit={(data) => {
-          console.log("Template used with data:", data);
-          setUseTemplateModalOpen(false);
-        }}
-        onCancel={() => setUseTemplateModalOpen(false)}
-        submitText="Send"
-      />
-    )}
 
+      {useTemplateModalOpen && (
+        <DynamicForm
+          title={`Use Template: ${useTemplateFormTitle}`}
+          fields={useTemplateFields}
+          onSubmit={(data) => {
+            console.log("Template used with data:", data);
+            setUseTemplateModalOpen(false);
+          }}
+          onCancel={() => setUseTemplateModalOpen(false)}
+          submitText="Send"
+        />
+      )}
     </>
   );
 };

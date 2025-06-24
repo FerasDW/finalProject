@@ -10,7 +10,7 @@
 }
 
 /* Action buttons */
-.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn {
+.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn, .msg-use-btn {
   padding: 6px 12px;
   margin-right: 8px;
   border-radius: 5px;
@@ -58,6 +58,16 @@
 
 .msg-duplicate-btn:hover {
   background-color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.msg-use-btn {
+  background-color: #06b6d4;
+  color: white;
+}
+
+.msg-use-btn:hover {
+  background-color: #0891b2;
   transform: translateY(-1px);
 }
 
@@ -251,12 +261,12 @@
 }
 
 /* Animation for action buttons */
-.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn {
+.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn, .msg-use-btn {
   position: relative;
   overflow: hidden;
 }
 
-.msg-view-btn::before, .msg-reply-btn::before, .msg-edit-btn::before, .msg-duplicate-btn::before {
+.msg-view-btn::before, .msg-reply-btn::before, .msg-edit-btn::before, .msg-duplicate-btn::before, .msg-use-btn::before {
   content: '';
   position: absolute;
   top: 0;
@@ -267,12 +277,12 @@
   transition: left 0.5s;
 }
 
-.msg-view-btn:hover::before, .msg-reply-btn:hover::before, .msg-edit-btn:hover::before, .msg-duplicate-btn:hover::before {
+.msg-view-btn:hover::before, .msg-reply-btn:hover::before, .msg-edit-btn:hover::before, .msg-duplicate-btn:hover::before, .msg-use-btn:hover::before {
   left: 100%;
 }
 
 /* Focus states for accessibility */
-.msg-view-btn:focus, .msg-reply-btn:focus, .msg-edit-btn:focus, .msg-duplicate-btn:focus {
+.msg-view-btn:focus, .msg-reply-btn:focus, .msg-edit-btn:focus, .msg-duplicate-btn:focus, .msg-use-btn:focus {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
 }
