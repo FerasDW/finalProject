@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import styles from './MiniCalendar.module.css';
+import styles from '../../../CSS/Components/BigCalendar/MiniCalendar.module.css';
 
 const MiniCalendar = ({ currentDate, onDateChange, onMonthChange }) => {
   const months = [

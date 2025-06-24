@@ -33,7 +33,7 @@
   pointer-events: none;
 }
 
-.student-header-content {
+.student-infoheader-content {
   position: relative;
   z-index: 1;
   display: flex;

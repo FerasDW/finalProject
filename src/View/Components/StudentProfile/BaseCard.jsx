@@ -2,41 +2,29 @@ import React from 'react';
 import './BaseCard.css';
 
 const BaseCard = ({ 
-  title, 
   children, 
-  className = '', 
-  headerClassName = '', 
-  bodyClassName = '',
-  headerActions = null,
-  onClick = null,
-  gradient = null,
-  icon = null,
-  variant = 'default' // 'default', 'gradient', 'outline'
+  title, 
+  icon, 
+  variant = 'default', 
+  gradient, 
+  className = '',
+  ...props 
 }) => {
-  const cardClasses = `base-card ${variant} ${className}`;
-  const headerClasses = `base-card-header ${headerClassName}`;
-  const bodyClasses = `base-card-body ${bodyClassName}`;
-
+  const cardStyle = gradient ? { background: gradient } : {};
+  
   return (
     <div 
-      className={cardClasses} 
-      onClick={onClick}
-      style={gradient ? { background: gradient } : {}}
+      className={`base-card ${variant} ${className}`} 
+      style={cardStyle}
+      {...props}
     >
-      {(title || headerActions || icon) && (
-        <div className={headerClasses}>
-          <div className="base-card-title-section">
-            {icon && <div className="base-card-icon">{icon}</div>}
-            {title && <h3 className="base-card-title">{title}</h3>}
-          </div>
-          {headerActions && (
-            <div className="base-card-actions">
-              {headerActions}
-            </div>
-          )}
+      {(title || icon) && (
+        <div className="base-card-header">
+          {icon && <div className="base-card-header-icon">{icon}</div>}
+          {title && <h3 className="base-card-title">{title}</h3>}
         </div>
       )}
-      <div className={bodyClasses}>
+      <div className="base-card-content">
         {children}
       </div>
     </div>

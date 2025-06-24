@@ -1,39 +1,81 @@
+// Components/Profile/OverviewCards.jsx
 import React from 'react';
-import { BookOpen, Award, Clock, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import BaseCard from './BaseCard';
 import './OverviewCards.css';
 
-const OverviewCards = () => {
-  const statsCards = [
-    {
-      title: "Total Credits",
-      value: "86",
-      icon: <BookOpen />,
-      gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
-    },
-    {
-      title: "Completed Courses", 
-      value: "24",
-      icon: <Award />,
-      gradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)"
-    },
-    {
-      title: "Pending Requests",
-      value: "1", 
-      icon: <Clock />,
-      gradient: "linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)"
+const OverviewCards = ({ 
+  statsCards, 
+  showProgressCard = true, 
+  progressData,
+  entityType = "student",
+  className = "",
+  cardClassName = "",
+  onCardClick
+}) => {
+  // Generate progress data based on entity type
+  const generateProgressData = () => {
+    if (entityType === "student") {
+      return {
+        title: "Academic Progress",
+        items: [
+          {
+            label: "Degree Progress",
+            value: "71%",
+            percentage: 71,
+            barColor: "blue"
+          },
+          {
+            label: "GPA Trend",
+            value: "+0.12",
+            percentage: 85,
+            barColor: "green",
+            showTrend: true
+          }
+        ]
+      };
+    } else {
+      return {
+        title: "Teaching Performance",
+        items: [
+          {
+            label: "Course Load",
+            value: "85%",
+            percentage: 85,
+            barColor: "blue"
+          },
+          {
+            label: "Rating Trend",
+            value: "+0.3",
+            percentage: 92,
+            barColor: "green",
+            showTrend: true
+          }
+        ]
+      };
     }
-  ];
+  };
+
+  const progressInfo = progressData || generateProgressData();
+
+  // Handle card clicks
+  const handleCardClick = (card, index) => {
+    if (onCardClick) {
+      onCardClick(card, index);
+    }
+  };
 
   return (
-    <div className="overview-cards-container">
+    <div className={`overview-cards-container ${className}`}>
       <div className="overview-cards-grid">
-        {statsCards.map((card, index) => (
+        {statsCards?.map((card, index) => (
           <BaseCard
-            key={index}
+            key={card.id || index}
             variant="gradient"
-            className="overview-stat-card"
+            className={`overview-stat-card ${cardClassName}`}
             gradient={card.gradient}
+            onClick={() => handleCardClick(card, index)}
+            style={{ cursor: onCardClick ? 'pointer' : 'default' }}
           >
             <div className="overview-card-content">
               <div className="overview-card-info">
@@ -47,36 +89,34 @@ const OverviewCards = () => {
           </BaseCard>
         ))}
         
-        {/* Academic Progress Card */}
-        <BaseCard
-          title="Academic Progress"
-          className="progress-card"
-          icon={<div className="progress-icon-bar"></div>}
-        >
-          <div className="progress-items">
-            <div className="progress-item">
-              <div className="progress-header">
-                <span>Degree Progress</span>
-                <span>71%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill-blue" style={{ width: "71%" }}></div>
-              </div>
+        {/* Progress Card */}
+        {showProgressCard && (
+          <BaseCard
+            title={progressInfo.title}
+            className={`progress-card ${cardClassName}`}
+            icon={<div className="progress-icon-bar"></div>}
+          >
+            <div className="progress-items">
+              {progressInfo.items.map((item, index) => (
+                <div key={index} className="progress-item">
+                  <div className="progress-header">
+                    <span>{item.label}</span>
+                    <span className={item.showTrend ? "progress-trend" : ""}>
+                      {item.showTrend && <TrendingUp />}
+                      {item.value}
+                    </span>
+                  </div>
+                  <div className="progress-bar">
+                    <div 
+                      className={`progress-fill-${item.barColor}`} 
+                      style={{ width: `${item.percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="progress-item">
-              <div className="progress-header">
-                <span>GPA Trend</span>
-                <span className="progress-trend">
-                  <TrendingUp />
-                  +0.12
-                </span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill-green" style={{ width: "85%" }}></div>
-              </div>
-            </div>
-          </div>
-        </BaseCard>
+          </BaseCard>
+        )}
       </div>
     </div>
   );

@@ -19,7 +19,8 @@ import {
   Zap
 } from 'lucide-react';
 import styles from './ScrollListItem.module.css';
-
+import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 const ScrollListItem = ({
   item,
   variant = 'default',
@@ -32,12 +33,14 @@ const ScrollListItem = ({
   onDelete,
   onView,
   onShare,
+  onClick,
   onToggleComplete,
   className = '',
   customFields = [],
   ...props
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate(); 
 
   // Variant configurations
   const variants = {

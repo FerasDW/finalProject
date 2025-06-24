@@ -1,205 +1,159 @@
-import React from "react";
-import WeeklyCalendar from "../../../View/Components/BigCalendar/WeeklyCalendar.jsx";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import {upcomingAssignments} from "../../../Static/dashboardData.js";
-import "./calendar.css";
-import { SAMPLE_EVENTS } from "../../../Static/CalendarEvents.js";
+import React, { useState } from "react";
+import WeeklyCalendar from "../../Components/BigCalendar/WeeklyCalendar";
+import MiniCalendar from "../../Components/BigCalendar/MiniCalendar";
+import ScrollList from "../../Components/ScrollList/ScrollList";
+import ScrollListItem from "../../Components/ScrollList/ScrollListItem";
+import { upcomingAssignments } from "../../../Static/dashboardContentData";
+import Popup from "../../Components/Cards/PopUp";
+import DynamicForm from "../../Components/Forms/dynamicForm";
+import assignmentFields from "../../../Static/AssigmentsFields";
+const CalendarDashboard = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [assignments, setAssignments] = useState(upcomingAssignments); 
+  const [isPopupOpen,   setPopupOpen]   = useState(false);
+    const [popupMode,     setPopupMode]   = useState("add"); // "add" | "edit"
+    const [editingItem,   setEditingItem] = useState(null);  
 
-export default function Calendar() {
-    return (
-        
-                <WeeklyCalendar  events={SAMPLE_EVENTS}/>
-           
-    );
-}
+  const openAddPopup  = () => { setPopupMode("add");  setEditingItem(null);  setPopupOpen(true); };
+  const openEditPopup = (item) => { console.log(item); setPopupMode("edit"); setEditingItem(item); setPopupOpen(true); };
+  const closePopup    = () => setPopupOpen(false);
 
-// import React, { useState } from 'react';
-// import { Plus, Calendar, Brain, Target } from 'lucide-react';
-// import ScrollList from '../../Components/ScrollList/ScrollList';
-// import ScrollListItem from '../../Components/ScrollList/ScrollListItem';
-// import "./calendar.css";
-// import { SAMPLE_EVENTS } from "../../../Static/CalendarEvents.js";
-// import WeeklyCalendar from "../../../View/Components/BigCalendar/WeeklyCalendar.jsx";
+  /** Add new OR update existing */
+  const handleFormSubmit = (data) => {
+    if (popupMode === "add") {
+      setAssignments((prev) => [
+        ...prev,
+        { ...data, id: Date.now() }   // מזהה דמה
+      ]);
+    } else {
+      setAssignments((prev) =>
+        prev.map((a) => (a.id === editingItem.id ? { ...editingItem, ...data } : a))
+      );
+    }
+    closePopup();
+  };
 
-// const AcademicDashboard = () => {
-//   const [assignments, setAssignments] = useState([
-//     {
-//       id: 1,
-//       title: 'Calculus Integration Project',
-//       description: 'Complete advanced integration techniques including substitution, integration by parts, and partial fractions.',
-//       course: 'Mathematics',
-//       type: 'assignment',
-//       dueDate: '2025-06-25',
-//       dueTime: '23:59',
-//       progress: 75,
-//       status: 'in-progress',
-//       priority: 'high',
-//       instructor: 'Dr. Sarah Chen',
-//       difficulty: 'Advanced',
-//       credits: 4,
-//       semester: 'Fall 2024'
-//     },
-//     {
-//       id: 2,
-//       title: 'Chemistry Lab Report',
-//       description: 'Analyze spectroscopic data and write comprehensive lab report on organic synthesis.',
-//       course: 'Chemistry',
-//       type: 'project',
-//       dueDate: '2025-06-20',
-//       dueTime: '17:00',
-//       progress: 90,
-//       status: 'pending',
-//       priority: 'medium',
-//       instructor: 'Prof. Johnson',
-//       difficulty: 'Intermediate',
-//       credits: 3,
-//       semester: 'Fall 2024'
-//     },
-//     {
-//       id: 3,
-//       title: 'Physics Midterm Exam',
-//       description: 'Comprehensive exam covering mechanics, thermodynamics, and wave physics.',
-//       course: 'Physics',
-//       type: 'exam',
-//       dueDate: '2025-06-18',
-//       dueTime: '10:00',
-//       progress: 100,
-//       status: 'completed',
-//       priority: 'urgent',
-//       instructor: 'Dr. Wilson',
-//       difficulty: 'Advanced',
-//       credits: 4,
-//       semester: 'Fall 2024'
-//     }
-//   ]);
+  return (
+    <div
+      style={{
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        backgroundColor: "#f8fafc",
+        minHeight: "250vh",
+        padding: "24px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            marginBottom: "32px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "32px",
+              fontWeight: "800",
+              color: "#1f2937",
+              margin: "0 0 8px 0",
+              letterSpacing: "-0.025em",
+            }}
+          >
+            Academic Calendar
+          </h1>
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#64748b",
+              margin: 0,
+            }}
+          >
+            Manage your schedule, assignments, and upcoming events
+          </p>
+        </div>
 
-//   const getDaysUntilDue = (dueDate) => {
-//     const today = new Date();
-//     const due = new Date(dueDate);
-//     const diffTime = due - today;
-//     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-//   };
+        {/* Main Grid Layout */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 350px",
+            gap: "32px",
+            alignItems: "start",
+          }}
+        >
+          {/* Left Column - Weekly Calendar */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+            }}
+          >
+            <WeeklyCalendar currentDate={currentDate} />
+          </div>
 
-//   const academicFilters = [
-//     {
-//       key: 'active',
-//       label: 'Active',
-//       count: assignments.filter(a => a.status === 'pending' || a.status === 'in-progress').length,
-//       filter: (item) => item.status === 'pending' || item.status === 'in-progress'
-//     },
-//     {
-//       key: 'completed',
-//       label: 'Completed',
-//       count: assignments.filter(a => a.status === 'completed').length,
-//       filter: (item) => item.status === 'completed'
-//     },
-//     {
-//       key: 'overdue',
-//       label: 'Overdue',
-//       count: assignments.filter(a => getDaysUntilDue(a.dueDate) < 0 && a.status !== 'completed').length,
-//       filter: (item) => getDaysUntilDue(item.dueDate) < 0 && item.status !== 'completed'
-//     }
-//   ];
+          {/* Right Column - Mini Calendar & Assignments */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px",
+            }}
+          >
+            <MiniCalendar
+              currentDate={currentDate}
+              onDateChange={setCurrentDate}
+              onMonthChange={setCurrentDate}
+            />
+            <div style={{ height: "750px" }}>
+              <ScrollList
+                title="Assignments "
+                items={upcomingAssignments}
+                renderItem={(assignment) => (
+                  <ScrollListItem
+                    showActions={true}
+                    item={assignment}
+                    variant={assignment.type}
+                    showProgress={true}
+                    showBadges={true}
+                    showDescription={true}
+                    showFooter={true}
+                          onEdit={() => openEditPopup(assignment)}  
+                          onDelete={() =>
+                            setAssignments((prev) => prev.filter((a) => a.id !== assignment.id))
+                          }
+                  />
+                )}
+                onAddNew={openAddPopup}   
+                showSearch={true}
+                showFilters={true}
+                showStats={true}
+                layout="list" // 'grid' or 'list'
+              />
 
-//   const handleEdit = (assignment) => {
-//     console.log('Edit assignment:', assignment);
-//   };
+              <Popup isOpen={isPopupOpen} onClose={closePopup}>
+                <DynamicForm
+                  title={
+                    popupMode === "add" ? "Add Assignment" : "Edit Assignment"
+                  }
+                  fields={assignmentFields}
+                  initialData={editingItem || {}}
+                  submitText={popupMode === "add" ? "Add" : "Save"}
+                  cancelText="Cancel"
+                  onSubmit={handleFormSubmit}
+                  onCancel={closePopup}
+                />
+              </Popup>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-//   const handleDelete = (id) => {
-//     setAssignments(prev => prev.filter(a => a.id !== id));
-//   };
-
-//   const handleView = (assignment) => {
-//     console.log('View assignment:', assignment);
-//   };
-
-//   const handleToggleComplete = (id) => {
-//     setAssignments(prev => prev.map(a => 
-//       a.id === id 
-//         ? { 
-//             ...a, 
-//             status: a.status === 'completed' ? 'pending' : 'completed',
-//             progress: a.status === 'completed' ? a.progress : 100
-//           }
-//         : a
-//     ));
-//   };
-
-//   const handleAddNew = () => {
-//     const newAssignment = {
-//       id: Date.now(),
-//       title: 'New Assignment',
-//       description: 'Add assignment description...',
-//       course: 'New Course',
-//       type: 'assignment',
-//       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-//       dueTime: '23:59',
-//       progress: 0,
-//       status: 'pending',
-//       priority: 'medium',
-//       instructor: 'Instructor Name',
-//       difficulty: 'Intermediate',
-//       credits: 3,
-//       semester: 'Fall 2024'
-//     };
-//     setAssignments(prev => [...prev, newAssignment]);
-//   };
-
-//   return (
-//     <div style={{ height: '100vh', padding: '20px' ,display: 'flex', flexDirection: 'row', gap: '20px'}}>
-//         <div> 
-//             <WeeklyCalendar  events={SAMPLE_EVENTS}/>
-//         </div>
-//       <ScrollList
-//         title="Academic Dashboard"
-//         subtitle="Track your assignments and academic progress"
-//         items={assignments}
-//         renderItem={(assignment) => (
-//           <ScrollListItem
-//             item={assignment}
-//             variant={assignment.type}
-//             showProgress={true}
-//             showBadges={true}
-//             showDescription={true}
-//             showFooter={true}
-//             onEdit={handleEdit}
-//             onDelete={handleDelete}
-//             onView={handleView}
-//             onToggleComplete={handleToggleComplete}
-//             customFields={[
-//               { key: 'difficulty', label: 'Difficulty', icon: Target }
-//             ]}
-//           />
-//         )}
-//         searchFields={['title', 'course', 'instructor', 'description']}
-//         filters={academicFilters}
-//         onAddNew={handleAddNew}
-//         headerActions={[
-//           {
-//             label: 'Calendar View',
-//             icon: <Calendar size={16} />,
-//             onClick: () => console.log('Calendar view')
-//           },
-//           {
-//             label: 'Study Planner',
-//             icon: <Brain size={16} />,
-//             onClick: () => console.log('Study planner')
-//           }
-//         ]}
-//         emptyState={{
-//           icon: '🎓',
-//           title: 'No assignments yet',
-//           message: 'Add your first assignment to start tracking your academic progress.',
-//           action: {
-//             label: 'Add Assignment',
-//             icon: <Plus size={16} />,
-//             onClick: handleAddNew
-//           }
-//         }}
-//       />
-//     </div>
-//   );
-// };
-
-// export default AcademicDashboard;
+export default CalendarDashboard;
