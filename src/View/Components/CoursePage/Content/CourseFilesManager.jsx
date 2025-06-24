@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import "../../../../CSS/Pages/CoursePage/CourseFilesManager.css";
 import DynamicForm from "../../Forms/dynamicForm.jsx";
+import PopUp from "../../Cards/PopUp.jsx";
 import {
   categoryFields,
   uploadFileFields,
@@ -300,8 +301,13 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
         </div>
       </div>
 
-      {/* Add Category with DynamicForm */}
-      {showAddCategory && (
+      {/* Add Category with PopUp */}
+      <PopUp
+        isOpen={showAddCategory}
+        onClose={() => setShowAddCategory(false)}
+        size="medium"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Add New Category"
           fields={categoryFields}
@@ -314,10 +320,15 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
           submitText="Add Category"
           cancelText="Cancel"
         />
-      )}
+      </PopUp>
 
       {/* File Upload Modal */}
-      {showAddFile && (
+      <PopUp
+        isOpen={showAddFile}
+        onClose={() => setShowAddFile(false)}
+        size="medium"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Upload File"
           fields={uploadFileFields(categories)}
@@ -330,7 +341,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
           submitText="Upload File"
           cancelText="Cancel"
         />
-      )}
+      </PopUp>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useState } from "react";
 import MidPageNavbar from "../../Components/CoursePage/Content/MidPageNavBar";
 import Table from "../../Components/Tables/Table";
 import Modal from "../../Components/Modal/Modal.jsx";
+import PopUp from "../../Components/Cards/PopUp.jsx";
 import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
 
 // Static Data
@@ -497,7 +498,12 @@ const Messages = () => {
       </Modal>
 
       {/* Announcement Modals */}
-      {createAnnouncementModalOpen && (
+      <PopUp
+        isOpen={createAnnouncementModalOpen}
+        onClose={() => setCreateAnnouncementModalOpen(false)}
+        size="large"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Create New Announcement"
           fields={announcementFormFields}
@@ -506,9 +512,14 @@ const Messages = () => {
           submitText="Create Announcement"
           initialData={announcementFormData}
         />
-      )}
+      </PopUp>
 
-      {editAnnouncementModalOpen && (
+      <PopUp
+        isOpen={editAnnouncementModalOpen}
+        onClose={() => setEditAnnouncementModalOpen(false)}
+        size="large"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Edit Announcement"
           fields={announcementFormFields}
@@ -517,7 +528,7 @@ const Messages = () => {
           submitText="Save Changes"
           initialData={announcementFormData}
         />
-      )}
+      </PopUp>
 
       <Modal
         isOpen={viewAnnouncementModalOpen}
@@ -557,7 +568,12 @@ const Messages = () => {
       </Modal>
 
       {/* Template Modals */}
-      {createTemplateModalOpen && (
+      <PopUp
+        isOpen={createTemplateModalOpen}
+        onClose={() => setCreateTemplateModalOpen(false)}
+        size="large"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Create New Template"
           fields={templateFormFields}
@@ -566,9 +582,14 @@ const Messages = () => {
           submitText="Create Template"
           initialData={templateFormData}
         />
-      )}
+      </PopUp>
 
-      {editTemplateModalOpen && (
+      <PopUp
+        isOpen={editTemplateModalOpen}
+        onClose={() => setEditTemplateModalOpen(false)}
+        size="large"
+        showCloseButton={false}
+      >
         <DynamicForm
           title="Edit Template"
           fields={templateFormFields}
@@ -577,7 +598,7 @@ const Messages = () => {
           submitText="Save Changes"
           initialData={templateFormData}
         />
-      )}
+      </PopUp>
 
       <Modal
         isOpen={viewTemplateModalOpen}
@@ -618,19 +639,24 @@ const Messages = () => {
           </div>
         )}
       </Modal>
-      {useTemplateModalOpen && (
-      <DynamicForm
-        title={`Use Template: ${useTemplateFormTitle}`}
-        fields={useTemplateFields}
-        onSubmit={(data) => {
-          console.log("Template used with data:", data);
-          setUseTemplateModalOpen(false);
-        }}
-        onCancel={() => setUseTemplateModalOpen(false)}
-        submitText="Send"
-      />
-    )}
 
+      <PopUp
+        isOpen={useTemplateModalOpen}
+        onClose={() => setUseTemplateModalOpen(false)}
+        size="large"
+        showCloseButton={false}
+      >
+        <DynamicForm
+          title={`Use Template: ${useTemplateFormTitle}`}
+          fields={useTemplateFields}
+          onSubmit={(data) => {
+            console.log("Template used with data:", data);
+            setUseTemplateModalOpen(false);
+          }}
+          onCancel={() => setUseTemplateModalOpen(false)}
+          submitText="Send"
+        />
+      </PopUp>
     </>
   );
 };
