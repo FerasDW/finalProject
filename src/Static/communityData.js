@@ -1,3 +1,4 @@
+// communityData.js
 import Friends from "../Assets/1.png";
 import Groups from "../Assets/2.png";
 import Market from "../Assets/3.png";

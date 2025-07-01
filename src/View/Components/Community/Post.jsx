@@ -8,16 +8,50 @@ import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import { Link, useNavigate } from "react-router-dom";
 import Comments from "./Comments";
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useSavedPosts } from "../../../Context/SavedPostsContext";
+import axios from "axios";
+import { AuthContext } from "../../../Context/AuthContext";
 
 const Post = ({ post }) => {
   const navigate = useNavigate();
+  const { authData } = useContext(AuthContext);
   const [commentOpen, setCommentOpen] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
+  const [commentsCount, setCommentsCount] = useState(0); // Start with 0
   const [menuOpen, setMenuOpen] = useState(false);
   const { savePost, unsavePost, isPostSaved } = useSavedPosts();
   const saved = isPostSaved(post.id);
+
+  // Fetch actual comment count from server
+  useEffect(() => {
+    const fetchCommentCount = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/community/posts/${post.id}/comments`,
+          { withCredentials: true }
+        );
+        setCommentsCount(res.data?.length || 0);
+      } catch (err) {
+        console.error("Failed to fetch comment count:", err);
+        // Fallback to post data if API fails
+        setCommentsCount(post.comments?.length || 0);
+      }
+    };
+
+    fetchCommentCount();
+  }, [post.id, post.comments]);
+
+  // Init liked status on mount or post changes
+  useEffect(() => {
+    if (authData && post.likes?.includes(authData.id)) {
+      setLiked(true);
+    } else {
+      setLiked(false);
+    }
+    setLikeCount(post.likes?.length || 0);
+  }, [authData, post.likes]);
 
   const toggleSave = () => {
     if (saved) {
@@ -32,6 +66,31 @@ const Post = ({ post }) => {
     if (post.groupId) {
       navigate(`/groups/${post.groupId}`);
     }
+  };
+
+  const handleLike = async () => {
+    if (!authData) return;
+
+    try {
+      const res = await axios.put(
+        `http://localhost:8080/api/community/posts/${post.id}/like`,
+        null,
+        {
+          params: { userId: authData.id },
+          withCredentials: true,
+        }
+      );
+
+      const updatedLikes = res.data.likes || [];
+      setLiked(updatedLikes.includes(authData.id));
+      setLikeCount(updatedLikes.length);
+    } catch (err) {
+      console.error("Failed to like post:", err);
+    }
+  };
+
+  const onCommentsUpdate = (newComments) => {
+    setCommentsCount(newComments.length);
   };
 
   return (
@@ -52,8 +111,8 @@ const Post = ({ post }) => {
               </Link>
               {post.groupName && (
                 <div className="groupInfo">
-                  <span 
-                    className="groupName clickable" 
+                  <span
+                    className="groupName clickable"
                     onClick={handleGroupClick}
                   >
                     📍 {post.groupName}
@@ -64,7 +123,6 @@ const Post = ({ post }) => {
             </div>
           </div>
 
-          {/* ⋮ Menu Icon */}
           <div className="more">
             <MoreHorizIcon
               onClick={() => setMenuOpen(!menuOpen)}
@@ -113,18 +171,18 @@ const Post = ({ post }) => {
         </div>
 
         <div className="info">
-          <div className="item" onClick={() => setLiked(!liked)}>
+          <div className="item" onClick={handleLike}>
             {liked ? (
               <FavoriteOutlinedIcon style={{ color: "red" }} />
             ) : (
               <FavoriteBorderOutlinedIcon />
             )}
-            {liked ? "13 Likes" : "12 Likes"}
+            {likeCount} {likeCount === 1 ? "Like" : "Likes"}
           </div>
 
           <div className="item" onClick={() => setCommentOpen(!commentOpen)}>
             <TextsmsOutlinedIcon />
-            12 Comments
+            {commentsCount} {commentsCount === 1 ? "Comment" : "Comments"}
           </div>
 
           <div className="item">
@@ -133,7 +191,7 @@ const Post = ({ post }) => {
           </div>
         </div>
 
-        {commentOpen && <Comments />}
+        {commentOpen && <Comments postId={post.id} onCommentsUpdate={onCommentsUpdate} />}
       </div>
     </div>
   );

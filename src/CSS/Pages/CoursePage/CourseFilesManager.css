@@ -28,9 +28,10 @@
 
 /* Sidebar */
 .categories-sidebar {
-  background: #f9fafb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .categories-sidebar-title {
@@ -139,6 +140,7 @@
   border-radius: 12px;
   padding: 20px;
   border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Search */
@@ -150,6 +152,7 @@
 
 .search-input-wrapper {
   position: relative;
+  flex: 1;
 }
 
 .search-icon {
@@ -166,12 +169,14 @@
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 14px;
+  background: #fafbfc;
 }
 
 .search-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
 }
 
 /* Files Grid */
@@ -181,95 +186,235 @@
   gap: 20px;
 }
 
+/* Enhanced File Cards */
 .file-card {
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
-  transition: all 0.2s;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.file-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .file-card:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
+.file-card:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced File Icons */
 .file-icon-container {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 .file-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  background: #f3f4f6;
-  border-radius: 8px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.file-card:hover .file-icon-wrapper {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* File Icon Colors by Type */
+.file-icon.presentation {
+  color: #ffffff;
+}
+
+.file-icon.document {
+  color: #ffffff;
+}
+
+.file-icon.video {
+  color: #ffffff;
+}
+
+.file-icon.audio {
+  color: #ffffff;
+}
+
+.file-icon.default {
+  color: #ffffff;
+}
+
+
+/* Enhanced File Info */
+.file-info {
+  margin-bottom: 20px;
 }
 
 .file-name {
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0 0 5px 0;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
   color: #1f2937;
+  line-height: 1.4;
 }
 
-.file-size, .file-date {
-  font-size: 12px;
+.file-size {
+  font-size: 13px;
   color: #6b7280;
-  margin: 2px 0;
+  margin: 4px 0;
+  font-weight: 500;
 }
 
+.file-date {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 4px 0;
+}
+
+/* Enhanced File Actions */
 .file-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 15px;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .file-action-btn {
-  padding: 6px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #f8fafc;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: all 0.2s;
+  gap: 6px;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
 }
 
-.file-action-btn:hover { background: #f9fafb; }
-.file-action-btn.delete:hover { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+.file-action-btn.download {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
 
-/* Upload Zone */
+.file-action-btn.download:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.file-action-btn.delete {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #6b7280;
+  border: 1px solid #e2e8f0;
+}
+
+.file-action-btn.delete:hover {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #dc2626;
+  border-color: #fca5a5;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+/* Enhanced Upload Zone */
 .upload-zone {
-  border: 2px dashed #d1d5db;
-  border-radius: 12px;
-  padding: 40px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 48px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .upload-zone:hover {
   border-color: #3b82f6;
-  background: #eff6ff;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
 }
 
-.upload-icon { color: #9ca3af; margin-bottom: 10px; }
-.upload-title { font-weight: 500; color: #1f2937; margin: 0; }
-.upload-subtitle { font-size: 12px; color: #6b7280; margin: 5px 0 0 0; }
+.upload-zone:hover::before {
+  opacity: 1;
+}
+
+.upload-icon {
+  color: #3b82f6;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover .upload-icon {
+  transform: scale(1.1);
+  color: #2563eb;
+}
+
+.upload-title {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
+
+.upload-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 80px 20px;
   color: #9ca3af;
 }
 
-.empty-icon { margin-bottom: 15px; }
-.empty-text { margin: 0; font-size: 16px; }
+.empty-icon {
+  margin-bottom: 20px;
+  color: #cbd5e1;
+}
+
+.empty-text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #6b7280;
+}
 
 /* Modals */
 .modal-overlay {

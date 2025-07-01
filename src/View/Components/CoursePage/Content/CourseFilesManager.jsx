@@ -30,6 +30,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddFile, setShowAddFile] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
@@ -56,7 +57,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
 
   const handleDownloadFile = (file) => {
     if (file.url) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = file.url;
       link.download = file.name;
       document.body.appendChild(link);
@@ -64,23 +65,58 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
       document.body.removeChild(link);
     } else {
       // Fallback if no URL - could call an API endpoint
-      console.error('No download URL available for file:', file.name);
+      console.error("No download URL available for file:", file.name);
       // You could show a toast notification here
     }
   };
 
+  const handleEditCategory = (category) => {
+    setEditingCategory(category);
+    setNewCategory({
+      name: category.name,
+      description: category.description,
+      color: category.color,
+    });
+    setShowAddCategory(true);
+  };
+
   const handleAddCategory = (data) => {
     if (data.name?.trim()) {
-      const category = {
-        id: Date.now(),
-        name: data.name,
-        description: data.description || "",
-        color: data.color || "#3b82f6",
-        files: [],
-      };
-      setCategories([...categories, category]);
+      if (editingCategory) {
+        // Edit existing category
+        setCategories(
+          categories.map((cat) =>
+            cat.id === editingCategory.id
+              ? {
+                  ...cat,
+                  name: data.name,
+                  description: data.description || "",
+                  color: data.color || "#3b82f6",
+                }
+              : cat
+          )
+        );
+        setEditingCategory(null);
+      } else {
+        // Add new category
+        const category = {
+          id: Date.now(),
+          name: data.name,
+          description: data.description || "",
+          color: data.color || "#3b82f6",
+          files: [],
+        };
+        setCategories([...categories, category]);
+      }
       setShowAddCategory(false);
+      setNewCategory({ name: "", description: "", color: "#3b82f6" });
     }
+  };
+
+  const handleCloseAddCategory = () => {
+    setShowAddCategory(false);
+    setEditingCategory(null);
+    setNewCategory({ name: "", description: "", color: "#3b82f6" });
   };
 
   const handleDeleteCategory = (categoryId) => {
@@ -112,7 +148,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
       size: (file.size / 1024 / 1024).toFixed(2) + " MB",
       uploadDate: new Date().toISOString().split("T")[0],
       type: "document",
-      url: URL.createObjectURL(file) // Create a temporary URL for the uploaded file
+      url: URL.createObjectURL(file), // Create a temporary URL for the uploaded file
     };
 
     setCategories(
@@ -170,7 +206,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Edit category logic
+                            handleEditCategory(category);
                           }}
                           className="action-btn"
                         >
@@ -237,7 +273,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
           {activeCategory ? (
             <div className="files-grid">
               {filteredFiles.map((file) => (
-                <div key={file.id} className="file-card">
+                <div key={file.id} className="file-card" data-file-type={file.type}>
                   {/* File Icon */}
                   <div className="file-icon-container">
                     <div className="file-icon-wrapper">
@@ -254,11 +290,7 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
 
                   {/* Actions */}
                   <div className="file-actions">
-                    <button className="file-action-btn view">
-                      <Eye size={16} />
-                      View
-                    </button>
-                    <button 
+                    <button
                       className="file-action-btn download"
                       onClick={() => handleDownloadFile(file)}
                     >
@@ -301,23 +333,22 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
         </div>
       </div>
 
-      {/* Add Category with PopUp */}
+      {/* Add/Edit Category with PopUp */}
       <PopUp
         isOpen={showAddCategory}
-        onClose={() => setShowAddCategory(false)}
+        onClose={handleCloseAddCategory}
         size="medium"
         showCloseButton={false}
       >
         <DynamicForm
-          title="Add New Category"
+          title={editingCategory ? "Edit Category" : "Add New Category"}
           fields={categoryFields}
           initialData={newCategory}
           onSubmit={(data) => {
             handleAddCategory(data);
-            setShowAddCategory(false);
           }}
-          onCancel={() => setShowAddCategory(false)}
-          submitText="Add Category"
+          onCancel={handleCloseAddCategory}
+          submitText={editingCategory ? "Update Category" : "Add Category"}
           cancelText="Cancel"
         />
       </PopUp>

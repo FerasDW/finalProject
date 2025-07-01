@@ -16,7 +16,6 @@ const ProgressBar = ({ progress }) => {
     borderRadius: '12px',
     overflow: 'hidden',
     width: '100%',
-    maxWidth: '400px',
   };
 
   return (

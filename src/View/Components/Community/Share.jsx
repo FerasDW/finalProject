@@ -1,25 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import "../../../CSS/Components/Community/share.scss";
 import ImageIcon from "../../../Assets/img.png";
 import MapIcon from "../../../Assets/map.png";
-import FriendIcon from "../../../Assets/friend.png";
+import { AuthContext } from "../../../Context/AuthContext";
+import axios from "axios";
 
 const Share = ({ onShare }) => {
-  const currentUser = {
-    id: 1,
-    name: "Muhammed Taha",
-    profilePic:
-      "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg",
-  };
+  const { authData } = useContext(AuthContext);
 
   const [desc, setDesc] = useState("");
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [file, setFile] = useState(null);
 
   const handleImageChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
-      setImage(URL.createObjectURL(selected));
+      setImageFile(selected);
+      setImagePreview(URL.createObjectURL(selected));
     }
   };
 
@@ -30,46 +28,74 @@ const Share = ({ onShare }) => {
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!desc.trim()) return;
 
-    const newPost = {
-      id: Date.now(),
-      userId: currentUser.id,
-      name: currentUser.name,
-      profilePic: currentUser.profilePic,
-      desc,
-      img: image,
-      file: file
-        ? {
-            name: file.name,
-            url: URL.createObjectURL(file), // simulate upload
-          }
-        : null,
-    };
+    if (!authData) {
+      alert("You must be logged in to share a post.");
+      return;
+    }
 
-    onShare(newPost);
-    setDesc("");
-    setImage(null);
-    setFile(null);
+    try {
+      // Prepare data to send to backend
+      // Note: backend expects URLs for images/files — 
+      // here you’d normally upload files first to get URLs.
+      // For simplicity, we'll send the file name only and null URLs,
+      // you should implement proper file upload separately.
+
+      const postPayload = {
+        desc,
+        img: imagePreview, // temporary preview URL (won't be accessible by backend)
+        file: file
+          ? {
+              name: file.name,
+              url: null, // replace with actual uploaded file URL when you implement upload
+            }
+          : null,
+        userId: authData.id,
+        name: authData.name,
+        role: authData.role,
+        profilePic: authData.profilePic,
+        groupId: null,
+        groupName: null,
+      };
+
+      const response = await axios.post(
+        "http://localhost:8080/api/community/posts",
+        postPayload,
+        { withCredentials: true }
+      );
+
+      // Use the post returned from backend (with real id, timestamps, etc)
+      onShare(response.data);
+
+      // Reset form fields
+      setDesc("");
+      setImageFile(null);
+      setImagePreview(null);
+      setFile(null);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      alert("Failed to share post. Please try again.");
+    }
   };
 
   return (
     <div className="share">
       <div className="shareContainer">
         <div className="top">
-          <img src={currentUser.profilePic} alt="" />
+          <img src={authData?.profilePic || ""} alt="" />
           <input
             type="text"
-            placeholder={`What's on your mind, ${currentUser.name}?`}
+            placeholder={`What's on your mind, ${authData?.name || "User"}?`}
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
           />
         </div>
 
-        {image && (
+        {imagePreview && (
           <div className="previewImage">
-            <img src={image} alt="Preview" />
+            <img src={imagePreview} alt="Preview" />
           </div>
         )}
 

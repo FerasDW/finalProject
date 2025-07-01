@@ -67,20 +67,12 @@ const CourseDetails = ({ courseData }) => {
         <div className="progress-section">
           <div className="progress-header">
             <span className="progress-label">Course Progress</span>
-            <span className="progress-percentage">80%</span>
           </div>
           <div className="progress-bar">
             <ProgressBar progress={80} />
           </div>
-          <div className="progress-milestones">
-            <span className="milestone completed">Enrolled</span>
-            <span className="milestone completed">In Progress</span>
-            <span className="milestone">Completed</span>
-          </div>
         </div>
       </div>
-
-      <div className="divider"></div>
 
       <div className="course-data">
         <div className="course-details-grid">
