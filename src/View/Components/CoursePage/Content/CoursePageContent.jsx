@@ -4,8 +4,8 @@ import Box from "../../Dashboard/Content/Box";
 import CourseDetails from "../CourseDetails";
 import PieChart from "../../Charts/pieCharts";
 import BarChart from "../../Charts/barChart";
+import LineChart from "../../Charts/lineChart";
 import StudentTable from "../../Tables/Table";
-import Card from "./CourseMaterialCards";
 import studentsData from "../../../../Static/students.js";
 import {
   getContentConfig,
@@ -21,34 +21,74 @@ import {
 } from "../../../../Static/formsInputs.js";
 
 const CoursePageContent = ({ courseData, userRole = "1100" }) => {
+  
   const [activeSection, setActiveSection] = useState("charts");
   const [selectedYear, setSelectedYear] = useState("");
 
   // Get course-specific data
   const courseId = courseData?.id;
   const contentConfig = courseId ? getContentConfig(courseId, userRole) : null;
-  const attendanceData = courseId
-    ? getCourseChartData(courseId, "attendance")
-    : [];
-  const barChartData = courseId ? getCourseChartData(courseId, "bar") : [];
+  const gradeDistributionData = courseId ? getCourseChartData(courseId, "gradeDistribution", selectedYear) : [];
+  const assignmentProgressData = courseId ? getCourseChartData(courseId, "assignmentProgress", selectedYear) : [];
   const courseMaterials = courseId ? getCourseMaterials(courseId) : [];
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [students, setStudents] = useState(studentsData);
 
-  // Fallback data if course not found or no specific data
-  const fallbackAttendanceData = [
-    { id: "Attended", label: "Attended", value: 75 },
-    { id: "Missed", label: "Missed", value: 25 },
+  // FIXED: Fallback data that matches your BarChart structure
+  const fallbackGradeData = [
+    {
+      Group: "A (90-100)",
+      "First year": 8,
+      "Second year": 0,
+      "Third year": 0
+    },
+    {
+      Group: "B (80-89)",
+      "First year": 15,
+      "Second year": 0,
+      "Third year": 0
+    },
+    {
+      Group: "C (70-79)",
+      "First year": 10,
+      "Second year": 0,
+      "Third year": 0
+    },
+    {
+      Group: "D (60-69)",
+      "First year": 3,
+      "Second year": 0,
+      "Third year": 0
+    },
+    {
+      Group: "F (<60)",
+      "First year": 1,
+      "Second year": 0,
+      "Third year": 0
+    }
   ];
 
-  const fallbackBarData = [
+  const fallbackAssignmentData = [
     {
-      Group: "General",
-      Attended: 70,
-      AttendedColor: "hsl(167, 70%, 50%)",
-      Missed: 30,
-      MissedColor: "hsl(112, 70.20%, 50.00%)",
+      id: "Completed",
+      color: "hsl(167, 70%, 50%)",
+      data: [
+        { x: "Assignment 1", y: 25 },
+        { x: "Assignment 2", y: 28 },
+        { x: "Assignment 3", y: 30 },
+        { x: "Assignment 4", y: 27 }
+      ]
     },
+    {
+      id: "On Time",
+      color: "hsl(210, 70%, 50%)",
+      data: [
+        { x: "Assignment 1", y: 22 },
+        { x: "Assignment 2", y: 25 },
+        { x: "Assignment 3", y: 28 },
+        { x: "Assignment 4", y: 25 }
+      ]
+    }
   ];
 
   const handleAddStudent = (studentData) => {
@@ -159,31 +199,36 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
         return (
           <>
             <div className="row">
+              {/* Grade Distribution Bar Chart */}
               <Box
-                title="Course attendance percentage"
-                chart={
-                  <PieChart
-                    data={
-                      attendanceData.length > 0
-                        ? attendanceData
-                        : fallbackAttendanceData
-                    }
-                  />
-                }
-                gridRow="span 4"
-                gridColumn="span 3"
-              />
-              <Box
-                title="Weekly Attendance Trends"
+                title="Grade Distribution"
                 chart={
                   <BarChart
                     data={
-                      barChartData.length > 0 ? barChartData : fallbackBarData
+                      gradeDistributionData.length > 0
+                        ? gradeDistributionData
+                        : fallbackGradeData
                     }
                   />
                 }
                 gridRow="span 4"
-                gridColumn="span 9"
+                gridColumn="span 6"
+              />
+              
+              {/* Assignment Progress Line Chart */}
+              <Box
+                title="Assignment Progress Timeline"
+                chart={
+                  <LineChart
+                    data={
+                      assignmentProgressData.length > 0
+                        ? assignmentProgressData
+                        : fallbackAssignmentData
+                    }
+                  />
+                }
+                gridRow="span 4"
+                gridColumn="span 6"
               />
             </div>
           </>
@@ -210,7 +255,6 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
         );
       case "files":
         return <CourseFilesManager courseId={courseId} />;
-      // return <Card materials={courseMaterials} />;
       default:
         return null;
     }

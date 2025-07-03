@@ -221,24 +221,6 @@ const Messages = () => {
     }
   };
 
-  const handleDuplicateTemplate = (row) => {
-    const fullTemplate = currentFullTemplates.find((t) => t.id === row.id);
-    if (fullTemplate) {
-      const formData = {
-        name: fullTemplate.name + " (Copy)",
-        category: fullTemplate.category,
-        subject: fullTemplate.subject,
-        content: fullTemplate.content,
-        variables: fullTemplate.variables.join(", "),
-        targetAudience: fullTemplate.targetAudience,
-        status: "draft",
-      };
-      setSelectedTemplate(null);
-      setTemplateFormData(formData);
-      setCreateTemplateModalOpen(true);
-    }
-  };
-
   const handleTemplateSubmit = (formData) => {
     const variablesArray = formData.variables
       ? formData.variables.split(",").map((v) => v.trim()).filter((v) => v)
@@ -406,11 +388,6 @@ const Messages = () => {
               (row) => (
                 <button onClick={() => handleEditTemplate(row)} className="msg-edit-btn">
                   ✏️ Edit
-                </button>
-              ),
-              (row) => (
-                <button onClick={() => handleDuplicateTemplate(row)} className="msg-duplicate-btn">
-                  📋 Duplicate
                 </button>
               ),
             ]}

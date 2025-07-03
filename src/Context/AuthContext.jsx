@@ -1,6 +1,6 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { useCookies } from "react-cookie";
-import { useLocation } from "react-router-dom"; 
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 
 export const AuthContext = createContext();
@@ -9,12 +9,11 @@ export function AuthProvider({ children }) {
   const [cookies, setCookie, removeCookie] = useCookies(["jwtToken"]);
   const [authData, setAuthData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const location = useLocation(); 
+  const location = useLocation();
 
-  
   useEffect(() => {
-    
-    if (location.pathname === "/") return; 
+    if (location.pathname === "/") return;
+
     async function fetchUser() {
       console.log("Fetching user dataaaa...");
       try {
@@ -29,19 +28,27 @@ export function AuthProvider({ children }) {
       }
       setLoading(false);
     }
-    fetchUser();
-  }, [cookies.jwtToken, location.pathname]); 
 
-  
+    fetchUser();
+  }, [cookies.jwtToken, location.pathname]);
+
   const loginUser = (data) => {
     setAuthData(data);
-    setCookie("jwtToken", data.token, { path: "/", secure: false, httpOnly: false, maxAge: 7 * 24 * 60 * 60 });
+    setCookie("jwtToken", data.token, {
+      path: "/",
+      secure: false,
+      httpOnly: false,
+      maxAge: 7 * 24 * 60 * 60,
+    });
   };
 
-  
   const logoutUser = async () => {
     try {
-      await axios.post("http://localhost:8080/api/logout", {}, { withCredentials: true });
+      await axios.post(
+        "http://localhost:8080/api/logout",
+        {},
+        { withCredentials: true }
+      );
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -54,4 +61,13 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// ✅ Add and export this custom hook
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }

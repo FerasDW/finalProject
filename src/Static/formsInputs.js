@@ -6,83 +6,99 @@ export const reportsForm = {
   placeholder: "Enter your report query here...",
 };
 
+import { getAllGroups, semesterOptions } from "./coursesData";
+
 export const courseFields = [
   {
-    name: 'title',
-    label: 'Course Title',
-    type: 'text',
-    placeholder: 'Enter course title',
+    name: "title",
+    label: "Course Title",
+    type: "text",
+    placeholder: "Enter course title",
     required: true,
   },
   {
-    name: 'code',
-    label: 'Course Code',
-    type: 'text',
-    placeholder: 'e.g., CS101',
+    name: "code",
+    label: "Course Code",
+    type: "text",
+    placeholder: "e.g., CS101",
     required: true,
   },
   {
-    name: 'year',
-    label: 'Year',
-    type: 'select',
-    options: [
-      { label: 'First Year', value: '1' },
-      { label: 'Second Year', value: '2' },
-      { label: 'Third Year', value: '3' },
-      { label: 'Fourth Year', value: '4' },
-    ],
+    name: "group",
+    label: "Program Group",
+    type: "select",
+    options: getAllGroups(),
     required: true,
   },
   {
-    name: 'semester',
-    label: 'Semester',
-    type: 'select',
-    options: [
-      { label: 'First Semester', value: '1' },
-      { label: 'Second Semester', value: '2' },
-    ],
+    name: "year", // fix
+    label: "Academic Year", //
+    type: "select",
+    options: [],
+    required: true,
+    dependsOn: "group",
+  },
+  {
+    name: "semester",
+    label: "Semester",
+    type: "select",
+    options: semesterOptions,
     required: true,
   },
   {
-    name: 'group',
-    label: 'Program Group',
-    type: 'select',
-    options: [
-      { label: 'Information Systems', value: 'Information Systems' },
-      { label: 'Certificate IT', value: 'Certificate IT' },
-      { label: 'Business Diploma', value: 'Business Diploma' },
-      { label: 'Nursing', value: 'Nursing' },
-    ],
+    name: "academicYear", // fix
+    label: "Year", //
+    type: "number",
+    value: new Date().getFullYear(),
     required: true,
+    disabled: true, 
   },
   {
-    name: 'students',
-    label: 'Number of Students',
-    type: 'number',
-    placeholder: 'e.g., 30',
+    name: "students",
+    label: "Maximum Students",
+    type: "number",
+    placeholder: "e.g., 30",
     required: false,
   },
   {
-    name: 'lessons',
-    label: 'Number of Lessons',
-    type: 'number',
-    placeholder: 'e.g., 12',
+    name: "lessons",
+    label: "Number of Lessons",
+    type: "number",
+    placeholder: "e.g., 12",
     required: false,
   },
   {
-    name: 'rating',
-    label: 'Rating',
-    type: 'number',
-    placeholder: 'e.g., 4.5',
+    name: "credits",
+    label: "Credits",
+    type: "number",
+    placeholder: "e.g., 3",
     required: false,
   },
   {
-    name: 'img',
-    label: 'Image URL',
-    type: 'text',
-    placeholder: 'Enter image URL',
+    // fix to select instructor by the group 
+    name: "instructor", 
+    label: "Instructor",
+    type: "text",
+    placeholder: "Enter instructor name",
     required: false,
-  }
+  },
+  {
+    name: "description",
+    label: "Description",
+    type: "textarea",
+    placeholder: "Enter course description",
+    required: false,
+    rows: 3,
+  },
+  {
+    name: "img",
+    label: "Image URL",
+    type: "text",
+    placeholder: "Enter image URL",
+    required: false,
+  },
+
+  // add checkbox selectable (yes or no) for the course // קורס בחירה
 ];
 
 // cvFormFields.js
@@ -92,213 +108,213 @@ export const cvFormFields = [
     label: "Full Name",
     type: "text",
     placeholder: "Enter your full name",
-    required: true
+    required: true,
   },
   {
     name: "title",
     label: "Professional Title",
     type: "text",
     placeholder: "e.g., Software Engineer, Marketing Manager",
-    required: true
+    required: true,
   },
   {
     name: "summary",
     label: "Professional Summary",
     type: "textarea",
     placeholder: "Write a brief professional summary about yourself",
-    required: false
+    required: false,
   },
   {
     name: "education",
     label: "Education",
     type: "textarea",
     placeholder: "List your educational background",
-    required: false
+    required: false,
   },
   {
     name: "experience",
     label: "Work Experience",
     type: "textarea",
     placeholder: "Describe your work experience",
-    required: false
+    required: false,
   },
   {
     name: "skills",
     label: "Skills",
     type: "textarea",
     placeholder: "List your skills (comma separated)",
-    required: false
+    required: false,
   },
   {
     name: "links",
     label: "Links",
     type: "text",
     placeholder: "LinkedIn, Portfolio, etc.",
-    required: false
-  }
+    required: false,
+  },
 ];
 
 export const categoryFields = [
   {
-    name: 'name',
-    label: 'Category Name',
-    placeholder: 'e.g., Presentations, Assignments...',
+    name: "name",
+    label: "Category Name",
+    placeholder: "e.g., Presentations, Assignments...",
     required: true,
   },
   {
-    name: 'description',
-    label: 'Description',
-    type: 'textarea',
-    placeholder: 'Brief description of this category...',
+    name: "description",
+    label: "Description",
+    type: "textarea",
+    placeholder: "Brief description of this category...",
     rows: 3,
   },
   {
-    name: 'color',
-    label: 'Color',
-    type: 'radio',
+    name: "color",
+    label: "Color",
+    type: "radio",
     options: [
-      { value: '#3b82f6', label: 'Blue' },
-      { value: '#10b981', label: 'Green' },
-      { value: '#f59e0b', label: 'Yellow' },
-      { value: '#ef4444', label: 'Red' },
-      { value: '#8b5cf6', label: 'Purple' },
-      { value: '#06b6d4', label: 'Cyan' },
+      { value: "#3b82f6", label: "Blue" },
+      { value: "#10b981", label: "Green" },
+      { value: "#f59e0b", label: "Yellow" },
+      { value: "#ef4444", label: "Red" },
+      { value: "#8b5cf6", label: "Purple" },
+      { value: "#06b6d4", label: "Cyan" },
     ],
     required: true,
-  }
+  },
 ];
 
 export const uploadFileFields = (categories) => [
   {
-    name: 'categoryId',
-    label: 'Select Category',
-    type: 'select',
-    placeholder: 'Choose a category...',
-    options: categories.map(cat => ({
+    name: "categoryId",
+    label: "Select Category",
+    type: "select",
+    placeholder: "Choose a category...",
+    options: categories.map((cat) => ({
       value: cat.id,
-      label: cat.name
+      label: cat.name,
     })),
     required: true,
   },
   {
-    name: 'file',
-    label: 'Choose File',
-    type: 'file',
+    name: "file",
+    label: "Choose File",
+    type: "file",
     accept: ".pdf,.docx,.pptx,.txt",
     required: true,
-  }
+  },
 ];
 
 export const studentFormFields = [
   {
-    name: 'photo',
-    label: 'Profile Photo URL',
-    type: 'url',
-    placeholder: 'https://example.com/photo.jpg',
-    required: false
+    name: "photo",
+    label: "Profile Photo URL",
+    type: "url",
+    placeholder: "https://example.com/photo.jpg",
+    required: false,
   },
   {
-    name: 'name',
-    label: 'Full Name',
-    type: 'text',
-    placeholder: 'Enter student full name',
-    required: true
+    name: "name",
+    label: "Full Name",
+    type: "text",
+    placeholder: "Enter student full name",
+    required: true,
   },
   {
-    name: 'email',
-    label: 'Email Address',
-    type: 'email',
-    placeholder: 'student@example.com',
-    required: true
+    name: "email",
+    label: "Email Address",
+    type: "email",
+    placeholder: "student@example.com",
+    required: true,
   },
   {
-    name: 'division',
-    label: 'Division',
-    type: 'select',
+    name: "division",
+    label: "Division",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Division' },
-      { value: 'computer-science', label: 'Computer Science' },
-      { value: 'engineering', label: 'Engineering' },
-      { value: 'mathematics', label: 'Mathematics' },
-      { value: 'physics', label: 'Physics' },
-      { value: 'chemistry', label: 'Chemistry' }
-    ]
+      { value: "", label: "Select Division" },
+      { value: "computer-science", label: "Computer Science" },
+      { value: "engineering", label: "Engineering" },
+      { value: "mathematics", label: "Mathematics" },
+      { value: "physics", label: "Physics" },
+      { value: "chemistry", label: "Chemistry" },
+    ],
   },
   {
-    name: 'academicYear',
-    label: 'Academic Year',
-    type: 'select',
+    name: "academicYear",
+    label: "Academic Year",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Academic Year' },
-      { value: '2023-24', label: '2023-24' },
-      { value: '2024-25', label: '2024-25' },
-      { value: '2025-26', label: '2025-26' }
-    ]
+      { value: "", label: "Select Academic Year" },
+      { value: "2023-24", label: "2023-24" },
+      { value: "2024-25", label: "2024-25" },
+      { value: "2025-26", label: "2025-26" },
+    ],
   },
   {
-    name: 'learningGroup',
-    label: 'Learning Group',
-    type: 'select',
+    name: "learningGroup",
+    label: "Learning Group",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Learning Group' },
-      { value: 'group-a', label: 'Group A' },
-      { value: 'group-b', label: 'Group B' },
-      { value: 'group-c', label: 'Group C' }
-    ]
+      { value: "", label: "Select Learning Group" },
+      { value: "group-a", label: "Group A" },
+      { value: "group-b", label: "Group B" },
+      { value: "group-c", label: "Group C" },
+    ],
   },
   {
-    name: 'graduationYear',
-    label: 'Graduation Year',
-    type: 'select',
+    name: "graduationYear",
+    label: "Graduation Year",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Graduation Year' },
-      { value: '2024', label: '2024' },
-      { value: '2025', label: '2025' },
-      { value: '2026', label: '2026' },
-      { value: '2027', label: '2027' }
-    ]
+      { value: "", label: "Select Graduation Year" },
+      { value: "2024", label: "2024" },
+      { value: "2025", label: "2025" },
+      { value: "2026", label: "2026" },
+      { value: "2027", label: "2027" },
+    ],
   },
   {
-    name: 'yearGroup',
-    label: 'Year Group',
-    type: 'select',
+    name: "yearGroup",
+    label: "Year Group",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Year Group' },
-      { value: 'First Year', label: 'First Year' },
-      { value: 'Second Year', label: 'Second Year' },
-      { value: 'Third Year', label: 'Third Year' },
-      { value: 'Fourth Year', label: 'Fourth Year' }
-    ]
+      { value: "", label: "Select Year Group" },
+      { value: "First Year", label: "First Year" },
+      { value: "Second Year", label: "Second Year" },
+      { value: "Third Year", label: "Third Year" },
+      { value: "Fourth Year", label: "Fourth Year" },
+    ],
   },
   {
-    name: 'status',
-    label: 'Status',
-    type: 'select',
+    name: "status",
+    label: "Status",
+    type: "select",
     required: true,
     options: [
-      { value: '', label: 'Select Status' },
-      { value: 'Active', label: 'Active' },
-      { value: 'Inactive', label: 'Inactive' },
-      { value: 'Graduated', label: 'Graduated' },
-      { value: 'Suspended', label: 'Suspended' }
-    ]
-  }
+      { value: "", label: "Select Status" },
+      { value: "Active", label: "Active" },
+      { value: "Inactive", label: "Inactive" },
+      { value: "Graduated", label: "Graduated" },
+      { value: "Suspended", label: "Suspended" },
+    ],
+  },
 ];
 
 export const studentValidationRules = {
   email: {
     pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    message: 'Please enter a valid email address'
+    message: "Please enter a valid email address",
   },
   photo: {
     pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif)$/i,
-    message: 'Please enter a valid image URL'
-  }
+    message: "Please enter a valid image URL",
+  },
 };
 
 // announcementsFormFields
@@ -309,7 +325,7 @@ export const announcementFormFields = [
     label: "Announcement Title",
     type: "text",
     required: true,
-    placeholder: "Enter announcement title..."
+    placeholder: "Enter announcement title...",
   },
   {
     name: "content",
@@ -317,38 +333,42 @@ export const announcementFormFields = [
     type: "textarea",
     required: true,
     rows: 6,
-    placeholder: "Enter announcement content..."
+    placeholder: "Enter announcement content...",
   },
   {
     name: "targetAudienceType",
     label: "Target Audience",
     type: "select",
     required: true,
-    options: targetAudienceOptions
+    options: targetAudienceOptions,
   },
   {
     name: "priority",
     label: "Priority",
     type: "select",
     required: true,
-    options: priorityOptions
+    options: priorityOptions,
   },
   {
     name: "expiryDate",
     label: "Expiry Date",
     type: "date",
-    required: true
+    required: true,
   },
   {
     name: "scheduledDate",
     label: "Schedule for Later (Optional)",
     type: "datetime-local",
-    required: false
-  }
+    required: false,
+  },
 ];
 
 // messagesFormFields
-import { templateCategoryOptions, templateTargetAudienceOptions, templateStatusOptions } from "./messagesData.js";
+import {
+  templateCategoryOptions,
+  templateTargetAudienceOptions,
+  templateStatusOptions,
+} from "./messagesData.js";
 
 export const templateFormFields = [
   {
@@ -356,21 +376,21 @@ export const templateFormFields = [
     label: "Template Name",
     type: "text",
     required: true,
-    placeholder: "Enter template name..."
+    placeholder: "Enter template name...",
   },
   {
     name: "category",
     label: "Category",
     type: "select",
     required: true,
-    options: templateCategoryOptions
+    options: templateCategoryOptions,
   },
   {
     name: "subject",
     label: "Email Subject",
     type: "text",
     required: true,
-    placeholder: "Enter email subject (use {variable} for dynamic content)..."
+    placeholder: "Enter email subject (use {variable} for dynamic content)...",
   },
   {
     name: "content",
@@ -378,27 +398,28 @@ export const templateFormFields = [
     type: "textarea",
     required: true,
     rows: 8,
-    placeholder: "Enter template content (use {variable} for dynamic content)..."
+    placeholder:
+      "Enter template content (use {variable} for dynamic content)...",
   },
   {
     name: "variables",
     label: "Variables (comma separated)",
     type: "text",
     required: false,
-    placeholder: "e.g., studentName, courseName, date..."
+    placeholder: "e.g., studentName, courseName, date...",
   },
   {
     name: "targetAudience",
     label: "Target Audience",
     type: "select",
     required: true,
-    options: templateTargetAudienceOptions
+    options: templateTargetAudienceOptions,
   },
   {
     name: "status",
     label: "Status",
     type: "select",
     required: true,
-    options: templateStatusOptions
-  }
+    options: templateStatusOptions,
+  },
 ];

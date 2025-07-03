@@ -1,113 +1,156 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import coursesList from "../../../Static/coursesData";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import coursesList, { getYearOptionsForGroup } from "../../../Static/coursesData";
 import CoursesContent from "../../Components/Courses/Content/CoursesContent";
 import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
 import DynamicFilter from "../../Components/DynamicFilter.jsx";
 import { courseFields } from "../../../Static/formsInputs";
-import "../../../CSS/Pages/Courses/courses.css"; // Assuming you have a CSS file for styles
+import "../../../CSS/Pages/Courses/courses.css";
 import Popup from "../../Components/Cards/PopUp.jsx";
+
+// TODO: Consider moving these constants to a separate constants file
+const COURSES_PER_PAGE = 4;
+const DEFAULT_FILTERS = {
+  group: "all",
+  year: "all",
+  semester: "all",
+  academicYear: new Date().getFullYear().toString(),
+};
+
+// TODO: Consider moving utility functions to a separate utils file
+const sortCoursesByYear = (courses) =>
+  [...courses].sort((a, b) => (b.academicYear || 0) - (a.academicYear || 0));
+
+const getUniqueValues = (array, key) =>
+  [...new Set(array.map(item => item[key]).filter(value => value != null))];
+
+const convertToNumbers = (formData, numericFields) => {
+  const result = { ...formData };
+  numericFields.forEach(field => {
+    result[field] = parseInt(formData[field]) || (field === 'credits' ? 0 : 1);
+  });
+  return result;
+};
+
 export default function Courses() {
   const currentYear = new Date().getFullYear().toString();
+  
+  // State management
   const [isCoursePopupOpen, setCoursePopupOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    group: "all",
-    year: "all",
-    semester: "all",
-    academicYear: currentYear,
-  });
-  const [allCourses, setAllCourses] = useState(
-    [...coursesList].sort((a, b) => {
-      const yearA = a.academicYear || 0;
-      const yearB = b.academicYear || 0;
-      return yearB - yearA;
-    })
-  );
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [allCourses, setAllCourses] = useState(() => sortCoursesByYear(coursesList));
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [visibleCourses, setVisibleCourses] = useState([]);
   const [useFilters, setUseFilters] = useState(true);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [dynamicYearOptions, setDynamicYearOptions] = useState([]);
+
+  // Refs for intersection observer
   const observer = useRef();
   const loadMoreRef = useRef();
 
-  // Fixed useMemo with null/undefined checks
-  const courseYears = useMemo(() => {
-    const years = allCourses
-      .map(c => c.academicYear)
-      .filter(year => year !== null && year !== undefined)
-      .map(year => year.toString());
-    return [...new Set(years)];
-  }, [allCourses]);
+  // Memoized computed values
+  const courseYears = useMemo(() => 
+    getUniqueValues(allCourses, 'academicYear').map(String), 
+    [allCourses]
+  );
 
-  const groupOptions = useMemo(() => {
-    const groups = allCourses
-      .map(c => c.group)
-      .filter(group => group !== null && group !== undefined);
-    return [...new Set(groups)];
-  }, [allCourses]);
+  const groupOptions = useMemo(() => 
+    getUniqueValues(allCourses, 'group'), 
+    [allCourses]
+  );
 
-  useEffect(() => {
-    const filtered = allCourses.filter(course => {
-      if (!useFilters) {
+  const filterFields = useMemo(() => [
+    {
+      label: "Group",
+      name: "group",
+      options: [...groupOptions],
+    },
+    {
+      label: "Year",
+      name: "year",
+      options: ["1", "2", "3", "4"],
+    },
+    {
+      label: "Semester",
+      name: "semester",
+      options: ["1", "2"],
+    },
+    {
+      label: "Academic Year",
+      name: "academicYear",
+      options: [...courseYears.sort((a, b) => b - a)],
+    },
+  ], [groupOptions, courseYears]);
+
+  // Course filtering logic
+  const applyFilters = useCallback((courses, currentFilters, query, shouldUseFilters) => {
+    return courses.filter(course => {
+      if (!shouldUseFilters) {
+        const searchTerm = query.toLowerCase();
         return (
-          course.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          course.code?.toLowerCase().includes(searchQuery.toLowerCase())
+          course.title?.toLowerCase().includes(searchTerm) ||
+          course.code?.toLowerCase().includes(searchTerm)
         );
       }
-      
+
       return (
-        (filters.group === "all" || course.group === filters.group) &&
-        (filters.year === "all" || course.year?.toString() === filters.year) &&
-        (filters.semester === "all" || course.semester?.toString() === filters.semester) &&
-        (filters.academicYear === "all" || course.academicYear?.toString() === filters.academicYear)
+        (currentFilters.group === "all" || course.group === currentFilters.group) &&
+        (currentFilters.year === "all" || course.year?.toString() === currentFilters.year) &&
+        (currentFilters.semester === "all" || course.semester?.toString() === currentFilters.semester) &&
+        (currentFilters.academicYear === "all" || course.academicYear?.toString() === currentFilters.academicYear)
       );
     });
-    
-    setFilteredCourses(filtered);
-    setVisibleCourses(filtered.slice(0, 4));
-  }, [filters, searchQuery, useFilters, allCourses]);
+  }, []);
 
-  const handleSearch = () => {
+  // Filter courses whenever dependencies change
+  useEffect(() => {
+    const filtered = applyFilters(allCourses, filters, searchQuery, useFilters);
+    setFilteredCourses(filtered);
+    setVisibleCourses(filtered.slice(0, COURSES_PER_PAGE));
+  }, [filters, searchQuery, useFilters, allCourses, applyFilters]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+
+    const currentObserver = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && visibleCourses.length < filteredCourses.length) {
+        setVisibleCourses(prev => [
+          ...prev,
+          ...filteredCourses.slice(prev.length, prev.length + COURSES_PER_PAGE),
+        ]);
+      }
+    });
+
+    currentObserver.observe(loadMoreRef.current);
+    observer.current = currentObserver;
+
+    return () => currentObserver.disconnect();
+  }, [visibleCourses.length, filteredCourses.length, filteredCourses]);
+
+  // Event handlers
+  const handleSearch = useCallback(() => {
     setUseFilters(false);
     setSearchQuery(searchInput);
-  };
+  }, [searchInput]);
 
-  const handleFilterChange = (name, value) => {
+  const handleFilterChange = useCallback((name, value) => {
     setFilters(prev => ({ ...prev, [name]: value }));
     setUseFilters(true);
     setSearchQuery("");
-  };
+  }, []);
 
-  const loadMore = () => {
-    setVisibleCourses(prev => [
-      ...prev,
-      ...filteredCourses.slice(prev.length, prev.length + 4),
-    ]);
-  };
-
-  useEffect(() => {
-    if (!loadMoreRef.current) return;
-    observer.current = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && visibleCourses.length < filteredCourses.length) {
-        loadMore();
-      }
-    });
-    observer.current.observe(loadMoreRef.current);
-    return () => observer.current.disconnect();
-  }, [visibleCourses, filteredCourses]);
-
-  const handleAddCourse = () => {
+  const handleAddCourse = useCallback(() => {
     setEditingCourse(null);
+    setDynamicYearOptions([]);
     setCoursePopupOpen(true);
-  };
+  }, []);
 
-  const handleEditCourse = (course) => {
-    console.log("Editing course:", course);
-    // Create a properly formatted course object for editing
+  const handleEditCourse = useCallback((course) => {
     const courseToEdit = {
       ...course,
-      // Ensure all fields have proper values for the form
       id: course.id,
       title: course.title || "",
       code: course.code || "",
@@ -118,83 +161,74 @@ export default function Courses() {
       description: course.description || "",
       credits: course.credits || 0,
       instructor: course.instructor || "",
-      // Add any other fields that your form expects
     };
-    
+
+    const yearOptions = getYearOptionsForGroup(course.group);
+    setDynamicYearOptions(yearOptions);
     setEditingCourse(courseToEdit);
     setCoursePopupOpen(true);
-  };
+  }, [currentYear]);
 
-  const handleDeleteCourse = (id) => {
-    const updatedCourses = allCourses.filter(course => course.id !== id);
-    setAllCourses(updatedCourses);
-  };
+  const handleDeleteCourse = useCallback((id) => {
+    setAllCourses(prev => prev.filter(course => course.id !== id));
+  }, []);
 
-  const handleSubmit = (formData) => {
+  const handleSubmit = useCallback((formData) => {
+    const numericFields = ['year', 'semester', 'academicYear', 'credits'];
+    const processedData = convertToNumbers(formData, numericFields);
+
     if (editingCourse) {
       // Update existing course
-      const updatedList = allCourses.map(c =>
-        c.id === editingCourse.id ? { 
-          ...c, 
-          ...formData,
-          // Ensure numeric fields are properly converted
-          year: parseInt(formData.year) || 1,
-          semester: parseInt(formData.semester) || 1,
-          academicYear: parseInt(formData.academicYear) || parseInt(currentYear),
-          credits: parseInt(formData.credits) || 0
-        } : c
-      );
-      setAllCourses(updatedList);
+      setAllCourses(prev => prev.map(course =>
+        course.id === editingCourse.id
+          ? { ...course, ...processedData }
+          : course
+      ));
     } else {
       // Add new course
       const newCourse = {
-        ...formData,
+        ...processedData,
         id: Date.now(),
         students: 0,
         rating: 0,
         lessons: 0,
         img: "",
-        // Ensure numeric fields are properly converted
-        year: parseInt(formData.year) || 1,
-        semester: parseInt(formData.semester) || 1,
-        academicYear: parseInt(formData.academicYear) || parseInt(currentYear),
-        credits: parseInt(formData.credits) || 0
       };
-      setAllCourses([newCourse, ...allCourses]);
+      setAllCourses(prev => [newCourse, ...prev]);
     }
+
     setCoursePopupOpen(false);
     setEditingCourse(null);
-  };
+  }, [editingCourse]);
 
-  const filterFields = [
-    { 
-      label: "Group", 
-      name: "group", 
-      options: [ ...groupOptions]
-    },
-    { 
-      label: "Year", 
-      name: "year", 
-      options: ["1", "2", "3", "4"] 
-    },
-    { 
-      label: "Semester", 
-      name: "semester", 
-      options: [ "1", "2"] 
-    },
-    { 
-      label: "Academic Year", 
-      name: "academicYear", 
-      options: [ ...courseYears.sort((a, b) => b - a)]
-    },
-  ];
+  const handleGroupChange = useCallback((selectedGroup) => {
+    const yearOptions = getYearOptionsForGroup(selectedGroup);
+    setDynamicYearOptions(yearOptions);
+  }, []);
+
+  const handlePopupClose = useCallback(() => {
+    setCoursePopupOpen(false);
+  }, []);
+
+  // Update course fields with dynamic year options
+  const updatedCourseFields = useMemo(() =>
+    courseFields.map(field =>
+      field.name === "year"
+        ? { ...field, options: dynamicYearOptions }
+        : field
+    ), [dynamicYearOptions]
+  );
 
   return (
     <div className="courses-header">
       <div className="header-content">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        {/* Header section */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
           <h2>Course Management</h2>
-          {/* Add Course Button */}
           <button
             className="add-course-btn"
             onClick={handleAddCourse}
@@ -213,8 +247,14 @@ export default function Courses() {
           </button>
         </div>
 
+        {/* Filter and search section */}
+        //TODO: add a filter for selectable course or not (yes or no)
         <div className="filter-container">
-          <DynamicFilter filters={filterFields} values={filters} onChange={handleFilterChange} />
+          <DynamicFilter
+            filters={filterFields}
+            values={filters}
+            onChange={handleFilterChange}
+          />
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <input
               type="text"
@@ -224,31 +264,36 @@ export default function Courses() {
               className="filter-select"
               style={{ width: "220px" }}
             />
-            <button className="search-btn" onClick={handleSearch}>Search</button>
+            <button className="search-btn" onClick={handleSearch}>
+              Search
+            </button>
           </div>
         </div>
       </div>
 
+      {/* Courses content */}
       <CoursesContent
         courses={visibleCourses}
         onDeleteCourse={handleDeleteCourse}
         onEditCourse={handleEditCourse}
       />
 
-      <div ref={loadMoreRef} style={{ height: "30px" }}></div>
+      {/* Infinite scroll trigger */}
+      <div ref={loadMoreRef} style={{ height: "30px" }} />
 
-      {isCoursePopupOpen &&  <Popup 
-        isOpen={isCoursePopupOpen} 
-        onClose={() => setCoursePopupOpen(false)}
-      >
-        <DynamicForm
-              fields={courseFields}
-              onSubmit={handleSubmit}
-              onCancel={() => setCoursePopupOpen(false)}
-              submitText={editingCourse ? "Update Course" : "Add Course"}
-              initialData={editingCourse}
-            />
-      </Popup>}
+      {/* Course form popup */}
+      {isCoursePopupOpen && (
+        <Popup isOpen={isCoursePopupOpen} onClose={handlePopupClose}>
+          <DynamicForm
+            fields={updatedCourseFields}
+            onSubmit={handleSubmit}
+            onCancel={handlePopupClose}
+            submitText={editingCourse ? "Update Course" : "Add Course"}
+            initialData={editingCourse}
+            onFieldChange={handleGroupChange}
+          />
+        </Popup>
+      )}
     </div>
   );
 }

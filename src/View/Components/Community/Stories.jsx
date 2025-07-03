@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { currentUser, stories } from "../../../Static/communityData";
+import axios from "axios";
+import { useAuth } from "../../../Context/AuthContext";
 import { useFriends } from "../../../Context/FriendContext";
 import "../../../CSS/Components/Community/stories.scss";
 
@@ -8,27 +9,62 @@ const Stories = () => {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [storyProgress, setStoryProgress] = useState(0);
   const [showAddStory, setShowAddStory] = useState(false);
-  const [userStories, setUserStories] = useState(stories);
+  const [userStories, setUserStories] = useState([]);
   const { friendsList } = useFriends();
+  const { authData } = useAuth();
+
   const [storyText, setStoryText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Get current user's stories
-  const currentUserStories = userStories.filter(
-    (story) => story.userId === currentUser.id
-  );
+  const userId = authData?.id;
 
-  // Filter stories to show friends' stories plus current user's stories
+  // Load user stories when component mounts or user changes
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadStories = async () => {
+      try {
+        // Use the feed endpoint to get all visible stories (user + friends)
+        const response = await axios.get(`http://localhost:8080/api/community/stories/feed?userId=${userId}`);
+        console.log("Stories response:", response.data); // Debug log
+        
+        // Extract stories from the response structure
+        const storiesData = response.data.stories || [];
+        
+        // Flatten the grouped stories into individual story objects
+        const flattenedStories = [];
+        storiesData.forEach(userGroup => {
+          userGroup.stories.forEach(story => {
+            flattenedStories.push({
+              ...story,
+              userId: userGroup.userId,
+              name: userGroup.name,
+              profilePic: userGroup.profilePic
+            });
+          });
+        });
+        
+        console.log("Flattened stories:", flattenedStories); // Debug log
+        setUserStories(flattenedStories);
+      } catch (err) {
+        console.error("Failed to fetch stories:", err);
+        setUserStories([]);
+      }
+    };
+
+    loadStories();
+  }, [userId]);
+
+  // Filter stories to show only current user + friends' stories
   const allStories = userStories.filter((story) => {
-    if (story.userId === currentUser.id) return true; // Always include current user's stories
-    if (!friendsList || friendsList.length === 0) return false;
+    if (story.userId === userId) return true;
     return friendsList.some((friend) => friend.id === story.userId);
   });
 
   // Group stories by user
   const groupedStories = allStories.reduce((acc, story) => {
-    const existingUser = acc.find((user) => user.userId === story.userId);
+    const existingUser = acc.find(user => user.userId === story.userId);
     if (existingUser) {
       existingUser.stories.push(story);
     } else {
@@ -42,17 +78,18 @@ const Stories = () => {
     return acc;
   }, []);
 
-  // Separate current user stories and friends' stories for display
-  const currentUserGroup = groupedStories.find(user => user.userId === currentUser.id);
-  const friendsStories = groupedStories.filter(user => user.userId !== currentUser.id);
+  // Separate current user and friends' stories
+  const currentUserGroup = groupedStories.find(user => user.userId === userId);
+  const friendsStories = groupedStories.filter(user => user.userId !== userId);
 
-  // Create final display array: current user first (if has stories), then friends
+  // Final display array
   const displayStories = [];
   if (currentUserGroup) {
     displayStories.push(currentUserGroup);
   }
   displayStories.push(...friendsStories);
 
+  // Handlers
   const handleOpenStory = (userIndex) => {
     setOpenUserIndex(userIndex);
     setCurrentStoryIndex(0);
@@ -60,13 +97,11 @@ const Stories = () => {
   };
 
   const handleOpenCurrentUserStory = () => {
-    if (currentUserStories.length > 0) {
-      // Current user has stories, open them (always at index 0 in displayStories if they exist)
+    if (currentUserGroup?.stories.length > 0) {
       setOpenUserIndex(0);
       setCurrentStoryIndex(0);
       setStoryProgress(0);
     } else {
-      // Current user has no stories, show add story modal
       handleAddStory();
     }
   };
@@ -77,14 +112,6 @@ const Stories = () => {
     setStoryProgress(0);
   };
 
-  const handlePrevUser = () => {
-    if (openUserIndex > 0) {
-      setOpenUserIndex(openUserIndex - 1);
-      setCurrentStoryIndex(0);
-      setStoryProgress(0);
-    }
-  };
-
   const handleNextUser = () => {
     if (openUserIndex < displayStories.length - 1) {
       setOpenUserIndex(openUserIndex + 1);
@@ -92,6 +119,14 @@ const Stories = () => {
       setStoryProgress(0);
     } else {
       handleClose();
+    }
+  };
+
+  const handlePrevUser = () => {
+    if (openUserIndex > 0) {
+      setOpenUserIndex(openUserIndex - 1);
+      setCurrentStoryIndex(0);
+      setStoryProgress(0);
     }
   };
 
@@ -136,32 +171,49 @@ const Stories = () => {
     if (!selectedFile && !storyText.trim()) return;
 
     setIsUploading(true);
-
     try {
-      const fileURL = selectedFile ? URL.createObjectURL(selectedFile) : null;
-      const fileType = selectedFile?.type.startsWith("video/") ? "video" : "image";
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("name", authData.name);
+      formData.append("profilePic", authData.profilePic || "");
+      formData.append("text", storyText.trim());
 
-      const newStory = {
-        id: Date.now(),
-        userId: currentUser.id,
-        name: currentUser.name,
-        profilePic: currentUser.profilePic,
-        img: fileURL,
-        text: storyText.trim() || null,
-        type: selectedFile ? fileType : "text",
-        time: "now",
-        timestamp: new Date().toISOString(),
-      };
+      if (selectedFile) {
+        formData.append("img", selectedFile);
+      }
 
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await axios.post("http://localhost:8080/api/community/stories", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-      setUserStories((prev) => [newStory, ...prev]);
+      console.log("Upload response:", res.data); // Debug log
+
+      // After successful upload, reload stories from the server
+      const response = await axios.get(`http://localhost:8080/api/community/stories/feed?userId=${userId}`);
+      const storiesData = response.data.stories || [];
+      
+      // Flatten the grouped stories into individual story objects
+      const flattenedStories = [];
+      storiesData.forEach(userGroup => {
+        userGroup.stories.forEach(story => {
+          flattenedStories.push({
+            ...story,
+            userId: userGroup.userId,
+            name: userGroup.name,
+            profilePic: userGroup.profilePic
+          });
+        });
+      });
+      
+      setUserStories(flattenedStories);
       setShowAddStory(false);
       setStoryText("");
       setSelectedFile(null);
     } catch (error) {
       console.error("Error uploading story:", error);
+      alert("Failed to upload story. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -173,7 +225,6 @@ const Stories = () => {
     setSelectedFile(null);
   };
 
-  // Check if share button should be enabled
   const canShare = (selectedFile || storyText.trim()) && !isUploading;
 
   // Auto-advance story logic
@@ -182,15 +233,15 @@ const Stories = () => {
 
     const currentUser = displayStories[openUserIndex];
     const currentStory = currentUser.stories[currentStoryIndex];
-    let duration = 8000; // Default 8 seconds for images
 
-    // Check if it's a video
+    let duration = 8000; // Default 8s for images
+
     const isVideo =
       currentStory.type === "video" ||
       (currentStory.img &&
         (currentStory.img.includes(".mp4") ||
-          currentStory.img.includes(".webm") ||
-          currentStory.img.includes(".ogg")));
+         currentStory.img.includes(".webm") ||
+         currentStory.img.includes(".ogg")));
 
     if (isVideo) {
       const videoElement = document.querySelector(".story-full-video");
@@ -205,7 +256,6 @@ const Stories = () => {
       handleNextStory();
     }, duration);
 
-    // Progress bar animation
     const progressTimer = setInterval(() => {
       setStoryProgress((prev) => {
         const increment = 100 / (duration / 100);
@@ -219,18 +269,13 @@ const Stories = () => {
     };
   }, [openUserIndex, currentStoryIndex]);
 
-  // Handle keyboard navigation
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e) => {
       if (openUserIndex === null) return;
-
-      if (e.key === "ArrowLeft") {
-        handlePrevStory();
-      } else if (e.key === "ArrowRight") {
-        handleNextStory();
-      } else if (e.key === "Escape") {
-        handleClose();
-      }
+      if (e.key === "ArrowLeft") handlePrevStory();
+      else if (e.key === "ArrowRight") handleNextStory();
+      else if (e.key === "Escape") handleClose();
     };
 
     document.addEventListener("keydown", handleKeyPress);
@@ -242,10 +287,9 @@ const Stories = () => {
       story.type === "video" ||
       (story.img &&
         (story.img.includes(".mp4") ||
-          story.img.includes(".webm") ||
-          story.img.includes(".ogg")));
+         story.img.includes(".webm") ||
+         story.img.includes(".ogg")));
 
-    // If it's a text-only story (no image/video)
     if (story.type === "text" || (!story.img && story.text)) {
       return (
         <div className="story-text-content">
@@ -254,7 +298,6 @@ const Stories = () => {
       );
     }
 
-    // If it has both media and text
     const mediaElement = isVideo ? (
       <video
         className="story-full-video"
@@ -274,49 +317,43 @@ const Stories = () => {
         alt="Story"
         className="story-full-img"
         onError={(e) => {
-          console.error("Image failed to load:", e);
-          e.target.src =
-            "https://via.placeholder.com/400x600/cccccc/666666?text=Story";
+          e.target.src = "https://via.placeholder.com/400x600/cccccc/666666?text=Story";
         }}
       />
     );
 
-    // Return media with optional text overlay
     return (
       <div className="story-media-container">
         {mediaElement}
-        {story.text && (
-          <div className="story-text-overlay">
-            <p>{story.text}</p>
-          </div>
-        )}
+        {story.text && <div className="story-text-overlay"><p>{story.text}</p></div>}
       </div>
     );
   };
+
+  console.log("Current user group:", currentUserGroup); // Debug log
+  console.log("Display stories:", displayStories); // Debug log
 
   return (
     <div className="stories">
       <div className="story">
         <img
-          src={currentUser.profilePic}
+          src={authData.profilePic}
           alt=""
           onClick={handleOpenCurrentUserStory}
         />
-        <span onClick={handleOpenCurrentUserStory}>{currentUser.name}</span>
+        <span onClick={handleOpenCurrentUserStory}>{authData.name}</span>
         <button onClick={handleAddStory}>+</button>
       </div>
 
       {friendsStories.map((user, index) => {
-        // Calculate the correct index in displayStories
         const displayIndex = currentUserGroup ? index + 1 : index;
-        
         return (
           <div
             className="story"
             key={user.userId}
             onClick={() => handleOpenStory(displayIndex)}
           >
-            <img src={user.profilePic || user.stories[0].img} alt="" />
+            <img src={user.profilePic || user.stories[0]?.img} alt="" />
             <span>{user.name}</span>
             {user.stories.length > 1 && (
               <div className="story-count">{user.stories.length}</div>
@@ -331,6 +368,7 @@ const Stories = () => {
         </div>
       )}
 
+      {/* Story Overlay */}
       {openUserIndex !== null && displayStories[openUserIndex] && (
         <div className="story-overlay">
           <div className="story-header">
@@ -368,26 +406,20 @@ const Stories = () => {
                 {displayStories[openUserIndex].name}
               </span>
               <span className="story-time">
-                {displayStories[openUserIndex].stories[currentStoryIndex]
-                  .time || "2h ago"}
+                {displayStories[openUserIndex].stories[currentStoryIndex].time || "2h ago"}
               </span>
             </div>
             <button className="close-btn" onClick={handleClose}>
               ×
             </button>
           </div>
-
           <div className="overlay-content">
             {(openUserIndex > 0 || currentStoryIndex > 0) && (
               <button className="nav left" onClick={handlePrevStory}>
                 ‹
               </button>
             )}
-
-            {renderStoryMedia(
-              displayStories[openUserIndex].stories[currentStoryIndex]
-            )}
-
+            {renderStoryMedia(displayStories[openUserIndex].stories[currentStoryIndex])}
             {(openUserIndex < displayStories.length - 1 ||
               currentStoryIndex <
                 displayStories[openUserIndex].stories.length - 1) && (
@@ -399,6 +431,7 @@ const Stories = () => {
         </div>
       )}
 
+      {/* Add Story Modal */}
       {showAddStory && (
         <div className="add-story-overlay">
           <div className="add-story-modal">
@@ -448,18 +481,18 @@ const Stories = () => {
                   <p className="char-count">{storyText.length}/280</p>
                 </div>
               </div>
-              
+
               <div className="modal-actions">
-                <button 
-                  className="cancel-button" 
+                <button
+                  className="cancel-button"
                   onClick={handleCancelAddStory}
                   disabled={isUploading}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className={`share-button ${!canShare ? 'disabled' : ''} ${isUploading ? 'loading' : ''}`}
-                  onClick={handleStoryUpload} 
+                  onClick={handleStoryUpload}
                   disabled={!canShare}
                 >
                   {isUploading ? (
@@ -468,7 +501,7 @@ const Stories = () => {
                       Sharing...
                     </span>
                   ) : (
-                    'Share Story'
+                    "Share Story"
                   )}
                 </button>
               </div>
