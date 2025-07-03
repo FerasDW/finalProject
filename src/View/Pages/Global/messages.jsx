@@ -345,6 +345,8 @@ const Messages = () => {
       case "requests":
         return (
           <Table
+            title="Messages"
+            showAddButton={false}
             data={messagesData}
             actionButtons={[
               (row) => (
@@ -363,8 +365,10 @@ const Messages = () => {
       case "announcement":
         return (
           <Table
+            title="Announcements"
             data={currentAnnouncements}
             showAddButton={true}
+            addButtonText="Create Announcement"
             onAddClick={handleCreateAnnouncement}
             actionButtons={[
               (row) => (
@@ -383,8 +387,10 @@ const Messages = () => {
       case "templates":
         return (
           <Table
+            title="Templates"
             data={currentTemplates}
             showAddButton={true}
+            addButtonText="Create Template"
             onAddClick={handleCreateTemplate}
             actionButtons={[
               (row) => (

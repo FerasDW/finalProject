@@ -125,7 +125,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
   };
 
   const renderField = () => {
-    console.log( value);
+    
     switch (field.type) {
       case 'textarea':
         return (
@@ -695,7 +695,7 @@ const DynamicForm = ({
       }}>
         <form onSubmit={handleSubmit}>
           {fields.map((field, index) => (
-            console.log(field),
+            
             <FormField
               key={field.name || index}
               field={field}

@@ -48,7 +48,7 @@ export const SummaryCards = ({ data, colorScheme }) => (
   </div>
 );
 
-export const TableSection = ({ title, description, data, actionButtons, customColumns, children }) => (
+export const TableSection = ({ title, description, data, actionButtons, customColumns, children,onAddClick }) => (
   <div style={{ padding: '1.5rem', background: '#f9fafb', borderRadius: '8px' }}>
     <div style={{ marginBottom: '1.5rem' }}>
       <h3 style={{ fontSize: '1.5rem', fontWeight: '600', color: '#1f2937' }}>{title}</h3>
@@ -63,6 +63,7 @@ export const TableSection = ({ title, description, data, actionButtons, customCo
         showAddButton
         actionButtons={actionButtons}
         customColumns={customColumns}
+        onAddClick={onAddClick}
       />
     </div>
   </div>

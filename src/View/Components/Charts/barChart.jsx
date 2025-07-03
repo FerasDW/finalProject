@@ -23,6 +23,7 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
         colors={{ scheme: 'paired' }}
         defs={[
             {
+                id: 'lines',
                 type: 'patternDots',
                 background: 'inherit',
                 color: '#38bcb2',
@@ -31,6 +32,7 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
                 stagger: true
             },
             {
+                id: 'lines2',
                 type: 'patternLines',
                 background: 'inherit',
                 color: '#eed312',
