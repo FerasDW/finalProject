@@ -15,12 +15,21 @@ export function AuthProvider({ children }) {
     if (location.pathname === "/") return;
 
     async function fetchUser() {
-      console.log("Fetching user dataaaa...");
       try {
         const response = await axios.get("http://localhost:8080/api/auth/user", {
           withCredentials: true,
         });
-        setAuthData({ token: cookies.jwtToken, ...response.data });
+        
+        // Map the backend field names to frontend expected names
+        const userData = {
+          token: cookies.jwtToken,
+          ...response.data,
+          // Map profile_pic to profilePic for consistency
+          profilePic: response.data.profile_pic || response.data.profilePic
+        };
+        
+        console.log("Fetched user data:", userData);
+        setAuthData(userData);
       } catch (err) {
         console.error("User fetch failed", err);
         removeCookie("jwtToken", { path: "/" });
@@ -33,7 +42,12 @@ export function AuthProvider({ children }) {
   }, [cookies.jwtToken, location.pathname]);
 
   const loginUser = (data) => {
-    setAuthData(data);
+    // Also map profile_pic to profilePic on login
+    const mappedData = {
+      ...data,
+      profilePic: data.profile_pic || data.profilePic
+    };
+    setAuthData(mappedData);
     setCookie("jwtToken", data.token, {
       path: "/",
       secure: false,

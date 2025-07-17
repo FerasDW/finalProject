@@ -1,60 +1,104 @@
 import "../../../CSS/Components/Community/rightBar.scss";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  friendRequests,
-  activities,
-  users,
-  currentUser,
-} from "../../../Static/communityData";
+import { AuthContext } from "../../../Context/AuthContext";
 import { useFriends } from "../../../Context/FriendContext";
 
+// Import the clean API functions
+import { 
+  getFriendRequests, 
+  getFriendsActivities, 
+  getFriends
+} from "../../../Api/CommunityAPIs/friendsApi";
+
 const RightBar = () => {
-  const [requests, setRequests] = useState(friendRequests);
+  const [requests, setRequests] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [onlineFriends, setOnlineFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [processingRequest, setProcessingRequest] = useState(null);
   const navigate = useNavigate();
-  const { addFriend, friendsList } = useFriends();
+  const { authData } = useContext(AuthContext);
+  const { acceptFriendRequest, rejectFriendRequest, friendsList } = useFriends();
 
-  // Filter online friends to only show actual friends
-  const onlineFriends = useMemo(() => {
-    const friendIds = friendsList.map(friend => friend.id);
-    return users.filter(user => 
-      friendIds.includes(user.id) && user.id !== currentUser.id
-    ).slice(0, 5); // Limit to 5 online friends
-  }, [friendsList]);
+  const fetchRightBarData = async () => {
+    if (!authData?.id) return;
 
-  // Filter activities to only show friends' activities (exclude current user)
-  const friendActivities = useMemo(() => {
-    const friendIds = friendsList.map(friend => friend.id);
-    return activities.filter(activity => 
-      friendIds.includes(activity.id) && activity.id !== currentUser.id
-    );
-  }, [friendsList]);
-
-  const handleAccept = (user) => {
-    // Add to friends list
-    const friendData = {
-      id: user.id,
-      name: user.name,
-      profilePic: user.img,
-      role: "Student", // You might want to get this from somewhere else
-      title: "New Friend",
-      university: "Yezreel Valley College",
-    };
-    addFriend(friendData);
-
-    // Remove from friend requests
-    setRequests((prev) => prev.filter((req) => req.id !== user.id));
+    try {
+      setLoading(true);
+      
+      const [requestsData, activitiesData, friendsData] = await Promise.all([
+        getFriendRequests(),
+        getFriendsActivities(),
+        getFriends('online')
+      ]);
+      
+      setRequests(requestsData);
+      setActivities(activitiesData);
+      setOnlineFriends(friendsData.slice(0, 5));
+    } catch (error) {
+      setRequests([]);
+      setActivities([]);
+      setOnlineFriends([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReject = (userId) => {
-    // Just remove from friend requests
-    setRequests((prev) => prev.filter((req) => req.id !== userId));
+  useEffect(() => {
+    fetchRightBarData();
+  }, [authData]);
+
+  useEffect(() => {
+    if (authData?.id && friendsList.length > 0) {
+      setOnlineFriends(friendsList.slice(0, 5));
+    }
+  }, [friendsList, authData]);
+
+  const handleAccept = async (user) => {
+    if (processingRequest === user.id) return;
+    
+    try {
+      setProcessingRequest(user.id);
+      await acceptFriendRequest(user.id);
+      setRequests((prev) => prev.filter((req) => req.id !== user.id));
+      
+      setTimeout(() => {
+        fetchRightBarData();
+      }, 1000);
+      
+    } catch (error) {
+      alert("Failed to accept friend request. Please try again.");
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
+
+  const handleReject = async (user) => {
+    if (processingRequest === user.id) return;
+    
+    try {
+      setProcessingRequest(user.id);
+      await rejectFriendRequest(user.id);
+      setRequests((prev) => prev.filter((req) => req.id !== user.id));
+    } catch (error) {
+      alert("Failed to reject friend request. Please try again.");
+    } finally {
+      setProcessingRequest(null);
+    }
   };
 
   const handleNameClick = (userId) => {
-    // Navigate to user's profile
     navigate(`/community/profile/${userId}`);
   };
+
+  if (loading) {
+    return (
+      <div className="rightBar">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="rightBar">
@@ -64,7 +108,10 @@ const RightBar = () => {
           {requests.map((user) => (
             <div className="user" key={user.id}>
               <div className="userInfo">
-                <img src={user.img} alt={user.name} />
+                <img 
+                  src={user.profilePic || user.img || "https://via.placeholder.com/40"} 
+                  alt={user.name} 
+                />
                 <span
                   onClick={() => handleNameClick(user.id)}
                   style={{ cursor: "pointer", color: "#5271ff" }}
@@ -73,8 +120,26 @@ const RightBar = () => {
                 </span>
               </div>
               <div className="buttons">
-                <button onClick={() => handleAccept(user)}>Accept</button>
-                <button onClick={() => handleReject(user.id)}>Reject</button>
+                <button 
+                  onClick={() => handleAccept(user)}
+                  disabled={processingRequest === user.id}
+                  style={{ 
+                    opacity: processingRequest === user.id ? 0.6 : 1,
+                    cursor: processingRequest === user.id ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {processingRequest === user.id ? "..." : "Accept"}
+                </button>
+                <button 
+                  onClick={() => handleReject(user)}
+                  disabled={processingRequest === user.id}
+                  style={{ 
+                    opacity: processingRequest === user.id ? 0.6 : 1,
+                    cursor: processingRequest === user.id ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {processingRequest === user.id ? "..." : "Reject"}
+                </button>
               </div>
             </div>
           ))}
@@ -87,21 +152,24 @@ const RightBar = () => {
 
         <div className="item">
           <span>Latest Activities</span>
-          {friendActivities.length > 0 ? (
-            friendActivities.map((activity) => (
-              <div className="user" key={activity.id}>
+          {activities.length > 0 ? (
+            activities.map((activity) => (
+              <div className="user" key={`${activity.id}-${activity.createdAt}`}>
                 <div className="userInfo">
-                  <img src={activity.img} alt={activity.name} />
+                  <img 
+                    src={activity.profilePic || activity.img || "https://via.placeholder.com/40"} 
+                    alt={activity.name} 
+                  />
                   <p>
                     <span 
-                      onClick={() => handleNameClick(activity.id)}
+                      onClick={() => handleNameClick(activity.userId || activity.id)}
                       style={{ cursor: "pointer", color: "#5271ff" }}
                     >
                       {activity.name}
                     </span> {activity.action}
                   </p>
                 </div>
-                <span>{activity.time}</span>
+                <span>{activity.time || activity.createdAt}</span>
               </div>
             ))
           ) : (
@@ -117,7 +185,10 @@ const RightBar = () => {
             onlineFriends.map((user) => (
               <div className="user" key={user.id}>
                 <div className="userInfo">
-                  <img src={user.profilePic} alt={user.name} />
+                  <img 
+                    src={user.profilePic || "https://via.placeholder.com/40"} 
+                    alt={user.name} 
+                  />
                   <div className="online" />
                   <span 
                     onClick={() => handleNameClick(user.id)}

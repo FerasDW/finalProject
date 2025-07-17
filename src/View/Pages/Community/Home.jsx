@@ -5,10 +5,13 @@ import Share from "../../Components/Community/Share";
 import "../../../CSS/Pages/Community/home.scss";
 import { useFriends } from "../../../Context/FriendContext";
 import { AuthContext } from "../../../Context/AuthContext";
-import axios from "axios";
+
+// Import the new clean API function
+import { getFeed } from "../../../Api/CommunityAPIs/postsApi";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { friendsList } = useFriends();
   const { authData } = useContext(AuthContext);
 
@@ -18,40 +21,44 @@ const Home = () => {
 
     async function fetchPosts() {
       try {
-        // Assuming authData.id is your logged-in user's ID
-        // friendsList.map(friend => friend.id) to get array of friend IDs
-        const friendIds = friendsList.map((friend) => friend.id);
-
-        const params = new URLSearchParams();
-        params.append("userId", authData.id);
-        friendIds.forEach((id) => params.append("friendIds", id));
-
-        const response = await axios.get(
-          `http://localhost:8080/api/community/posts/feed?${params.toString()}`,
-          {
-            withCredentials: true, // send cookies automatically
-          }
-        );
-
-        setPosts(response.data);
+        setLoading(true);
+        
+        // Use the new clean API function
+        const postsData = await getFeed();
+        setPosts(postsData);
       } catch (error) {
         console.error("Failed to fetch posts", error);
+        setPosts([]);
+      } finally {
+        setLoading(false);
       }
     }
 
     fetchPosts();
   }, [authData, friendsList]);
 
-  // Add new post to the top (called after Share component uploads a new post)
   const handleShare = (newPost) => {
     setPosts((prevPosts) => [newPost, ...prevPosts]);
   };
+
+  if (loading) {
+    return (
+      <div className="home">
+        <div>Loading posts...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="home">
       <Stories />
       <Share onShare={handleShare} />
       <Posts posts={posts} />
+      {posts.length === 0 && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          No posts found. Create your first post!
+        </div>
+      )}
     </div>
   );
 };

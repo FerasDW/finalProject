@@ -423,3 +423,297 @@ export const templateFormFields = [
     options: templateStatusOptions,
   },
 ];
+
+
+// community form fields
+
+// Add these to your formsInputs.js file
+
+// CREATE GROUP FORM FIELDS
+export const createGroupFields = [
+  {
+    name: 'name',
+    label: 'Group Name',
+    type: 'text',
+    placeholder: 'Enter a catchy group name',
+    required: true,
+    helperText: 'Choose a name that describes your group\'s purpose'
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    type: 'textarea',
+    placeholder: 'What\'s this group about? Who should join?',
+    required: true,
+    rows: 4,
+    helperText: 'Help people understand what your group is for'
+  },
+  {
+    name: 'type',
+    label: 'Privacy Setting',
+    type: 'radio',
+    required: true,
+    options: [
+      { 
+        value: 'Public', 
+        label: 'Public - Anyone can join and see content' 
+      },
+      { 
+        value: 'Private', 
+        label: 'Private - Only invited members can join' 
+      }
+    ]
+  },
+  {
+    name: 'img',
+    label: 'Group Image (Optional)',
+    type: 'file',
+    accept: 'image/*',
+    helperText: 'Upload a cover image for your group (max 5MB)'
+  }
+];
+
+// CREATE GROUP VALIDATION RULES
+export const createGroupValidation = {
+  name: (value) => {
+    if (value.length < 3) return 'Group name must be at least 3 characters';
+    if (value.length > 100) return 'Group name must be less than 100 characters';
+    return null;
+  },
+  description: (value) => {
+    if (value.length < 10) return 'Description must be at least 10 characters';
+    if (value.length > 500) return 'Description must be less than 500 characters';
+    return null;
+  },
+  img: (file) => {
+    if (file && file.size > 5 * 1024 * 1024) {
+      return 'File size must be less than 5MB';
+    }
+    if (file && !file.type.startsWith('image/')) {
+      return 'Please select an image file';
+    }
+    return null;
+  }
+};
+
+// INVITE FRIENDS FORM FIELDS
+export const inviteFriendsFields = [
+  {
+    name: 'message',
+    label: 'Invitation Message (Optional)',
+    type: 'textarea',
+    placeholder: 'Hey! You should join this group. I think you\'ll like it!',
+    rows: 3,
+    helperText: 'Add a personal message to your invitation'
+  }
+];
+
+// INVITE FRIENDS VALIDATION RULES
+export const inviteFriendsValidation = {
+  message: (value) => {
+    if (value && value.length > 500) {
+      return 'Message must be less than 500 characters';
+    }
+    return null;
+  }
+};
+
+// UPDATE GROUP FORM FIELDS
+export const updateGroupFields = [
+  {
+    name: 'name',
+    label: 'Group Name',
+    type: 'text',
+    placeholder: 'Enter group name',
+    required: true
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    type: 'textarea',
+    placeholder: 'Describe your group',
+    required: true,
+    rows: 4
+  },
+  {
+    name: 'type',
+    label: 'Privacy Setting',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'Public', label: 'Public' },
+      { value: 'Private', label: 'Private' }
+    ]
+  },
+  {
+    name: 'img',
+    label: 'Group Image URL (Optional)',
+    type: 'url',
+    placeholder: 'https://example.com/image.jpg'
+  }
+];
+
+// UPDATE GROUP VALIDATION RULES
+export const updateGroupValidation = {
+  name: (value) => {
+    if (value.length < 3) return 'Group name must be at least 3 characters';
+    if (value.length > 100) return 'Group name must be less than 100 characters';
+    return null;
+  },
+  description: (value) => {
+    if (value.length < 10) return 'Description must be at least 10 characters';
+    if (value.length > 500) return 'Description must be less than 500 characters';
+    return null;
+  }
+};
+
+// GROUP SEARCH FILTERS
+export const groupSearchFields = [
+  {
+    name: 'searchTerm',
+    label: 'Search Groups',
+    type: 'search',
+    placeholder: 'Search by name or description...'
+  },
+  {
+    name: 'type',
+    label: 'Group Type',
+    type: 'select',
+    options: [
+      { value: 'all', label: 'All Types' },
+      { value: 'Public', label: 'Public Groups' },
+      { value: 'Private', label: 'Private Groups' }
+    ]
+  },
+  {
+    name: 'sortBy',
+    label: 'Sort By',
+    type: 'select',
+    options: [
+      { value: 'activity', label: 'Most Active' },
+      { value: 'members', label: 'Most Members' },
+      { value: 'newest', label: 'Newest First' }
+    ]
+  }
+];
+
+// GROUP SETTINGS FORM FIELDS
+export const groupSettingsFields = [
+  {
+    name: 'allowMemberInvites',
+    label: 'Allow members to invite friends',
+    type: 'checkbox'
+  },
+  {
+    name: 'requireApproval',
+    label: 'Require admin approval for new posts',
+    type: 'checkbox'
+  },
+  {
+    name: 'allowMemberPromote',
+    label: 'Allow members to promote content',
+    type: 'checkbox'
+  },
+  {
+    name: 'category',
+    label: 'Group Category',
+    type: 'select',
+    options: [
+      { value: 'study', label: 'Study Groups' },
+      { value: 'social', label: 'Social & Networking' },
+      { value: 'professional', label: 'Professional Development' },
+      { value: 'hobby', label: 'Hobbies & Interests' },
+      { value: 'sports', label: 'Sports & Fitness' },
+      { value: 'tech', label: 'Technology' },
+      { value: 'other', label: 'Other' }
+    ]
+  }
+];
+
+// REPORT GROUP FORM FIELDS
+export const reportGroupFields = [
+  {
+    name: 'reason',
+    label: 'Reason for Reporting',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'spam', label: 'Spam or Scam' },
+      { value: 'harassment', label: 'Harassment or Bullying' },
+      { value: 'inappropriate', label: 'Inappropriate Content' },
+      { value: 'fake', label: 'Fake Information' },
+      { value: 'violence', label: 'Violence or Threats' },
+      { value: 'other', label: 'Other' }
+    ]
+  },
+  {
+    name: 'details',
+    label: 'Additional Details',
+    type: 'textarea',
+    placeholder: 'Please provide more information about why you\'re reporting this group...',
+    rows: 4,
+    required: true
+  }
+];
+
+// REPORT GROUP VALIDATION RULES
+export const reportGroupValidation = {
+  details: (value) => {
+    if (value.length < 10) return 'Please provide more details (at least 10 characters)';
+    if (value.length > 1000) return 'Details must be less than 1000 characters';
+    return null;
+  }
+};
+
+// PROMOTE MEMBER FORM FIELDS
+export const promoteMemberFields = [
+  {
+    name: 'role',
+    label: 'New Role',
+    type: 'select',
+    required: true,
+    options: [
+      { value: 'Member', label: 'Member' },
+      { value: 'Co-founder', label: 'Co-founder (Admin)' }
+    ]
+  },
+  {
+    name: 'reason',
+    label: 'Reason for Promotion (Optional)',
+    type: 'textarea',
+    placeholder: 'Why are you promoting this member?',
+    rows: 2
+  }
+];
+
+// TRANSFER OWNERSHIP FORM FIELDS
+export const transferOwnershipFields = [
+  {
+    name: 'confirmation',
+    label: 'Type "TRANSFER" to confirm',
+    type: 'text',
+    placeholder: 'TRANSFER',
+    required: true,
+    helperText: 'This action cannot be undone. You will lose founder privileges.'
+  },
+  {
+    name: 'reason',
+    label: 'Reason for Transfer',
+    type: 'textarea',
+    placeholder: 'Why are you transferring ownership?',
+    rows: 3,
+    required: true
+  }
+];
+
+// TRANSFER OWNERSHIP VALIDATION
+export const transferOwnershipValidation = {
+  confirmation: (value) => {
+    if (value !== 'TRANSFER') return 'Please type "TRANSFER" to confirm';
+    return null;
+  },
+  reason: (value) => {
+    if (value.length < 10) return 'Please provide a reason (at least 10 characters)';
+    return null;
+  }
+};

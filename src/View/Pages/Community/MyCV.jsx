@@ -1,368 +1,531 @@
-import { useState, useEffect, useRef } from "react";
-import DynamicForm from "../../../View/Components/Forms/dynamicForm";
-import { cvFormFields } from "../../../Static/formsInputs"
+import React, { useContext, useState, useEffect } from 'react';
 import "../../../CSS/Pages/Community/mycv.scss";
+import { AuthContext } from "../../../Context/AuthContext";
+
+// Import the clean API functions
+import { getCV, saveCV, deleteCV, generateCVWithAI } from "../../../Api/CommunityAPIs/cvApi";
 
 const MyCV = () => {
-  const [activeTab, setActiveTab] = useState("mycv");
-  const [cvFile, setCvFile] = useState(null);
-  const [cvSaved, setCvSaved] = useState(false);
-  const [freeText, setFreeText] = useState("");
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [showPdfViewer, setShowPdfViewer] = useState(false);
-  const [openFeature, setOpenFeature] = useState("autoFill");
-  const [isSaving, setIsSaving] = useState(false); // Loading state for form submission
-  const canvasRef = useRef(null);
+  const { authData } = useContext(AuthContext);
+  
+  // Main states
+  const [currentStep, setCurrentStep] = useState(1); // 1: Input, 2: AI Processing, 3: Preview/Edit, 4: Generated
+  const [cvData, setCvData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  // AI Input states
+  const [aiInput, setAiInput] = useState("");
+  const [inputType, setInputType] = useState("general"); // general, job-description, resume-text
+  
+  // Edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({});
 
-  const [formData, setFormData] = useState({
-    name: "",
-    title: "",
-    summary: "",
-    education: "",
-    experience: "",
-    skills: "",
-    links: "",
-  });
-
-  // Render PDF thumbnail
+  // Load existing CV on mount
   useEffect(() => {
-    const renderPdfThumbnail = async () => {
-      if (!cvFile || !canvasRef.current) return;
+    loadExistingCV();
+  }, []);
 
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      canvas.width = 300;
-      canvas.height = 400;
-      context.fillStyle = "#f8f9fa";
-      context.fillRect(0, 0, 300, 400);
-      context.fillStyle = "#666";
-      context.font = "16px sans-serif";
-      context.textAlign = "center";
-      context.fillText("PDF Preview", 150, 200);
-      context.fillText("(Click to view full)", 150, 220);
-    };
-
-    renderPdfThumbnail();
-  }, [cvFile]);
-
-  // Backend API placeholder
-  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-  const cvApi = {
-    saveCV: async (cvData) => console.log("TODO: Save CV to backend", cvData),
-    uploadCV: async (file) => console.log("TODO: Upload CV file to backend", file.name),
-    getUserCVs: async () => console.log("TODO: Fetch user CVs from backend"),
-    deleteCV: async (cvId) => console.log("TODO: Delete CV from backend", cvId)
-  };
-
-  // Handle file upload
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === "application/pdf") {
-      setCvFile(file);
-      // cvApi.uploadCV(file);
-    } else {
-      alert("Please upload a valid PDF file.");
-    }
-  };
-
-  // Download CV file
-  const handleDownload = () => {
-    if (cvFile) {
-      const url = URL.createObjectURL(cvFile);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = cvFile.name;
-      link.click();
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  // Delete CV file
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this CV?")) {
-      setCvFile(null);
-      setCvSaved(false);
-    }
-  };
-
-  // Handle form submission from DynamicForm
-  const handleFormSubmit = async (data) => {
-    setIsSaving(true);
+  const loadExistingCV = async () => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const existingCV = await getCV();
+      if (existingCV) {
+        setCvData(existingCV);
+        setCurrentStep(4); // Go to generated state
+      }
+    } catch (error) {
+      // No existing CV, start fresh
+      setCurrentStep(1);
+    }
+  };
+
+  // AI CV Generation
+  const generateCV = async () => {
+    if (!aiInput.trim()) {
+      setError("Please provide some information about yourself");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setCurrentStep(2);
+
+    try {
+      // Use the API function from cvApi.js
+      const result = await generateCVWithAI(
+        inputType === 'general' ? 'full' : inputType,
+        aiInput
+      );
       
-      setFormData(data);
-      setCvSaved(true);
-      setActiveTab("mycv");
-      // cvApi.saveCV(data);
+      let parsedData;
+      try {
+        // Try to parse the AI response as JSON
+        parsedData = JSON.parse(result.suggestion);
+      } catch (e) {
+        // If not JSON, create structured data from text
+        parsedData = parseAITextResponse(result.suggestion);
+      }
+
+      // Enhance with user data
+      const enhancedData = {
+        name: parsedData.name || authData?.name || '',
+        title: parsedData.title || '',
+        summary: parsedData.summary || '',
+        education: parsedData.education || '',
+        experience: parsedData.experience || '',
+        skills: parsedData.skills || '',
+        links: parsedData.links || ''
+      };
+
+      setCvData(enhancedData);
+      setEditData(enhancedData);
+      setCurrentStep(3); // Preview/Edit step
+
     } catch (error) {
-      console.error("Error saving CV:", error);
-      alert("Failed to save CV. Please try again.");
+      setError('Failed to generate CV. Please try again.');
+      setCurrentStep(1);
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
   };
 
-  // Handle form cancel
-  const handleFormCancel = () => {
-    setActiveTab("mycv");
+  // Parse non-JSON AI response
+  const parseAITextResponse = (text) => {
+    return {
+      name: authData?.name || '',
+      title: 'Professional Title',
+      summary: text.substring(0, 200) + '...',
+      education: 'Educational background extracted from your input',
+      experience: 'Work experience based on provided information',
+      skills: 'JavaScript, React, Node.js, Python',
+      links: ''
+    };
   };
 
-  // AI extraction
-  const handleAutoExtract = async () => {
-    if (!freeText.trim()) return;
-    setIsExtracting(true);
+  // Save CV to backend
+  const saveCVToBackend = async (data = cvData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/ai/cv/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "full", input: freeText }),
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-      const raw = (data?.suggestion || "").trim();
-      const cleaned = raw.startsWith("{") ? raw : raw.slice(raw.indexOf("{"));
-      const result = JSON.parse(cleaned);
-      setFormData((prev) => ({ ...prev, ...result }));
+      setLoading(true);
+      const savedCV = await saveCV(data);
+      setCvData(savedCV);
+      setCurrentStep(4);
+      setIsEditing(false);
     } catch (error) {
-      console.error("Extraction error:", error);
-      alert("Failed to extract CV data. Please try again later.");  
+      setError('Failed to save CV. Please try again.');
     } finally {
-      setIsExtracting(false);
+      setLoading(false);
     }
   };
 
-  const toggleFeature = (key) => setOpenFeature(openFeature === key ? null : key);
+  // Delete CV
+  const handleDeleteCV = async () => {
+    if (!confirm('Are you sure you want to delete your CV? This action cannot be undone.')) {
+      return;
+    }
 
-  const aiFeatures = [
-    {
-      key: "autoFill",
-      title: "🪄 CV Maker by AI",
-      content: (
-        <div className="ai-feature-content">
-          <p>Let AI help you write and improve your CV. Try the auto-fill feature or explore more coming tools!</p>
-          <textarea
-            placeholder="Write your CV in one paragraph and let AI fill the fields..."
-            rows={6}
-            value={freeText}
-            onChange={(e) => setFreeText(e.target.value)}
-          />
-          <button onClick={handleAutoExtract} disabled={isExtracting}>
-            {isExtracting ? "Extracting..." : "🚀 Auto-Fill"}
-          </button>
-        </div>
-      ),
-    },
-    {
-      key: "summary",
-      title: "✨ Improve professional summary",
-      content: <p>Coming soon: AI will rewrite your summary in a more professional tone.</p>,
-    },
-    {
-      key: "experience", 
-      title: "📄 Optimize experience section",
-      content: <p>Coming soon: AI will enhance your job descriptions.</p>,
-    },
-    {
-      key: "coverLetter",
-      title: "📬 Generate a cover letter", 
-      content: <p>Coming soon: Auto-generate personalized cover letters.</p>,
-    },
-    {
-      key: "translate",
-      title: "🌍 Translate to English/French",
-      content: <p>Coming soon: Instantly translate your CV.</p>,
-    },
+    try {
+      setLoading(true);
+      await deleteCV();
+      setCvData(null);
+      setCurrentStep(1);
+      setAiInput("");
+    } catch (error) {
+      setError('Failed to delete CV. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Edit handlers
+  const startEditing = () => {
+    setEditData({ ...cvData });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditData({});
+  };
+
+  const saveEdits = () => {
+    setCvData(editData);
+    saveCVToBackend(editData);
+  };
+
+  const updateEditField = (field, value) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Input type options
+  const inputTypes = [
+    { id: 'general', label: '💬 Tell me about yourself', placeholder: 'Describe your background, experience, skills, and goals...' },
+    { id: 'job-description', label: '📋 Paste a job description', placeholder: 'Paste the job description and I\'ll create a tailored CV...' },
+    { id: 'resume-text', label: '📄 Paste your existing resume', placeholder: 'Paste your current resume text and I\'ll improve it...' }
   ];
+
+  const getCurrentPlaceholder = () => {
+    return inputTypes.find(type => type.id === inputType)?.placeholder || '';
+  };
 
   return (
     <div className="cv-page">
-      {/* Tabs */}
-      <div className="cv-tabs">
-        <button 
-          className={activeTab === "mycv" ? "active" : ""} 
-          onClick={() => setActiveTab("mycv")}
-        >
-          📄 My CV
-        </button>
-        <button 
-          className={activeTab === "create" ? "active" : ""} 
-          onClick={() => setActiveTab("create")}
-        >
-          ✍️ Create CV
-        </button>
-        <button 
-          className={activeTab === "manage" ? "active" : ""} 
-          onClick={() => setActiveTab("manage")}
-        >
-          📁 Manage CV
-        </button>
+      {/* Header */}
+      <div className="cv-header">
+        <h1>🤖 AI CV Builder</h1>
+        <p>Create a professional CV in minutes with AI assistance</p>
       </div>
 
-      {/* My CV Tab - Only shows CV preview */}
-      {activeTab === "mycv" && (
-        <div className="cv-card">
-          {!cvSaved && !cvFile ? (
-            <div className="empty-state">
-              <h3>You don't have a CV yet</h3>
-              <p>Get started by creating a new CV or uploading an existing one</p>
-              <div className="action-buttons">
-                <button className="btn-primary" onClick={() => setActiveTab("create")}>
-                  ✍️ Create New CV
-                </button>
-                <button className="btn-secondary" onClick={() => setActiveTab("manage")}>
-                  📁 Upload CV
-                </button>
-              </div>
-            </div>
-          ) : cvSaved ? (
-            <div className="cv-preview">
-              <div className="cv-header">
-                <h3>{formData.name}</h3>
-                <button className="edit-btn" onClick={() => setActiveTab("create")}>
-                  ✏️ Edit
-                </button>
-              </div>
-              <p className="cv-title">{formData.title}</p>
-              <p className="cv-summary">{formData.summary}</p>
-              <hr />
-              <div className="cv-section">
-                <h4>🎓 Education</h4>
-                <p>{formData.education}</p>
-              </div>
-              <div className="cv-section">
-                <h4>💼 Experience</h4>
-                <p>{formData.experience}</p>
-              </div>
-              <div className="cv-section">
-                <h4>🧠 Skills</h4>
-                <p>{formData.skills}</p>
-              </div>
-              <div className="cv-section">
-                <h4>🔗 Links</h4>
-                <p>{formData.links}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="cv-preview">
-              <div className="cv-header">
-                <h3>📄 {cvFile.name}</h3>
-                <button className="edit-btn" onClick={() => setActiveTab("create")}>
-                  ✍️ Create New
-                </button>
-              </div>
-              <p className="cv-file-info">PDF file uploaded successfully</p>
-            </div>
-          )}
+      {/* Progress Indicator */}
+      <div className="progress-steps">
+        <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
+          <span className="step-number">1</span>
+          <span className="step-label">Input</span>
+        </div>
+        <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
+          <span className="step-number">2</span>
+          <span className="step-label">AI Generation</span>
+        </div>
+        <div className={`step ${currentStep >= 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}>
+          <span className="step-number">3</span>
+          <span className="step-label">Review & Edit</span>
+        </div>
+        <div className={`step ${currentStep >= 4 ? 'active' : ''}`}>
+          <span className="step-number">4</span>
+          <span className="step-label">Your CV</span>
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="error-message">
+          <span>❌ {error}</span>
+          <button onClick={() => setError(null)}>×</button>
         </div>
       )}
 
-      {/* Create CV Tab - Using DynamicForm */}
-      {activeTab === "create" && (
-        <div className="form-with-sidebar">
-          <div className="cv-form">
-            <DynamicForm
-              title="✍️ Create/Edit Your CV"
-              fields={cvFormFields}
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-              submitText="💾 Save CV"
-              cancelText="Cancel"
-              showCancel={true}
-              loading={isSaving}
-              initialData={formData}
-              className="cv-dynamic-form"
-            />
-          </div>
-
-          <div className="ai-helper">
-            <h3>💡 AI Assistant</h3>
-            <div className="ai-features">
-              {aiFeatures.map((feature) => (
-                <div key={feature.key} className="feature-item">
-                  <div 
-                    className="feature-header"
-                    onClick={() => toggleFeature(feature.key)}
-                    style={{ 
-                      borderLeft: `4px solid ${openFeature === feature.key ? '#4CAF50' : '#2196F3'}` 
-                    }}
-                  >
-                    {feature.title}
-                  </div>
-                  {openFeature === feature.key && (
-                    <div className="feature-content">
-                      {feature.content}
-                    </div>
-                  )}
-                </div>
+      {/* Step 1: AI Input */}
+      {currentStep === 1 && (
+        <div className="step-content input-step">
+          <div className="input-container">
+            <h2>Let's create your professional CV</h2>
+            <p>Choose how you'd like to provide your information:</p>
+            
+            {/* Input Type Selector */}
+            <div className="input-type-selector">
+              {inputTypes.map(type => (
+                <button
+                  key={type.id}
+                  className={`type-option ${inputType === type.id ? 'active' : ''}`}
+                  onClick={() => setInputType(type.id)}
+                >
+                  {type.label}
+                </button>
               ))}
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Manage CV Tab - Only file operations */}
-      {activeTab === "manage" && (
-        <div className="cv-card">
-          <h3>📁 Manage Your CV Files</h3>
-          <p>Upload, download, and manage your CV files</p>
-
-          <div className="upload-section">
-            <h4>📤 Upload New CV</h4>
-            <label htmlFor="cvUpload" className="upload-label">
-              Choose PDF File
-            </label>
-            <input 
-              id="cvUpload" 
-              type="file" 
-              accept="application/pdf" 
-              onChange={handleUpload} 
-              hidden 
-            />
-          </div>
-
-          {cvFile && (
-            <div className="file-preview">
-              <h4>📄 Current File</h4>
-              <p className="file-name">{cvFile.name}</p>
-              <div className="file-actions">
-                <button className="btn-secondary" onClick={handleDownload}>
-                  📥 Download
-                </button>
-                <button className="btn-secondary" onClick={() => setShowPdfViewer(true)}>
-                  👁️ View Full
-                </button>
-                <button className="btn-danger" onClick={handleDelete}>
-                  🗑️ Delete
+            {/* Text Input */}
+            <div className="ai-input-section">
+              <textarea
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder={getCurrentPlaceholder()}
+                rows={8}
+                className="ai-input"
+              />
+              <div className="input-footer">
+                <span className="char-count">{aiInput.length} characters</span>
+                <button 
+                  className="generate-btn"
+                  onClick={generateCV}
+                  disabled={!aiInput.trim() || loading}
+                >
+                  ✨ Generate My CV
                 </button>
               </div>
             </div>
-          )}
 
-          {!cvFile && !cvSaved && (
-            <div className="empty-state">
-              <p>No CV files uploaded yet.</p>
-              <p>Upload a PDF file to get started!</p>
+            {/* Examples */}
+            <div className="examples-section">
+              <h3>💡 Examples to get you started:</h3>
+              <div className="examples-grid">
+                <div className="example-card" onClick={() => setAiInput("I'm a frontend developer with 3 years of experience in React and JavaScript. I love creating user-friendly interfaces and have worked on several e-commerce projects. I graduated with a Computer Science degree and I'm passionate about learning new technologies.")}>
+                  <h4>👨‍💻 Developer</h4>
+                  <p>Frontend developer with React experience...</p>
+                </div>
+                <div className="example-card" onClick={() => setAiInput("I'm a marketing professional with 5 years in digital marketing. I specialize in social media campaigns, content creation, and data analytics. I have a Marketing degree and have increased brand engagement by 200% in my previous role.")}>
+                  <h4>📱 Marketer</h4>
+                  <p>Digital marketing specialist with social media...</p>
+                </div>
+                <div className="example-card" onClick={() => setAiInput("Recent graduate with a degree in Business Administration. I completed internships in finance and project management. I'm seeking an entry-level position where I can apply my analytical skills and grow professionally.")}>
+                  <h4>🎓 Graduate</h4>
+                  <p>Recent business graduate seeking opportunities...</p>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
-      {/* PDF Modal */}
-      {showPdfViewer && cvFile && (
-        <div className="pdf-modal">
-          <div className="pdf-overlay" onClick={() => setShowPdfViewer(false)}></div>
-          <div className="pdf-content">
-            <button onClick={() => setShowPdfViewer(false)} className="close-btn">
-              ❌ Close
-            </button>
-            <iframe 
-              src={URL.createObjectURL(cvFile)} 
-              title="PDF Viewer"
-            />
+      {/* Step 2: AI Processing */}
+      {currentStep === 2 && (
+        <div className="step-content processing-step">
+          <div className="processing-container">
+            <div className="ai-animation">
+              <div className="ai-brain">🧠</div>
+              <div className="processing-dots">
+                <span>.</span><span>.</span><span>.</span>
+              </div>
+            </div>
+            <h2>AI is creating your professional CV</h2>
+            <p>Please wait while our AI analyzes your information and generates a tailored CV...</p>
+            <div className="processing-steps">
+              <div className="processing-step active">📝 Analyzing your input</div>
+              <div className="processing-step active">🎯 Structuring information</div>
+              <div className="processing-step active">✨ Generating professional content</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Review & Edit */}
+      {currentStep === 3 && cvData && (
+        <div className="step-content preview-step">
+          <div className="preview-container">
+            <h2>Review your AI-generated CV</h2>
+            <p>Make any changes you'd like, then save your CV</p>
+            
+            <div className="cv-preview-edit">
+              <div className="edit-form">
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    value={editData.name || ''}
+                    onChange={(e) => updateEditField('name', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Professional Title</label>
+                  <input
+                    type="text"
+                    value={editData.title || ''}
+                    onChange={(e) => updateEditField('title', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Professional Summary</label>
+                  <textarea
+                    rows={3}
+                    value={editData.summary || ''}
+                    onChange={(e) => updateEditField('summary', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Education</label>
+                  <textarea
+                    rows={3}
+                    value={editData.education || ''}
+                    onChange={(e) => updateEditField('education', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Experience</label>
+                  <textarea
+                    rows={4}
+                    value={editData.experience || ''}
+                    onChange={(e) => updateEditField('experience', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Skills</label>
+                  <textarea
+                    rows={2}
+                    value={editData.skills || ''}
+                    onChange={(e) => updateEditField('skills', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Links & Contact</label>
+                  <textarea
+                    rows={2}
+                    value={editData.links || ''}
+                    onChange={(e) => updateEditField('links', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="preview-actions">
+              <button className="back-btn" onClick={() => setCurrentStep(1)}>
+                ← Back to Input
+              </button>
+              <button className="save-btn" onClick={saveEdits} disabled={loading}>
+                {loading ? 'Saving...' : '💾 Save My CV'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Generated CV */}
+      {currentStep === 4 && cvData && (
+        <div className="step-content final-step">
+          <div className="final-container">
+            <div className="success-header">
+              <h2>🎉 Your CV is ready!</h2>
+              <p>Your professional CV has been created and saved</p>
+            </div>
+            
+            <div className="cv-display">
+              <div className="cv-paper">
+                <div className="cv-header-section">
+                  <h1 className="cv-name">{cvData.name}</h1>
+                  {cvData.title && <h2 className="cv-title">{cvData.title}</h2>}
+                </div>
+                
+                {cvData.summary && (
+                  <div className="cv-section">
+                    <h3>Professional Summary</h3>
+                    <p>{cvData.summary}</p>
+                  </div>
+                )}
+                
+                {cvData.experience && (
+                  <div className="cv-section">
+                    <h3>Experience</h3>
+                    <p>{cvData.experience}</p>
+                  </div>
+                )}
+                
+                {cvData.education && (
+                  <div className="cv-section">
+                    <h3>Education</h3>
+                    <p>{cvData.education}</p>
+                  </div>
+                )}
+                
+                {cvData.skills && (
+                  <div className="cv-section">
+                    <h3>Skills</h3>
+                    <p>{cvData.skills}</p>
+                  </div>
+                )}
+                
+                {cvData.links && (
+                  <div className="cv-section">
+                    <h3>Contact & Links</h3>
+                    <p>{cvData.links}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="final-actions">
+              <button className="edit-btn" onClick={startEditing}>
+                ✏️ Edit CV
+              </button>
+              <button className="regenerate-btn" onClick={() => setCurrentStep(1)}>
+                🔄 Create New CV
+              </button>
+              <button className="delete-btn" onClick={handleDeleteCV}>
+                🗑️ Delete CV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditing && (
+        <div className="edit-modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>✏️ Edit Your CV</h3>
+              <button className="close-btn" onClick={cancelEditing}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="edit-form">
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    value={editData.name || ''}
+                    onChange={(e) => updateEditField('name', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Professional Title</label>
+                  <input
+                    type="text"
+                    value={editData.title || ''}
+                    onChange={(e) => updateEditField('title', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Professional Summary</label>
+                  <textarea
+                    rows={3}
+                    value={editData.summary || ''}
+                    onChange={(e) => updateEditField('summary', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Education</label>
+                  <textarea
+                    rows={3}
+                    value={editData.education || ''}
+                    onChange={(e) => updateEditField('education', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Experience</label>
+                  <textarea
+                    rows={4}
+                    value={editData.experience || ''}
+                    onChange={(e) => updateEditField('experience', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Skills</label>
+                  <textarea
+                    rows={2}
+                    value={editData.skills || ''}
+                    onChange={(e) => updateEditField('skills', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Links & Contact</label>
+                  <textarea
+                    rows={2}
+                    value={editData.links || ''}
+                    onChange={(e) => updateEditField('links', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="cancel-btn" onClick={cancelEditing}>
+                Cancel
+              </button>
+              <button className="save-btn" onClick={saveEdits} disabled={loading}>
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       )}

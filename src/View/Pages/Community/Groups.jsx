@@ -1,392 +1,508 @@
-import { useState, useEffect } from "react";
-import {
-  localGroupsList,
-  localGroupPosts,
-} from "../../../Static/communityData";
+import { useState, useEffect, useContext } from "react";
 import "../../../CSS/Pages/Community/groups.scss";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Posts from "../../Components/Community/Posts";
+import GroupCard from "../../Components/Community/GroupCard";
+import { AuthContext } from "../../../Context/AuthContext";
+import { useFriends } from "../../../Context/FriendContext";
+
+// Import clean API functions instead of direct endpoints
+import {
+  getMyGroups,
+  getAllGroups,
+  getGroupFeed,
+  searchGroups,
+  getRecommendedGroups,
+  getGroupInvitations,
+  getGroupStats,
+  joinGroup,
+  leaveGroup
+} from "../../../Api/CommunityAPIs/groupsApi";
+
+import {
+  CreateGroupModal,
+  InviteFriendsModal,
+  GroupInvitationsModal,
+  UpdateGroupModal,
+  ReportGroupModal
+} from "../../Components/Community/GroupsModals";
+
+// Import Material-UI icons for modern UI
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import AddIcon from "@mui/icons-material/Add";
+import GroupsIcon from "@mui/icons-material/Groups";
+import RecommendIcon from "@mui/icons-material/Recommend";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 
 const Groups = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { authData } = useContext(AuthContext);
+  const { friendsList } = useFriends();
 
-  // User state
+  // State
+  const [activeTab, setActiveTab] = useState('discover');
   const [joinedGroups, setJoinedGroups] = useState([]);
   const [availableGroups, setAvailableGroups] = useState([]);
-  const [showCreateGroupPopup, setShowCreateGroupPopup] = useState(false);
-  
-  // Form state for creating group
-  const [createGroupForm, setCreateGroupForm] = useState({
-    name: "",
-    description: "",
-    img: "",
-    imgFile: null,
-    type: "Public" // Public or Private
+  const [recommendedGroups, setRecommendedGroups] = useState([]);
+  const [groupFeed, setGroupFeed] = useState([]);
+  const [groupStats, setGroupStats] = useState(null);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFilters, setSearchFilters] = useState({
+    type: "all",
+    sortBy: "activity"
   });
 
-  // Current user
-  const currentUser = {
-    id: 1,
-    name: "Muhammed Taha",
-  };
+  // Modal states
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showInviteFriendsModal, setShowInviteFriendsModal] = useState(false);
+  const [showInvitationsModal, setShowInvitationsModal] = useState(false);
+  const [selectedGroupForInvite, setSelectedGroupForInvite] = useState(null);
 
-  // Load joined and available groups on mount
+  // Handle navigation state (from notifications)
   useEffect(() => {
-    const joined = localGroupsList.filter((group) =>
-      group.membersList.some((member) => member.id === currentUser.id)
-    );
-    const available = localGroupsList.filter(
-      (group) => !group.membersList.some((member) => member.id === currentUser.id)
-    );
-    
-    setJoinedGroups(joined);
-    setAvailableGroups(available);
-  }, []);
-
-  // Join group (only join, no leave functionality here)
-  const joinGroup = (group) => {
-    // Add user as member
-    const updatedGroup = {
-      ...group,
-      membersList: [
-        ...(group.membersList || []),
-        {
-          id: currentUser.id,
-          name: currentUser.name,
-          role: "Member",
-          joinDate: new Date().toLocaleDateString(),
-        },
-      ],
-      members: group.members + 1,
-    };
-
-    // Update localGroupsList directly
-    const groupIndex = localGroupsList.findIndex((g) => g.id === group.id);
-    if (groupIndex !== -1) {
-      localGroupsList[groupIndex] = updatedGroup;
+    const state = location.state;
+    if (state?.openInvitationsModal) {
+      // Clear the navigation state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true });
+      
+      // Open the invitations modal after data loads
+      setShowInvitationsModal(true);
     }
+  }, [location.state, navigate, location.pathname]);
 
-    // Update local state
-    setJoinedGroups([...joinedGroups, updatedGroup]);
-    setAvailableGroups(availableGroups.filter((g) => g.id !== group.id));
-  };
+  // Load initial data
+  useEffect(() => {
+    if (!authData?.id) return;
+    loadAllGroupsData();
+  }, [authData]);
 
-  // Handle form input changes
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setCreateGroupForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  // Search groups when search term or filters change
+  useEffect(() => {
+    if (activeTab === 'discover') {
+      searchGroupsData();
+    }
+  }, [searchTerm, searchFilters, activeTab]);
 
-  // Handle file upload
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Check if file is an image
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+  const loadAllGroupsData = async () => {
+    try {
+      setLoading(true);
+      
+      if (!authData?.id) {
+        setLoading(false);
         return;
       }
       
-      // Check file size (limit to 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size should be less than 5MB');
-        return;
-      }
+      const [
+        joinedRes,
+        recommendedRes,
+        feedRes,
+        statsRes,
+        invitationsRes
+      ] = await Promise.all([
+        getMyGroups(),
+        getRecommendedGroups(),
+        getGroupFeed(),
+        getGroupStats(),
+        getGroupInvitations()
+      ]);
+      
+      setJoinedGroups(joinedRes || []);
+      setRecommendedGroups(recommendedRes || []);
+      setGroupFeed(feedRes || []);
+      setGroupStats(statsRes || {});
+      setPendingInvitations(invitationsRes || []);
 
-      // Create URL for preview
-      const imageUrl = URL.createObjectURL(file);
-      setCreateGroupForm(prev => ({
-        ...prev,
-        imgFile: file,
-        img: imageUrl
-      }));
+      // Initial search for discover tab
+      searchGroupsData();
+    } catch (error) {
+      setJoinedGroups([]);
+      setRecommendedGroups([]);
+      setGroupFeed([]);
+      setGroupStats({});
+      setPendingInvitations([]);
+      
+      if (error.response?.status === 401) {
+        alert("Please log in to access groups.");
+      } else {
+        alert("Failed to load groups. Please check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Remove selected image
-  const removeImage = () => {
-    setCreateGroupForm(prev => ({
-      ...prev,
-      imgFile: null,
-      img: ""
-    }));
+  const searchGroupsData = async () => {
+    try {
+      const searchResults = await searchGroups(searchTerm, searchFilters);
+      setAvailableGroups(searchResults || []);
+    } catch (error) {
+      setAvailableGroups([]);
+    }
   };
 
-  // Create new group
-  const createGroup = (e) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!createGroupForm.name.trim() || !createGroupForm.description.trim()) {
-      alert("Please fill in all required fields");
+  const handleJoinGroup = async (group) => {
+    try {
+      await joinGroup(group.id);
+
+      // Update local state
+      const updatedGroup = {
+        ...group,
+        memberCount: group.memberCount + 1,
+        isUserMember: true
+      };
+
+      setJoinedGroups(prev => [...prev, updatedGroup]);
+      setAvailableGroups(prev => prev.filter(g => g.id !== group.id));
+      setRecommendedGroups(prev => prev.filter(g => g.id !== group.id));
+
+      // Refresh stats
+      loadGroupStatsData();
+    } catch (error) {
+      alert("Failed to join group. Please try again.");
+    }
+  };
+
+  const handleLeaveGroup = async (group) => {
+    if (group.userRole === 'Founder') {
+      alert("Founders cannot leave their own groups. Delete the group instead.");
       return;
     }
 
-    // Generate new group ID
-    const newGroupId = Math.max(...localGroupsList.map(g => g.id), 0) + 1;
-
-    // Handle image - use file URL if uploaded, otherwise URL or placeholder
-    let groupImage = "https://via.placeholder.com/60x60?text=Group";
-    if (createGroupForm.imgFile) {
-      // In a real app, you'd upload to a server here
-      // For demo purposes, we'll use the blob URL
-      groupImage = createGroupForm.img;
-    } else if (createGroupForm.img.trim()) {
-      groupImage = createGroupForm.img.trim();
+    if (!window.confirm(`Are you sure you want to leave "${group.name}"?`)) {
+      return;
     }
 
-    // Create new group object
-    const newGroup = {
-      id: newGroupId,
-      name: createGroupForm.name.trim(),
-      description: createGroupForm.description.trim(),
-      img: groupImage,
-      type: createGroupForm.type,
-      members: 1, // Creator is the first member
-      membersList: [
-        {
-          id: currentUser.id,
-          name: currentUser.name,
-          role: "Founder",
-          joinDate: new Date().toLocaleDateString(),
-        }
-      ],
-      createdDate: new Date().toLocaleDateString(),
-      createdBy: currentUser.id
-    };
+    try {
+      await leaveGroup(group.id);
 
-    // Add to localGroupsList
-    localGroupsList.push(newGroup);
+      // Update local state
+      setJoinedGroups(prev => prev.filter(g => g.id !== group.id));
+      
+      // Add back to available groups if it's public
+      if (group.type === 'Public') {
+        const updatedGroup = {
+          ...group,
+          memberCount: group.memberCount - 1,
+          isUserMember: false
+        };
+        setAvailableGroups(prev => [updatedGroup, ...prev]);
+      }
 
-    // Initialize empty posts array for this group
-    localGroupPosts[newGroupId] = [];
-
-    // Add to joined groups (creator automatically joins)
-    setJoinedGroups([...joinedGroups, newGroup]);
-
-    // Reset form and close popup
-    setCreateGroupForm({
-      name: "",
-      description: "",
-      img: "",
-      imgFile: null,
-      type: "Public"
-    });
-    setShowCreateGroupPopup(false);
+      // Refresh stats
+      loadGroupStatsData();
+    } catch (error) {
+      alert("Failed to leave group. Please try again.");
+    }
   };
 
-  // Close popup
-  const closePopup = () => {
-    // Clean up blob URL if exists
-    if (createGroupForm.imgFile && createGroupForm.img) {
-      URL.revokeObjectURL(createGroupForm.img);
+  const handleInviteFriends = (group) => {
+    if (!friendsList || friendsList.length === 0) {
+      alert("You don't have any friends to invite yet. Add some friends first!");
+      return;
     }
     
-    setShowCreateGroupPopup(false);
-    setCreateGroupForm({
-      name: "",
-      description: "",
-      img: "",
-      imgFile: null,
-      type: "Public"
-    });
+    setSelectedGroupForInvite(group);
+    setShowInviteFriendsModal(true);
   };
 
-  // Get all posts from joined groups
-  const allPosts = joinedGroups.flatMap((group) =>
-    (localGroupPosts[group.id] || []).map((post) => ({
-      ...post,
-      groupName: group.name,
-      groupId: group.id,
-    }))
-  );
+  const loadGroupStatsData = async () => {
+    try {
+      const stats = await getGroupStats();
+      setGroupStats(stats || {});
+    } catch (error) {
+      // Handle silently
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'discover' && availableGroups.length === 0) {
+      searchGroupsData();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="groupsPage">
+        <div className="loading">
+          <div className="loading-spinner"></div>
+          <p>Loading groups...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="groupsPage horizontalLayout">
-      {/* Left: Feed */}
-      <div className="groupFeed">
-        <div className="feedHeader">
-          <h3>Latest Updates</h3>
+    <div className="groupsPage">
+      {/* Header with Stats and Actions */}
+      <div className="groupsHeader">
+        <div className="headerLeft">
+          <h2>
+            <GroupsIcon className="headerIcon" />
+            Groups
+          </h2>
+          <div className="statsRow">
+            <div className="stat">
+              <span className="statNumber">{groupStats.userJoinedGroups || 0}</span>
+              <span className="statLabel">Joined</span>
+            </div>
+            <div className="stat">
+              <span className="statNumber">{groupStats.availableGroups || 0}</span>
+              <span className="statLabel">Available</span>
+            </div>
+            {pendingInvitations.length > 0 && (
+              <div className="stat highlight">
+                <span className="statNumber">{pendingInvitations.length}</span>
+                <span className="statLabel">Invitations</span>
+              </div>
+            )}
+          </div>
         </div>
-
-        {allPosts.length === 0 ? (
-          <p>You haven't joined any groups yet or there are no posts.</p>
-        ) : (
-          <Posts posts={allPosts} />
-        )}
-      </div>
-
-      {/* Right: All groups to join/leave */}
-      <div className="groupSidebar">
-        <div className="groupSidebarHeader">
-          <h3>Discover Groups</h3>
+        
+        <div className="headerActions">
+          {pendingInvitations.length > 0 && (
+            <button 
+              className="invitationsBtn"
+              onClick={() => setShowInvitationsModal(true)}
+            >
+              <NotificationsIcon />
+              Invitations ({pendingInvitations.length})
+            </button>
+          )}
           <button 
-            className="createGroupBtn"
-            onClick={() => setShowCreateGroupPopup(true)}
+            className="createGroupBtn primary"
+            onClick={() => setShowCreateGroupModal(true)}
           >
+            <AddIcon />
             Create Group
           </button>
         </div>
+      </div>
 
-        {availableGroups.map((group) => (
-          <div className="groupListCard" key={group.id}>
-            <img src={group.img} alt={group.name} className="groupThumb" />
-            <div className="groupInfo">
-              <h4>{group.name}</h4>
-              <p>{group.description}</p>
-              <small>
-                {group.members} Members • {group.type}
-              </small>
+      {/* Navigation Tabs */}
+      <div className="groupsNav">
+        <button 
+          className={`navTab ${activeTab === 'discover' ? 'active' : ''}`}
+          onClick={() => handleTabChange('discover')}
+        >
+          <RecommendIcon />
+          Discover
+        </button>
+        <button 
+          className={`navTab ${activeTab === 'myGroups' ? 'active' : ''}`}
+          onClick={() => handleTabChange('myGroups')}
+        >
+          <GroupsIcon />
+          My Groups ({joinedGroups.length})
+        </button>
+        <button 
+          className={`navTab ${activeTab === 'feed' ? 'active' : ''}`}
+          onClick={() => handleTabChange('feed')}
+        >
+          <TrendingUpIcon />
+          Feed
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="tabContent">
+        {/* Discover Tab */}
+        {activeTab === 'discover' && (
+          <div className="discoverTab">
+            {/* Search and Filters */}
+            <div className="searchSection">
+              <div className="searchBar">
+                <SearchIcon className="searchIcon" />
+                <input
+                  type="text"
+                  placeholder="Search groups by name or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="searchInput"
+                />
+              </div>
+              
+              <div className="filterSection">
+                <FilterListIcon className="filterIcon" />
+                <select
+                  value={searchFilters.type}
+                  onChange={(e) => setSearchFilters(prev => ({...prev, type: e.target.value}))}
+                  className="filterSelect"
+                >
+                  <option value="all">All Types</option>
+                  <option value="Public">Public</option>
+                  <option value="Private">Private</option>
+                </select>
+                
+                <select
+                  value={searchFilters.sortBy}
+                  onChange={(e) => setSearchFilters(prev => ({...prev, sortBy: e.target.value}))}
+                  className="filterSelect"
+                >
+                  <option value="activity">Most Active</option>
+                  <option value="members">Most Members</option>
+                  <option value="newest">Newest</option>
+                </select>
+              </div>
             </div>
-            <button
-              className="joinBtn"
-              onClick={() => joinGroup(group)}
-            >
-              Join
-            </button>
-          </div>
-        ))}
 
-        {availableGroups.length === 0 && (
-          <p className="noGroupsMessage">You've joined all available groups!</p>
+            {/* Recommended Groups Section */}
+            {recommendedGroups.length > 0 && !searchTerm && (
+              <div className="groupsSection">
+                <h3>
+                  <RecommendIcon />
+                  Recommended for You
+                </h3>
+                <div className="groupsGrid">
+                  {recommendedGroups.slice(0, 6).map(group => (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      onJoin={() => handleJoinGroup(group)}
+                      onInviteFriends={() => handleInviteFriends(group)}
+                      currentUserId={authData?.id}
+                      showInviteButton={false}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Search Results */}
+            <div className="groupsSection">
+              <h3>
+                {searchTerm ? `Search Results (${availableGroups.length})` : 'Discover Groups'}
+              </h3>
+              
+              {availableGroups.length === 0 ? (
+                <div className="emptyState">
+                  <GroupsIcon className="emptyIcon" />
+                  <p>
+                    {searchTerm 
+                      ? `No groups found for "${searchTerm}"`
+                      : "No new groups to discover"
+                    }
+                  </p>
+                  {searchTerm && (
+                    <button onClick={() => setSearchTerm("")}>
+                      Clear Search
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="groupsGrid">
+                  {availableGroups.map(group => (
+                    <GroupCard
+                      key={group.id}
+                      group={group}
+                      onJoin={() => handleJoinGroup(group)}
+                      onInviteFriends={() => handleInviteFriends(group)}
+                      currentUserId={authData?.id}
+                      showInviteButton={false}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
 
-        {joinedGroups.length > 0 && (
-          <div className="joinedGroupsSection">
-            <h3>Your Groups</h3>
-            {joinedGroups.map((group) => {
-              // Check if current user is the founder
-              const userRole = group.membersList.find(member => member.id === currentUser.id)?.role;
-              
-              return (
-                <div className="groupListCard" key={group.id}>
-                  <img src={group.img} alt={group.name} className="groupThumb" />
-                  <div className="groupInfo">
-                    <h4>{group.name}</h4>
-                    <p>{group.description}</p>
-                    <small>
-                      {group.members} Members • {group.type}
-                      {userRole === "Founder" && <span className="roleTag founder">Founder</span>}
-                    </small>
-                  </div>
-                  <div className="groupCardActions">
-                    <button
-                      className="viewGroupBtn"
-                      onClick={() => navigate(`/groups/${group.id}`)}
-                    >
-                      View Group
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        {/* My Groups Tab */}
+        {activeTab === 'myGroups' && (
+          <div className="myGroupsTab">
+            {joinedGroups.length === 0 ? (
+              <div className="emptyState">
+                <GroupsIcon className="emptyIcon" />
+                <p>You haven't joined any groups yet.</p>
+                <button onClick={() => handleTabChange('discover')}>
+                  Discover Groups
+                </button>
+              </div>
+            ) : (
+              <div className="groupsGrid">
+                {joinedGroups.map(group => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    onLeave={() => handleLeaveGroup(group)}
+                    onInviteFriends={() => handleInviteFriends(group)}
+                    onViewGroup={() => navigate(`/community/groups/${group.id}`)}
+                    currentUserId={authData?.id}
+                    showInviteButton={true}
+                    isJoined={true}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Feed Tab */}
+        {activeTab === 'feed' && (
+          <div className="feedTab">
+            {groupFeed.length === 0 ? (
+              <div className="emptyState">
+                <TrendingUpIcon className="emptyIcon" />
+                <p>No posts from your groups yet.</p>
+                <button onClick={() => handleTabChange('myGroups')}>
+                  View My Groups
+                </button>
+              </div>
+            ) : (
+              <div className="feedContent">
+                <h3>Latest from Your Groups</h3>
+                <Posts posts={groupFeed} />
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Create Group Popup */}
-      {showCreateGroupPopup && (
-        <div className="popupOverlay" onClick={closePopup}>
-          <div className="createGroupPopup" onClick={(e) => e.stopPropagation()}>
-            <div className="popupHeader">
-              <h3>Create New Group</h3>
-              <button className="closeBtn" onClick={closePopup}>×</button>
-            </div>
-            
-            <form onSubmit={createGroup} className="createGroupForm">
-              <div className="formGroup">
-                <label htmlFor="groupName">Group Name *</label>
-                <input
-                  type="text"
-                  id="groupName"
-                  name="name"
-                  value={createGroupForm.name}
-                  onChange={handleFormChange}
-                  placeholder="Enter group name"
-                  required
-                />
-              </div>
+      {/* Modals */}
+      {showCreateGroupModal && (
+        <CreateGroupModal
+          isOpen={showCreateGroupModal}
+          onClose={() => setShowCreateGroupModal(false)}
+          onGroupCreated={(newGroup) => {
+            setJoinedGroups(prev => [newGroup, ...prev]);
+            setShowCreateGroupModal(false);
+            loadGroupStatsData();
+          }}
+        />
+      )}
 
-              <div className="formGroup">
-                <label htmlFor="groupDescription">Description *</label>
-                <textarea
-                  id="groupDescription"
-                  name="description"
-                  value={createGroupForm.description}
-                  onChange={handleFormChange}
-                  placeholder="Describe your group"
-                  rows="3"
-                  required
-                />
-              </div>
+      {showInviteFriendsModal && selectedGroupForInvite && (
+        <InviteFriendsModal
+          isOpen={showInviteFriendsModal}
+          group={selectedGroupForInvite}
+          friends={friendsList}
+          onClose={() => {
+            setShowInviteFriendsModal(false);
+            setSelectedGroupForInvite(null);
+          }}
+          onInvitesSent={() => {
+            setShowInviteFriendsModal(false);
+            setSelectedGroupForInvite(null);
+          }}
+        />
+      )}
 
-              <div className="formGroup">
-                <label>Group Image</label>
-                <div className="imageUploadSection">
-                  {createGroupForm.img ? (
-                    <div className="imagePreview">
-                      <img src={createGroupForm.img} alt="Group preview" className="previewImg" />
-                      <button type="button" className="removeImageBtn" onClick={removeImage}>
-                        Remove
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="imageUploadOptions">
-                      <div className="uploadOption">
-                        <label htmlFor="imageFile" className="fileUploadBtn">
-                          Choose from Computer
-                        </label>
-                        <input
-                          type="file"
-                          id="imageFile"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          hidden
-                        />
-                      </div>
-                      <div className="orDivider">OR</div>
-                      <div className="uploadOption">
-                        <input
-                          type="url"
-                          name="img"
-                          value={createGroupForm.imgFile ? "" : createGroupForm.img}
-                          onChange={handleFormChange}
-                          placeholder="Enter image URL"
-                          disabled={!!createGroupForm.imgFile}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="formGroup">
-                <label htmlFor="groupType">Privacy</label>
-                <select
-                  id="groupType"
-                  name="type"
-                  value={createGroupForm.type}
-                  onChange={handleFormChange}
-                >
-                  <option value="Public">Public</option>
-                  <option value="Private">Private</option>
-                </select>
-              </div>
-
-              <div className="formActions">
-                <button type="button" className="cancelBtn" onClick={closePopup}>
-                  Cancel
-                </button>
-                <button type="submit" className="submitBtn">
-                  Create Group
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {showInvitationsModal && (
+        <GroupInvitationsModal
+          isOpen={showInvitationsModal}
+          invitations={pendingInvitations}
+          onClose={() => setShowInvitationsModal(false)}
+          onInvitationResponded={() => {
+            loadAllGroupsData();
+          }}
+        />
       )}
     </div>
   );

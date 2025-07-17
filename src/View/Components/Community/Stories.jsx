@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useAuth } from "../../../Context/AuthContext";
 import { useFriends } from "../../../Context/FriendContext";
 import "../../../CSS/Components/Community/stories.scss";
+
+// Import the new clean API functions
+import { getStoriesFeed, createStory } from "../../../Api/CommunityAPIs/storiesApi";
 
 const Stories = () => {
   const [openUserIndex, setOpenUserIndex] = useState(null);
@@ -22,39 +24,35 @@ const Stories = () => {
   // Load user stories when component mounts or user changes
   useEffect(() => {
     if (!userId) return;
+    loadStories();
+  }, [userId, friendsList]);
 
-    const loadStories = async () => {
-      try {
-        // Use the feed endpoint to get all visible stories (user + friends)
-        const response = await axios.get(`http://localhost:8080/api/community/stories/feed?userId=${userId}`);
-        console.log("Stories response:", response.data); // Debug log
-        
-        // Extract stories from the response structure
-        const storiesData = response.data.stories || [];
-        
-        // Flatten the grouped stories into individual story objects
-        const flattenedStories = [];
-        storiesData.forEach(userGroup => {
-          userGroup.stories.forEach(story => {
-            flattenedStories.push({
-              ...story,
-              userId: userGroup.userId,
-              name: userGroup.name,
-              profilePic: userGroup.profilePic
-            });
+  const loadStories = async () => {
+    try {
+      const friendIds = friendsList.map((friend) => friend.id);
+      
+      const response = await getStoriesFeed(userId, friendIds);
+      const storiesData = response.stories || [];
+
+      // Flatten the grouped stories into individual story objects
+      const flattenedStories = [];
+      storiesData.forEach((userGroup) => {
+        userGroup.stories.forEach((story) => {
+          flattenedStories.push({
+            ...story,
+            userId: userGroup.userId,
+            name: userGroup.name,
+            profilePic: userGroup.profilePic,
           });
         });
-        
-        console.log("Flattened stories:", flattenedStories); // Debug log
-        setUserStories(flattenedStories);
-      } catch (err) {
-        console.error("Failed to fetch stories:", err);
-        setUserStories([]);
-      }
-    };
+      });
 
-    loadStories();
-  }, [userId]);
+      setUserStories(flattenedStories);
+    } catch (err) {
+      console.error("Failed to fetch stories:", err);
+      setUserStories([]);
+    }
+  };
 
   // Filter stories to show only current user + friends' stories
   const allStories = userStories.filter((story) => {
@@ -64,7 +62,7 @@ const Stories = () => {
 
   // Group stories by user
   const groupedStories = allStories.reduce((acc, story) => {
-    const existingUser = acc.find(user => user.userId === story.userId);
+    const existingUser = acc.find((user) => user.userId === story.userId);
     if (existingUser) {
       existingUser.stories.push(story);
     } else {
@@ -79,8 +77,12 @@ const Stories = () => {
   }, []);
 
   // Separate current user and friends' stories
-  const currentUserGroup = groupedStories.find(user => user.userId === userId);
-  const friendsStories = groupedStories.filter(user => user.userId !== userId);
+  const currentUserGroup = groupedStories.find(
+    (user) => user.userId === userId
+  );
+  const friendsStories = groupedStories.filter(
+    (user) => user.userId !== userId
+  );
 
   // Final display array
   const displayStories = [];
@@ -102,8 +104,12 @@ const Stories = () => {
       setCurrentStoryIndex(0);
       setStoryProgress(0);
     } else {
-      handleAddStory();
+      alert("You don't have any stories yet. Click the + button to create one!");
     }
+  };
+
+  const handleAddStoryClick = () => {
+    handleAddStory();
   };
 
   const handleClose = () => {
@@ -172,42 +178,18 @@ const Stories = () => {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("userId", userId);
-      formData.append("name", authData.name);
-      formData.append("profilePic", authData.profilePic || "");
-      formData.append("text", storyText.trim());
+      const storyData = {
+        name: authData.name,
+        profilePic: authData.profilePic || "",
+        text: storyText.trim(),
+        img: selectedFile || null
+      };
 
-      if (selectedFile) {
-        formData.append("img", selectedFile);
-      }
-
-      const res = await axios.post("http://localhost:8080/api/community/stories", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      console.log("Upload response:", res.data); // Debug log
+      await createStory(storyData);
 
       // After successful upload, reload stories from the server
-      const response = await axios.get(`http://localhost:8080/api/community/stories/feed?userId=${userId}`);
-      const storiesData = response.data.stories || [];
-      
-      // Flatten the grouped stories into individual story objects
-      const flattenedStories = [];
-      storiesData.forEach(userGroup => {
-        userGroup.stories.forEach(story => {
-          flattenedStories.push({
-            ...story,
-            userId: userGroup.userId,
-            name: userGroup.name,
-            profilePic: userGroup.profilePic
-          });
-        });
-      });
-      
-      setUserStories(flattenedStories);
+      await loadStories();
+
       setShowAddStory(false);
       setStoryText("");
       setSelectedFile(null);
@@ -240,8 +222,8 @@ const Stories = () => {
       currentStory.type === "video" ||
       (currentStory.img &&
         (currentStory.img.includes(".mp4") ||
-         currentStory.img.includes(".webm") ||
-         currentStory.img.includes(".ogg")));
+          currentStory.img.includes(".webm") ||
+          currentStory.img.includes(".ogg")));
 
     if (isVideo) {
       const videoElement = document.querySelector(".story-full-video");
@@ -287,9 +269,11 @@ const Stories = () => {
       story.type === "video" ||
       (story.img &&
         (story.img.includes(".mp4") ||
-         story.img.includes(".webm") ||
-         story.img.includes(".ogg")));
+          story.img.includes(".webm") ||
+          story.img.includes(".ogg") ||
+          story.img.includes(".mov")));
 
+    // If it's just text or no media
     if (story.type === "text" || (!story.img && story.text)) {
       return (
         <div className="story-text-content">
@@ -298,51 +282,80 @@ const Stories = () => {
       );
     }
 
-    const mediaElement = isVideo ? (
-      <video
-        className="story-full-video"
-        src={story.img}
-        autoPlay
-        muted
-        onLoadedMetadata={(e) => {
-          console.log("Video duration:", e.target.duration * 1000);
-        }}
-        onError={(e) => {
-          console.error("Video failed to load:", e);
-        }}
-      />
-    ) : (
-      <img
-        src={story.img}
-        alt="Story"
-        className="story-full-img"
-        onError={(e) => {
-          e.target.src = "https://via.placeholder.com/400x600/cccccc/666666?text=Story";
-        }}
-      />
-    );
+    // If we have media (image or video)
+    if (story.img) {
+      const mediaElement = isVideo ? (
+        <video
+          className="story-full-video"
+          src={story.img}
+          autoPlay
+          muted
+          loop
+          onError={(e) => {
+            console.error("Video failed to load:", story.img);
+          }}
+        />
+      ) : (
+        <img
+          src={story.img}
+          alt="Story"
+          className="story-full-img"
+          onError={(e) => {
+            e.target.src =
+              "https://via.placeholder.com/400x600/cccccc/666666?text=Story";
+          }}
+        />
+      );
 
+      return (
+        <div className="story-media-container">
+          {mediaElement}
+          {story.text && (
+            <div className="story-text-overlay">
+              <p>{story.text}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback if no media
     return (
-      <div className="story-media-container">
-        {mediaElement}
-        {story.text && <div className="story-text-overlay"><p>{story.text}</p></div>}
+      <div className="story-text-content">
+        <p>{story.text || "Story content unavailable"}</p>
       </div>
     );
   };
 
-  console.log("Current user group:", currentUserGroup); // Debug log
-  console.log("Display stories:", displayStories); // Debug log
-
   return (
     <div className="stories">
-      <div className="story">
+      <div
+        className="story"
+        style={{
+          border:
+            currentUserGroup?.stories.length > 0
+              ? "3px solid #4CAF50"
+              : "1px solid #ddd",
+        }}
+      >
         <img
-          src={authData.profilePic}
-          alt=""
+          src={authData?.profilePic || authData?.profile_pic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "default")}
+          alt={authData?.name || "User"}
           onClick={handleOpenCurrentUserStory}
+          style={{ cursor: "pointer" }}
+          onError={(e) => {
+            e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "default");
+          }}
         />
-        <span onClick={handleOpenCurrentUserStory}>{authData.name}</span>
-        <button onClick={handleAddStory}>+</button>
+        <span
+          onClick={handleOpenCurrentUserStory}
+          style={{ cursor: "pointer" }}
+        >
+          {authData?.name}{" "}
+          {currentUserGroup?.stories.length > 0 &&
+            `(${currentUserGroup.stories.length})`}
+        </span>
+        <button onClick={handleAddStoryClick}>+</button>
       </div>
 
       {friendsStories.map((user, index) => {
@@ -353,7 +366,13 @@ const Stories = () => {
             key={user.userId}
             onClick={() => handleOpenStory(displayIndex)}
           >
-            <img src={user.profilePic || user.stories[0]?.img} alt="" />
+            <img 
+              src={user.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (user.name || "user")}
+              alt={user.name}
+              onError={(e) => {
+                e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (user.name || "user");
+              }}
+            />
             <span>{user.name}</span>
             {user.stories.length > 1 && (
               <div className="story-count">{user.stories.length}</div>
@@ -406,7 +425,8 @@ const Stories = () => {
                 {displayStories[openUserIndex].name}
               </span>
               <span className="story-time">
-                {displayStories[openUserIndex].stories[currentStoryIndex].time || "2h ago"}
+                {displayStories[openUserIndex].stories[currentStoryIndex]
+                  .time || "2h ago"}
               </span>
             </div>
             <button className="close-btn" onClick={handleClose}>
@@ -419,7 +439,9 @@ const Stories = () => {
                 ‹
               </button>
             )}
-            {renderStoryMedia(displayStories[openUserIndex].stories[currentStoryIndex])}
+            {renderStoryMedia(
+              displayStories[openUserIndex].stories[currentStoryIndex]
+            )}
             {(openUserIndex < displayStories.length - 1 ||
               currentStoryIndex <
                 displayStories[openUserIndex].stories.length - 1) && (
@@ -450,7 +472,10 @@ const Stories = () => {
                   onChange={(e) => handleFileSelect(e.target.files[0])}
                   style={{ display: "none" }}
                 />
-                <label htmlFor="story-upload" className={`upload-button ${selectedFile ? 'has-file' : ''}`}>
+                <label
+                  htmlFor="story-upload"
+                  className={`upload-button ${selectedFile ? "has-file" : ""}`}
+                >
                   {selectedFile ? (
                     <div className="file-preview">
                       <div className="file-info">
@@ -491,7 +516,9 @@ const Stories = () => {
                   Cancel
                 </button>
                 <button
-                  className={`share-button ${!canShare ? 'disabled' : ''} ${isUploading ? 'loading' : ''}`}
+                  className={`share-button ${!canShare ? "disabled" : ""} ${
+                    isUploading ? "loading" : ""
+                  }`}
                   onClick={handleStoryUpload}
                   disabled={!canShare}
                 >

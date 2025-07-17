@@ -1,8 +1,37 @@
-import { useState } from "react";
-import { jobPosts } from "../../../Static/communityData";
+import { useState, useEffect, useContext } from "react";
 import "../../../CSS/Pages/Community/jobBoard.scss";
+import { AuthContext } from "../../../Context/AuthContext";
+import Modal from "../../Components/Modal/Modal.jsx";
+
+// Import clean API functions instead of direct endpoints and axios
+import {
+  getAllJobs,
+  getMyPostedJobs,
+  getAppliedJobs,
+  getSavedJobs,
+  createJob,
+  updateJob,
+  deleteJob,
+  applyToJob,
+  saveJob,
+  unsaveJob,
+  getJobApplications,
+  acceptApplication,
+  rejectApplication,
+  downloadJobApplicantCV
+} from "../../../Api/CommunityAPIs/jobsApi";
+
+import {
+  getCV
+} from "../../../Api/CommunityAPIs/cvApi";
+
+import {
+  sendNotification
+} from "../../../Api/CommunityAPIs/notificationsApi";
 
 const JobBoard = () => {
+  const { authData } = useContext(AuthContext);
+  
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
@@ -11,16 +40,25 @@ const JobBoard = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [jobTypeFilter, setJobTypeFilter] = useState("All");
+  const [loading, setLoading] = useState(true);
   
-  // Job interaction state
+  // Job data state
+  const [allJobs, setAllJobs] = useState([]);
   const [savedJobs, setSavedJobs] = useState([]);
   const [appliedJobs, setAppliedJobs] = useState([]);
   const [postedJobs, setPostedJobs] = useState([]);
   
   // Job management state
   const [editingJob, setEditingJob] = useState(null);
-  const [jobApplications, setJobApplications] = useState({}); // Track applications per job ID
-  const [viewingApplications, setViewingApplications] = useState(null);
+  const [jobApplications, setJobApplications] = useState({});
+  
+  // CV and Application Modal states
+  const [userCV, setUserCV] = useState(null);
+  const [showApplicationsModal, setShowApplicationsModal] = useState(false);
+  const [currentJobApplications, setCurrentJobApplications] = useState([]);
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [showCVModal, setShowCVModal] = useState(false);
+  const [selectedCV, setSelectedCV] = useState(null);
 
   // New job form state with all required fields
   const [newJob, setNewJob] = useState({
@@ -43,7 +81,6 @@ const JobBoard = () => {
   // CONSTANTS AND CONFIGURATION
   // ============================================================================
   
-  // Predefined skills for job posting form
   const predefinedSkills = [
     "JavaScript", "React", "Node.js", "Python", "Java", "SQL",
     "UI/UX Design", "Project Management", "Data Analysis", "AWS",
@@ -52,7 +89,6 @@ const JobBoard = () => {
     "PostgreSQL", "Firebase", "Figma", "Adobe Creative Suite"
   ];
 
-  // Available benefits for job postings
   const benefitOptions = [
     "Health Insurance", "401(k)", "Flexible Hours", "Remote Work",
     "Paid Time Off", "Professional Development", "Stock Options",
@@ -62,67 +98,262 @@ const JobBoard = () => {
     "Unlimited PTO"
   ];
 
-  // Mock data for job applications (in production, this would come from API)
-  const mockApplications = {
-    1: [
-      { id: 1, name: "John Doe", email: "john@email.com", status: "pending" },
-      { id: 2, name: "Jane Smith", email: "jane@email.com", status: "reviewed" }
-    ]
-  };
+  // ============================================================================
+  // API INTEGRATION - LOAD DATA
+  // ============================================================================
+  
+  useEffect(() => {
+    if (!authData?.id) return;
+
+    const fetchJobsData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load jobs data and user CV in parallel
+        const [allJobsRes, savedRes, appliedRes, postedRes, cvRes] = await Promise.all([
+          getAllJobs(),
+          getSavedJobs(),
+          getAppliedJobs(),
+          getMyPostedJobs(),
+          getCV().catch(() => null) // CV might not exist
+        ]);
+        
+        setAllJobs(allJobsRes || []);
+        setSavedJobs(savedRes || []);
+        setAppliedJobs(appliedRes || []);
+        setPostedJobs(postedRes || []);
+        setUserCV(cvRes || null);
+
+        // Load application counts for posted jobs
+        const applicationCounts = {};
+        for (const job of postedRes || []) {
+          try {
+            const appsRes = await getJobApplications(job.id);
+            applicationCounts[job.id] = appsRes?.length || 0;
+          } catch (error) {
+            applicationCounts[job.id] = 0;
+          }
+        }
+        setJobApplications(applicationCounts);
+        
+      } catch (error) {
+        // Handle error silently
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobsData();
+  }, [authData]);
 
   // ============================================================================
-  // JOB INTERACTION HANDLERS
+  // CV CHECK AND APPLICATION LOGIC
   // ============================================================================
   
   /**
-   * Toggle save/unsave job functionality
-   * @param {Object} job - Job object to save or unsave
+   * Check if user has CV before allowing application
    */
-  const handleSaveJob = (job) => {
-    setSavedJobs((prev) =>
-      prev.some((j) => j.id === job.id)
-        ? prev.filter((j) => j.id !== job.id) // Remove if already saved
-        : [...prev, job] // Add if not saved
-    );
+  const checkCVBeforeApply = () => {
+    if (!userCV || (!userCV.name && !userCV.fileName)) {
+      alert(`🚨 Oops! You don't have a CV yet! 📄
+
+Your chances of getting this job: 0.000001% 😅
+
+But don't worry! Create your amazing CV first and come back to apply! 
+Head over to the "My CV" section and show the world what you've got! 💪✨`);
+      return false;
+    }
+    return true;
   };
 
   /**
-   * Handle job application - toggle apply/unapply and update application count
-   * @param {Object} job - Job object to apply to or unapply from
+   * Apply to job with CV validation
    */
-  const handleApplyJob = (job) => {
-    const isCurrentlyApplied = appliedJobs.some((j) => j.id === job.id);
-    
-    // Update applied jobs list
-    setAppliedJobs((prev) =>
-      isCurrentlyApplied
-        ? prev.filter((j) => j.id !== job.id) // Remove application
-        : [...prev, job] // Add application
-    );
-    
-    // Update application count for the job
-    setJobApplications(prev => ({
-      ...prev,
-      [job.id]: isCurrentlyApplied 
-        ? Math.max((prev[job.id] || 1) - 1, 0) // Decrease count, minimum 0
-        : (prev[job.id] || 0) + 1 // Increase count
-    }));
-  };
-
-  // ============================================================================
-  // JOB MANAGEMENT HANDLERS (CRUD Operations)
-  // ============================================================================
-  
-  /**
-   * Delete a job posting with confirmation
-   * @param {number} jobId - ID of job to delete
-   */
-  const handleDeleteJob = (jobId) => {
-    if (window.confirm("Are you sure you want to delete this job posting?")) {
-      // Remove job from posted jobs
-      setPostedJobs(prev => prev.filter(job => job.id !== jobId));
+  const handleApplyJob = async (job) => {
+    try {
+      const isApplied = appliedJobs.some((j) => j.id === job.id);
       
-      // Clean up applications data for this job
+      if (isApplied) {
+        // Unapply (you might want to add an endpoint for this)
+        setAppliedJobs(prev => prev.filter(j => j.id !== job.id));
+        setJobApplications(prev => ({
+          ...prev,
+          [job.id]: Math.max((prev[job.id] || 1) - 1, 0)
+        }));
+        return;
+      }
+
+      // Check CV before applying
+      if (!checkCVBeforeApply()) {
+        return;
+      }
+
+      // Apply with CV data
+      await applyToJob(job.id, {
+        applicationLink: "", 
+        message: "Application submitted with CV attached",
+        cvData: userCV // Send CV data with application
+      });
+      
+      setAppliedJobs(prev => [...prev, job]);
+      setJobApplications(prev => ({
+        ...prev,
+        [job.id]: (prev[job.id] || 0) + 1
+      }));
+
+      alert("🎉 Application submitted successfully with your CV!");
+      
+    } catch (error) {
+      if (error.message?.includes("CV not found")) {
+        alert("🚨 You need to create a CV before applying to jobs!\n\nYour chances without a CV: 0.000001% 😅\n\nGo to 'My CV' section and create your amazing CV first! 💪");
+      } else {
+        alert("Failed to apply to job. Please try again.");
+      }
+    }
+  };
+
+  // ============================================================================
+  // APPLICATIONS MANAGEMENT
+  // ============================================================================
+  
+  /**
+   * View applications with enhanced CV data
+   */
+  const handleViewApplications = async (job) => {
+    try {
+      setLoading(true);
+      const applications = await getJobApplications(job.id);
+      
+      // Applications now come with enhanced CV data from backend
+      setSelectedJob(job);
+      setCurrentJobApplications(applications || []);
+      setShowApplicationsModal(true);
+      
+    } catch (error) {
+      alert("Failed to load applications.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Accept job application
+   */
+  const handleAcceptApplication = async (application) => {
+    try {
+      await acceptApplication(application.id);
+      
+      // Update local state
+      setCurrentJobApplications(prev => 
+        prev.map(app => 
+          app.id === application.id 
+            ? { ...app, status: 'ACCEPTED' }
+            : app
+        )
+      );
+
+      alert(`✅ Application accepted! ${application.applicant.name} has been notified.`);
+      
+    } catch (error) {
+      alert("Failed to accept application. Please try again.");
+    }
+  };
+
+  /**
+   * Reject job application
+   */
+  const handleRejectApplication = async (application) => {
+    if (!confirm(`Are you sure you want to reject ${application.applicant.name}'s application?`)) {
+      return;
+    }
+
+    try {
+      await rejectApplication(application.id);
+      // Update local state
+      setCurrentJobApplications(prev => 
+        prev.map(app => 
+          app.id === application.id 
+            ? { ...app, status: 'REJECTED' }
+            : app
+        )
+      );
+
+      alert(`❌ Application rejected. ${application.applicant.name} has been notified.`);
+      
+    } catch (error) {
+      alert("Failed to reject application. Please try again.");
+    }
+  };
+
+  /**
+   * View CV in modal
+   */
+  const handleViewCV = (application) => {
+    setSelectedCV(application);
+    setShowCVModal(true);
+  };
+
+  /**
+   * Download CV with proper error handling
+   */
+  const handleDownloadCV = async (application) => {
+    try {
+      setLoading(true);
+      
+      const response = await downloadJobApplicantCV(application.applicant.id);
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${application.applicant.name.replace(/\s+/g, '_')}_CV.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      if (error.response?.status === 404) {
+        alert("CV file not found. The applicant may not have uploaded a CV file.");
+      } else if (error.response?.status === 403) {
+        alert("You don't have permission to download this CV.");
+      } else {
+        alert("Failed to download CV. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // EXISTING HANDLERS (Save, Delete, Edit, etc.)
+  // ============================================================================
+  
+  const handleSaveJob = async (job) => {
+    try {
+      const isSaved = savedJobs.some((j) => j.id === job.id);
+      
+      if (isSaved) {
+        await unsaveJob(job.id);
+        setSavedJobs(prev => prev.filter(j => j.id !== job.id));
+      } else {
+        await saveJob(job.id);
+        setSavedJobs(prev => [...prev, job]);
+      }
+    } catch (error) {
+      alert("Failed to save/unsave job. Please try again.");
+    }
+  };
+
+  const handleDeleteJob = async (jobId) => {
+    if (!window.confirm("Are you sure you want to delete this job posting?")) return;
+    
+    try {
+      await deleteJob(jobId);
+      
+      setPostedJobs(prev => prev.filter(job => job.id !== jobId));
+      setAllJobs(prev => prev.filter(job => job.id !== jobId));
+      
       setJobApplications(prev => {
         const newApps = { ...prev };
         delete newApps[jobId];
@@ -130,68 +361,52 @@ const JobBoard = () => {
       });
       
       alert("Job deleted successfully!");
+    } catch (error) {
+      alert("Failed to delete job. Please try again.");
     }
   };
 
-  /**
-   * Initialize job editing mode
-   * @param {Object} job - Job object to edit
-   */
   const handleEditJob = (job) => {
     setEditingJob(job);
-    setNewJob(job); // Populate form with existing job data
-    setActiveTab("post"); // Switch to post job tab
+    setNewJob(job);
+    setActiveTab("post");
   };
 
-  /**
-   * Display applications for a specific job (mock functionality)
-   * @param {Object} job - Job object to view applications for
-   */
-  const handleViewApplications = (job) => {
-    setViewingApplications(job);
-    // In production, this would open a modal or navigate to applications page
-    alert(`Viewing applications for: ${job.title}\nApplications: ${jobApplications[job.id] || 0}`);
-  };
-
-  /**
-   * Handle job posting form submission (create or update)
-   * @param {Event} e - Form submission event
-   */
-  const handlePostJob = (e) => {
+  const handlePostJob = async (e) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!newJob.title || !newJob.company || !newJob.description) {
       alert("Please fill in required fields.");
       return;
     }
 
-    if (editingJob) {
-      // Update existing job
-      setPostedJobs(prev => 
-        prev.map(job => job.id === editingJob.id ? { ...newJob, id: editingJob.id } : job)
-      );
-      setEditingJob(null);
-      alert("Job updated successfully!");
-    } else {
-      // Create new job with unique ID and current date
-      const jobToPost = {
-        ...newJob,
-        id: Date.now(), // Simple ID generation (use UUID in production)
-        postedDate: new Date().toLocaleDateString()
-      };
-      setPostedJobs((prev) => [...prev, jobToPost]);
-      alert("Job posted successfully!");
-    }
+    try {
+      if (editingJob) {
+        const response = await updateJob(editingJob.id, newJob);
+        
+        setPostedJobs(prev => 
+          prev.map(job => job.id === editingJob.id ? response : job)
+        );
+        setAllJobs(prev => 
+          prev.map(job => job.id === editingJob.id ? response : job)
+        );
+        setEditingJob(null);
+        alert("Job updated successfully!");
+      } else {
+        const response = await createJob(newJob);
+        
+        setPostedJobs(prev => [...prev, response]);
+        setAllJobs(prev => [...prev, response]);
+        alert("Job posted successfully!");
+      }
 
-    // Reset form to initial state
-    resetJobForm();
-    setActiveTab("all"); // Navigate back to all jobs
+      resetJobForm();
+      setActiveTab("all");
+    } catch (error) {
+      alert("Failed to save job. Please try again.");
+    }
   };
 
-  /**
-   * Reset the new job form to initial state
-   */
   const resetJobForm = () => {
     setNewJob({
       title: "",
@@ -210,33 +425,21 @@ const JobBoard = () => {
     });
   };
 
-  // ============================================================================
-  // FORM HANDLERS FOR JOB POSTING
-  // ============================================================================
-  
-  /**
-   * Toggle skill selection in job posting form
-   * @param {string} skill - Skill to toggle
-   */
   const handleSkillToggle = (skill) => {
     setNewJob(prev => ({
       ...prev,
       tags: prev.tags.includes(skill)
-        ? prev.tags.filter(t => t !== skill) // Remove skill
-        : [...prev.tags, skill] // Add skill
+        ? prev.tags.filter(t => t !== skill)
+        : [...prev.tags, skill]
     }));
   };
 
-  /**
-   * Toggle benefit selection in job posting form
-   * @param {string} benefit - Benefit to toggle
-   */
   const handleBenefitToggle = (benefit) => {
     setNewJob(prev => ({
       ...prev,
       benefits: prev.benefits.includes(benefit)
-        ? prev.benefits.filter(b => b !== benefit) // Remove benefit
-        : [...prev.benefits, benefit] // Add benefit
+        ? prev.benefits.filter(b => b !== benefit)
+        : [...prev.benefits, benefit]
     }));
   };
 
@@ -244,47 +447,46 @@ const JobBoard = () => {
   // UTILITY FUNCTIONS
   // ============================================================================
   
-  /**
-   * Check if a job was posted by the current user
-   * @param {Object} job - Job object to check
-   * @returns {boolean} - True if job was posted by current user
-   */
   const isMyJob = (job) => {
     return postedJobs.some(pJob => pJob.id === job.id);
   };
 
-  // ============================================================================
-  // COMPUTED VALUES AND FILTERS
-  // ============================================================================
-  
-  // Combine static job posts with user-posted jobs
-  const allJobs = [...jobPosts, ...postedJobs];
-
-  // Filter jobs based on search term and job type
   const filteredJobs = allJobs.filter((job) => {
-    const matchesSearch = job.title
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = jobTypeFilter === "All" || job.type === jobTypeFilter;
     return matchesSearch && matchesType;
   });
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'PENDING': return '#ffa500';
+      case 'REVIEWED': return '#2196f3';
+      case 'ACCEPTED': return '#4caf50';
+      case 'REJECTED': return '#f44336';
+      default: return '#666';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // ============================================================================
   // RENDER FUNCTIONS
   // ============================================================================
   
-  /**
-   * Render a single job card with appropriate actions based on ownership
-   * @param {Object} job - Job object to render
-   * @returns {JSX.Element} - Job card component
-   */
   const renderJobCard = (job) => {
     const myJob = isMyJob(job);
     const applicationCount = jobApplications[job.id] || 0;
+    const isSaved = savedJobs.some(j => j.id === job.id);
+    const isApplied = appliedJobs.some(j => j.id === job.id);
 
     return (
       <div className="jobCard" key={job.id}>
-        {/* Job Header with Title and Status */}
         <div className="jobHeader">
           <h4>{job.title}</h4>
           {job.status && (
@@ -294,32 +496,25 @@ const JobBoard = () => {
           )}
         </div>
         
-        {/* Company and Location Information */}
         <p className="company">
           🏢 {job.company} • 📍 {job.location}
         </p>
         <p className="description">{job.description}</p>
         
-        {/* Job Metadata */}
         <div className="meta">
           <span className="type">💼 {job.type}</span>
           <span className="date">📅 Posted: {job.postedDate}</span>
           {job.salary && <span className="salary">💰 {job.salary}</span>}
         </div>
         
-        {/* Skill Tags */}
         <div className="tags">
-          {job.tags.map((tag, idx) => (
-            <span key={idx} className="tag">
-              {tag}
-            </span>
+          {job.tags && job.tags.map((tag, idx) => (
+            <span key={idx} className="tag">{tag}</span>
           ))}
         </div>
         
-        {/* Action Buttons - Different for own jobs vs other jobs */}
         <div className="actions">
           {myJob ? (
-            // Actions for jobs posted by current user
             <>
               <button
                 className="viewApplicationsBtn"
@@ -341,24 +536,19 @@ const JobBoard = () => {
               </button>
             </>
           ) : (
-            // Actions for other users' jobs
             <>
               <button
-                className={`applyBtn ${
-                  appliedJobs.some((j) => j.id === job.id) ? "applied" : ""
-                }`}
+                className={`applyBtn ${isApplied ? "applied" : ""}`}
                 onClick={() => handleApplyJob(job)}
               >
-                {appliedJobs.some((j) => j.id === job.id) ? "✅ Applied" : "📤 Apply"}
+                {isApplied ? "✅ Applied" : "📤 Apply"}
               </button>
 
               <button
-                className={`saveBtn ${
-                  savedJobs.some((j) => j.id === job.id) ? "saved" : ""
-                }`}
+                className={`saveBtn ${isSaved ? "saved" : ""}`}
                 onClick={() => handleSaveJob(job)}
               >
-                {savedJobs.some((j) => j.id === job.id) ? "💾 Saved" : "💾 Save"}
+                {isSaved ? "💾 Saved" : "💾 Save"}
               </button>
             </>
           )}
@@ -367,13 +557,24 @@ const JobBoard = () => {
     );
   };
 
-  // ============================================================================
-  // MAIN COMPONENT RENDER
-  // ============================================================================
-  
+  if (loading) {
+    return (
+      <div className="jobBoardPage">
+        <div className="loading">Loading jobs...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="jobBoardPage">
       <h2>💼 Job Board</h2>
+
+      {/* CV Status Indicator */}
+      {!userCV && (
+        <div className="cvWarning">
+          ⚠️ You don't have a CV yet! Create one in the <strong>My CV</strong> section to apply for jobs.
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="tabs">
@@ -401,7 +602,6 @@ const JobBoard = () => {
         >
           {editingJob ? "✏️ Edit Job" : "➕ Post Job"}
         </button>
-        {/* Conditionally show My Jobs tab if user has posted jobs */}
         {postedJobs.length > 0 && (
           <button
             className={activeTab === "myJobs" ? "active" : ""}
@@ -412,7 +612,7 @@ const JobBoard = () => {
         )}
       </div>
 
-      {/* Search and Filter Controls - Only show for relevant tabs */}
+      {/* Search and Filter Controls */}
       {(activeTab === "all" || activeTab === "myJobs") && (
         <div className="filters">
           <div className="searchGroup">
@@ -437,13 +637,13 @@ const JobBoard = () => {
         </div>
       )}
 
-      {/* Main Content Area - Job Cards or Post Job Form */}
+      {/* Main Content Area */}
       <div className={activeTab === "post" ? "postJobContainer" : "jobGrid"}>
         
-        {/* ALL JOBS TAB - Show all filtered jobs */}
+        {/* ALL JOBS TAB */}
         {activeTab === "all" && filteredJobs.map((job) => renderJobCard(job))}
         
-        {/* MY JOBS TAB - Show only user's posted jobs with filters */}
+        {/* MY JOBS TAB */}
         {activeTab === "myJobs" && 
           postedJobs.filter(job => {
             const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -452,7 +652,7 @@ const JobBoard = () => {
           }).map((job) => renderJobCard(job))
         }
         
-        {/* SAVED JOBS TAB - Show saved jobs or empty state */}
+        {/* SAVED JOBS TAB */}
         {activeTab === "saved" && (
           savedJobs.length > 0 ? 
             savedJobs.map((job) => renderJobCard(job)) :
@@ -462,7 +662,7 @@ const JobBoard = () => {
             </div>
         )}
         
-        {/* APPLIED JOBS TAB - Show applied jobs or empty state */}
+        {/* APPLIED JOBS TAB */}
         {activeTab === "applied" && (
           appliedJobs.length > 0 ? 
             appliedJobs.map((job) => renderJobCard(job)) :
@@ -472,17 +672,15 @@ const JobBoard = () => {
             </div>
         )}
 
-        {/* POST/EDIT JOB TAB - Job posting form */}
+        {/* POST/EDIT JOB TAB - Complete Job posting form */}
         {activeTab === "post" && (
           <div className="postJobWrapper">
-            {/* Form Header */}
             <div className="postJobHeader">
               <h3>{editingJob ? "✏️ Edit Job Posting" : "🚀 Post a New Job"}</h3>
               <p>{editingJob ? "Update your job posting details" : "Find the perfect candidate for your team"}</p>
             </div>
             
             <div className="postJobContent">
-              {/* Main Form */}
               <div className="postJobForm">
                 <form onSubmit={handlePostJob}>
                   
@@ -648,7 +846,6 @@ const JobBoard = () => {
                       {editingJob ? "💾 Update Job" : "🚀 Post Job"}
                     </button>
                     
-                    {/* Show cancel button only when editing */}
                     {editingJob && (
                       <button 
                         type="button" 
@@ -668,7 +865,6 @@ const JobBoard = () => {
 
               {/* SIDEBAR WITH TIPS AND PREVIEW */}
               <div className="postJobSidebar">
-                {/* Tips for Better Job Posts */}
                 <div className="tipsCard">
                   <h4>💡 Tips for Better Job Posts</h4>
                   <ul>
@@ -680,7 +876,6 @@ const JobBoard = () => {
                   </ul>
                 </div>
 
-                {/* Live Preview of Job Card */}
                 <div className="previewCard">
                   <h4>👀 Live Preview</h4>
                   <div className="jobCardPreview">
@@ -706,7 +901,6 @@ const JobBoard = () => {
                   </div>
                 </div>
 
-                {/* Job Posting Statistics */}
                 <div className="statsCard">
                   <h4>📊 Job Posting Stats</h4>
                   <div className="statItem">
@@ -723,7 +917,6 @@ const JobBoard = () => {
                   </div>
                 </div>
 
-                {/* Job Posting Guidelines Checklist */}
                 <div className="guidelinesCard">
                   <h4>📋 Posting Guidelines</h4>
                   <div className="guideline">
@@ -752,11 +945,302 @@ const JobBoard = () => {
                   </div>
                 </div>
               </div>
-              
             </div>
           </div>
         )}
       </div>
+
+      {/* APPLICATIONS MANAGEMENT MODAL */}
+      <Modal
+        isOpen={showApplicationsModal}
+        onClose={() => setShowApplicationsModal(false)}
+        title={`Applications for: ${selectedJob?.title || 'Job'}`}
+        size="large"
+      >
+        <div className="applicationsModal">
+          {currentJobApplications.length === 0 ? (
+            <div className="emptyApplications">
+              <p>📭 No applications yet for this job.</p>
+              <p>Share the job posting to get more applicants!</p>
+            </div>
+          ) : (
+            <div className="applicationsList">
+              <div className="applicationsHeader">
+                <h4>👥 {currentJobApplications.length} Application(s)</h4>
+                <div className="applicationStats">
+                  <span className="stat pending">
+                    🟡 Pending: {currentJobApplications.filter(app => app.status === 'PENDING').length}
+                  </span>
+                  <span className="stat accepted">
+                    🟢 Accepted: {currentJobApplications.filter(app => app.status === 'ACCEPTED').length}
+                  </span>
+                  <span className="stat rejected">
+                    🔴 Rejected: {currentJobApplications.filter(app => app.status === 'REJECTED').length}
+                  </span>
+                </div>
+              </div>
+
+              {currentJobApplications.map((application) => (
+                <div key={application.id} className="applicationCard">
+                  <div className="applicantInfo">
+                    <div className="applicantHeader">
+                      <img 
+                        src={application.applicant.profilePic || "https://via.placeholder.com/50"} 
+                        alt={application.applicant.name}
+                        className="applicantAvatar"
+                      />
+                      <div className="applicantDetails">
+                        <h5>{application.applicant.name}</h5>
+                        <p className="applicantEmail">{application.applicant.email}</p>
+                        <p className="appliedDate">
+                          📅 Applied: {formatDate(application.appliedAt)}
+                        </p>
+                        
+                        {/* CV Preview */}
+                        {application.cvData && (
+                          <div className="cvPreview">
+                            <p className="cvTitle">
+                              <strong>{application.cvData.title || 'Professional'}</strong>
+                            </p>
+                            {application.cvData.previewText && (
+                              <p className="cvPreviewText">
+                                {application.cvData.previewText.substring(0, 100)}
+                                {application.cvData.previewText.length > 100 ? '...' : ''}
+                              </p>
+                            )}
+                            <div className="cvMeta">
+                              <span className="cvCompleteness">
+                                📊 CV: {application.cvData.completeness || 0}% complete
+                              </span>
+                              {application.cvData.hasFile && (
+                                <span className="hasFile">📎 PDF attached</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="applicationStatus">
+                        <span 
+                          className={`statusBadge ${application.status.toLowerCase()}`}
+                          style={{ backgroundColor: getStatusColor(application.status) }}
+                        >
+                          {application.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {application.message && (
+                      <div className="applicationMessage">
+                        <h6>💬 Cover Letter:</h6>
+                        <p>{application.message}</p>
+                      </div>
+                    )}
+
+                    {application.applicationLink && (
+                      <div className="applicationLink">
+                        <h6>🔗 Portfolio/Links:</h6>
+                        <a href={application.applicationLink} target="_blank" rel="noopener noreferrer">
+                          {application.applicationLink}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="applicationActions">
+                    <div className="cvActions">
+                      <button 
+                        className="viewCVBtn"
+                        onClick={() => handleViewCV(application)}
+                        disabled={!application.cvData}
+                      >
+                        👁️ View CV
+                      </button>
+                      
+                      {application.cvData?.hasFile && (
+                        <button 
+                          className="downloadCVBtn"
+                          onClick={() => handleDownloadCV(application)}
+                          disabled={loading}
+                        >
+                          {loading ? '⏳ Downloading...' : '📥 Download CV'}
+                        </button>
+                      )}
+                    </div>
+
+                    {application.status === 'PENDING' && (
+                      <div className="reviewActions">
+                        <button 
+                          className="acceptBtn"
+                          onClick={() => handleAcceptApplication(application)}
+                        >
+                          ✅ Accept
+                        </button>
+                        <button 
+                          className="rejectBtn"
+                          onClick={() => handleRejectApplication(application)}
+                        >
+                          ❌ Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {application.status === 'ACCEPTED' && (
+                      <div className="statusActions">
+                        <span className="acceptedStatus">✅ Accepted</span>
+                        <small>Applicant has been notified</small>
+                      </div>
+                    )}
+
+                    {application.status === 'REJECTED' && (
+                      <div className="statusActions">
+                        <span className="rejectedStatus">❌ Rejected</span>
+                        <small>Applicant has been notified</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* ENHANCED CV VIEWING MODAL */}
+      <Modal
+        isOpen={showCVModal}
+        onClose={() => setShowCVModal(false)}
+        title={`CV: ${selectedCV?.applicant?.name || 'Applicant'}`}
+        size="large"
+      >
+        <div className="cvViewModal">
+          {selectedCV && selectedCV.cvData && (
+            <div className="cvContent">
+              {/* CV Header with applicant info */}
+              <div className="cvModalHeader">
+                <div className="applicantInfo">
+                  <img 
+                    src={selectedCV.applicant.profilePic || "https://via.placeholder.com/80"} 
+                    alt={selectedCV.applicant.name}
+                    className="applicantAvatarLarge"
+                  />
+                  <div className="applicantDetails">
+                    <h3>{selectedCV.applicant.name}</h3>
+                    <p className="applicantEmail">{selectedCV.applicant.email}</p>
+                    {selectedCV.cvData.title && (
+                      <p className="professionalTitle">{selectedCV.cvData.title}</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="cvActions">
+                  <div className="cvCompleteness">
+                    <span className="completenessLabel">CV Completeness:</span>
+                    <div className="completenessBar">
+                      <div 
+                        className="completenessProgress" 
+                        style={{ width: `${selectedCV.cvData.completeness || 0}%` }}
+                      ></div>
+                    </div>
+                    <span className="completenessPercent">{selectedCV.cvData.completeness || 0}%</span>
+                  </div>
+                  
+                  {selectedCV.cvData.hasFile && (
+                    <button 
+                      className="downloadCVBtn primary"
+                      onClick={() => handleDownloadCV(selectedCV)}
+                      disabled={loading}
+                    >
+                      {loading ? '⏳ Downloading...' : '📥 Download PDF'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* CV Content Sections */}
+              <div className="cvSections">
+                {selectedCV.cvData.summary && (
+                  <div className="cvSection">
+                    <h4>📋 Professional Summary</h4>
+                    <div className="cvSectionContent">
+                      <p>{selectedCV.cvData.summary}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCV.cvData.experience && (
+                  <div className="cvSection">
+                    <h4>💼 Work Experience</h4>
+                    <div className="cvSectionContent">
+                      <p>{selectedCV.cvData.experience}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCV.cvData.education && (
+                  <div className="cvSection">
+                    <h4>🎓 Education</h4>
+                    <div className="cvSectionContent">
+                      <p>{selectedCV.cvData.education}</p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCV.cvData.skills && (
+                  <div className="cvSection">
+                    <h4>🛠️ Skills</h4>
+                    <div className="cvSectionContent">
+                      <div className="skillsTags">
+                        {selectedCV.cvData.skills.split(',').map((skill, index) => (
+                          <span key={index} className="skillTag">
+                            {skill.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCV.cvData.links && (
+                  <div className="cvSection">
+                    <h4>🔗 Links & Contact</h4>
+                    <div className="cvSectionContent">
+                      <p>{selectedCV.cvData.links}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* File Information */}
+                {selectedCV.cvData.hasFile && selectedCV.cvData.fileName && (
+                  <div className="cvSection">
+                    <h4>📄 Uploaded CV File</h4>
+                    <div className="cvSectionContent">
+                      <div className="fileInfo">
+                        <span className="fileName">📎 {selectedCV.cvData.fileName}</span>
+                        <button 
+                          className="downloadFileBtn"
+                          onClick={() => handleDownloadCV(selectedCV)}
+                        >
+                          📥 Download
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!selectedCV.cvData.summary && !selectedCV.cvData.experience && 
+                !selectedCV.cvData.education && !selectedCV.cvData.hasFile && (
+                  <div className="cvEmptyState">
+                    <p>📭 This applicant hasn't provided detailed CV information.</p>
+                    <p>You may want to contact them directly for more details.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

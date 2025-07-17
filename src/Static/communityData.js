@@ -9,8 +9,6 @@ import JobBoard from "../Assets/Icons/Job.png";
 import Resume from "../Assets/Icons/CV.png";
 import Applications from "../Assets/Icons/Applications.png";
 import Saved from "../Assets/Icons/Bookmark.png";
-import Challenges from "../Assets/Icons/Challenges.png";
-import Badges from "../Assets/Icons/Badges.png";
 
 // ==============================
 // User & Profile Data
@@ -861,6 +859,4 @@ export const leftBarMenuItems = [
   { id: 3, icon: JobBoard, label: "Job Board" },
   { id: 4, icon: Resume, label: "My CV" },
   { id: 5, icon: Saved, label: "Saved Posts" },
-  { id: 6, icon: Challenges, label: "Skill Challenges" },
-  { id: 7, icon: Badges, label: "My Badges" },
 ];

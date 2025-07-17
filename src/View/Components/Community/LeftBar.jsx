@@ -1,28 +1,43 @@
 import "../../../CSS/Components/Community/leftBar.scss";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import {
-  currentUser,
-  leftBarMenuItems,
-} from "../../../Static/communityData";
+import { useContext } from "react";
+import { AuthContext } from "../../../Context/AuthContext";
+
+import Friends from "../../../Assets/1.png";
+import Groups from "../../../Assets/2.png";
+import JobBoard from "../../../Assets/Icons/Job.png";
+import Resume from "../../../Assets/Icons/CV.png";
+import Saved from "../../../Assets/Icons/Bookmark.png";
+
+const leftBarMenuItems = [
+  { id: 1, icon: Friends, label: "Friends" },
+  { id: 2, icon: Groups, label: "Groups" },
+  { id: 3, icon: JobBoard, label: "Job Board" },
+  { id: 4, icon: Resume, label: "My CV" },
+  { id: 5, icon: Saved, label: "Saved Posts" },
+];
 const LeftBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { authData } = useContext(AuthContext);
 
-  const handleNameClick = (userId) => {
-    // Navigate to user's profile
-    navigate(`/community/profile/${userId}`);
+  const handleNameClick = () => {
+    if (authData?.id) {
+      navigate(`/community/profile/${authData.id}`);
+    }
   };
+
   return (
     <div className="leftBar">
       <div className="leftBarMenus">
         <div className="menu">
           <div
-            onClick={() => handleNameClick(currentUser.id)}
+            onClick={handleNameClick}
             style={{ cursor: "pointer" }}
             className="user"
           >
-            <img src={currentUser.profilePic} alt={currentUser.name} />
-            <span>{currentUser.name}</span>
+            <img src={authData?.profilePic || "https://via.placeholder.com/40"} alt={authData?.name || "User"} />
+            <span>{authData?.name || "User"}</span>
           </div>
 
           {leftBarMenuItems.map((item) => {
@@ -44,7 +59,6 @@ const LeftBar = () => {
             );
           })}
         </div>
-
         <hr />
         <hr />
       </div>
