@@ -93,7 +93,7 @@ function GlobalRoutes() {
         <Route path="/community/profile/:userId" element={<Profile />} />
         <Route path="/community/friends" element={<Friends />} />
         <Route path="/community/groups" element={<Groups />} />
-        <Route path="/groups/:groupId" element={<GroupPage />} />
+        <Route path="/community/groups/:groupId" element={<GroupPage />} />
         <Route path="/community/job-board" element={<JobBoard />} />
         <Route path="/community/my-cv" element={<MyCV />} />
         <Route path="/community/saved-posts" element={<SavedPosts />} />

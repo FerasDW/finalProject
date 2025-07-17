@@ -8,10 +8,13 @@ import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import { Link, useNavigate } from "react-router-dom";
 import Comments from "./Comments";
+import RealTimeTimestamp from "../../Components/Common/RealTimeTimestamp";
 import { useState, useEffect, useContext } from "react";
 import { useSavedPosts } from "../../../Context/SavedPostsContext";
-import axios from "axios";
 import { AuthContext } from "../../../Context/AuthContext";
+
+// Import the clean API functions
+import { getPostComments, togglePostLike } from "../../../Api/CommunityAPIs/postsApi";
 
 const Post = ({ post }) => {
   const navigate = useNavigate();
@@ -19,8 +22,9 @@ const Post = ({ post }) => {
   const [commentOpen, setCommentOpen] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
-  const [commentsCount, setCommentsCount] = useState(0); // Start with 0
+  const [commentsCount, setCommentsCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [savingPost, setSavingPost] = useState(false);
   const { savePost, unsavePost, isPostSaved } = useSavedPosts();
   const saved = isPostSaved(post.id);
 
@@ -28,14 +32,10 @@ const Post = ({ post }) => {
   useEffect(() => {
     const fetchCommentCount = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/api/community/posts/${post.id}/comments`,
-          { withCredentials: true }
-        );
-        setCommentsCount(res.data?.length || 0);
+        const commentsData = await getPostComments(post.id);
+        setCommentsCount(commentsData.length || 0);
       } catch (err) {
-        console.error("Failed to fetch comment count:", err);
-        // Fallback to post data if API fails
+        // Handle error silently - fallback to post.comments length
         setCommentsCount(post.comments?.length || 0);
       }
     };
@@ -53,13 +53,45 @@ const Post = ({ post }) => {
     setLikeCount(post.likes?.length || 0);
   }, [authData, post.likes]);
 
-  const toggleSave = () => {
-    if (saved) {
-      unsavePost(post.id);
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${post.name}'s post`,
+        text: post.desc,
+        url: window.location.href
+      }).catch(() => {
+        // Handle error silently
+      });
     } else {
-      savePost(post);
+      // Fallback for browsers without native share
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Post link copied to clipboard!');
+      }).catch(() => {
+        alert('Share feature not available');
+      });
     }
+    
     setMenuOpen(false);
+  };
+
+  const toggleSave = async () => {
+    if (savingPost) return; // Prevent double-clicks
+    
+    try {
+      setSavingPost(true);
+      
+      if (saved) {
+        await unsavePost(post.id);
+      } else {
+        await savePost(post);
+      }
+      
+      setMenuOpen(false);
+    } catch (error) {
+      // Handle error silently or show user-friendly message
+    } finally {
+      setSavingPost(false);
+    }
   };
 
   const handleGroupClick = () => {
@@ -72,20 +104,13 @@ const Post = ({ post }) => {
     if (!authData) return;
 
     try {
-      const res = await axios.put(
-        `http://localhost:8080/api/community/posts/${post.id}/like`,
-        null,
-        {
-          params: { userId: authData.id },
-          withCredentials: true,
-        }
-      );
-
-      const updatedLikes = res.data.likes || [];
+      const response = await togglePostLike(post.id, authData.id);
+      
+      const updatedLikes = response.likes || [];
       setLiked(updatedLikes.includes(authData.id));
       setLikeCount(updatedLikes.length);
     } catch (err) {
-      console.error("Failed to like post:", err);
+      // Handle error silently
     }
   };
 
@@ -93,12 +118,30 @@ const Post = ({ post }) => {
     setCommentsCount(newComments.length);
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (menuOpen) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [menuOpen]);
+
   return (
     <div className="post">
       <div className="postContainer">
         <div className="user">
           <div className="userInfo">
-            <img src={post.profilePic} alt="" />
+            <img 
+              src={post.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (post.name || "user")}
+              alt={post.name}
+              onError={(e) => {
+                e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (post.name || "user");
+              }}
+            />
             <div className="details">
               <Link
                 to={`/community/profile/${post.userId}`}
@@ -119,23 +162,40 @@ const Post = ({ post }) => {
                   </span>
                 </div>
               )}
-              <span className="date">1 min ago</span>
+              <RealTimeTimestamp 
+                createdAt={post.createdAt} 
+                className="date"
+                showTooltip={true}
+              />
             </div>
           </div>
 
           <div className="more">
             <MoreHorizIcon
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen(!menuOpen);
+              }}
               style={{ cursor: "pointer" }}
             />
 
             {menuOpen && (
-              <div className="dropdownMenu">
-                <div className="menuItem" onClick={toggleSave}>
-                  {saved ? (
+              <div className="dropdownMenu" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  className={`menuItem ${savingPost ? 'disabled' : ''}`} 
+                  onClick={toggleSave}
+                >
+                  {savingPost ? (
+                    <>
+                      <BookmarkBorderIcon
+                        style={{ fontSize: "18px", marginRight: "5px" }}
+                      />
+                      Saving...
+                    </>
+                  ) : saved ? (
                     <>
                       <BookmarkIcon
-                        style={{ fontSize: "18px", marginRight: "5px" }}
+                        style={{ fontSize: "18px", marginRight: "5px", color: "#1877f2" }}
                       />
                       Unsave
                     </>
@@ -148,6 +208,13 @@ const Post = ({ post }) => {
                     </>
                   )}
                 </div>
+                
+                <div className="menuItem" onClick={handleShare}>
+                  <ShareOutlinedIcon
+                    style={{ fontSize: "18px", marginRight: "5px" }}
+                  />
+                  Share
+                </div>
               </div>
             )}
           </div>
@@ -155,7 +222,7 @@ const Post = ({ post }) => {
 
         <div className="content">
           <p>{post.desc}</p>
-          <img src={post.img} alt="" />
+          {post.img && <img src={post.img} alt="" />}
           {post.file && (
             <div className="sharedFile">
               <a
@@ -183,11 +250,6 @@ const Post = ({ post }) => {
           <div className="item" onClick={() => setCommentOpen(!commentOpen)}>
             <TextsmsOutlinedIcon />
             {commentsCount} {commentsCount === 1 ? "Comment" : "Comments"}
-          </div>
-
-          <div className="item">
-            <ShareOutlinedIcon />
-            Share
           </div>
         </div>
 

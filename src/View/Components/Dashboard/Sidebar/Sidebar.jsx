@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../../../../Context/AuthContext.jsx";
 import SidebarItem from "./SidebarItem";
-import ChatInterface from "../ChatInterface/ChatInterface";
+import ChatInterface from "../../Common/ChatInterface.jsx";
 import "../../../../CSS/Components/Global/Sidebar.css";
 import Logo from "../../../../Assets/Images/Logo/PNG/LogoSquare@0.5x.png";
 import { AlignJustify } from "react-feather";

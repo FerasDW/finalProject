@@ -1,25 +1,28 @@
 import React, { useState, useEffect, useContext } from "react";
 import "../../../CSS/Components/Community/comments.scss";
-import axios from "axios";
 import { AuthContext } from "../../../Context/AuthContext";
+import RealTimeTimestamp from "../../Components/Common/RealTimeTimestamp";
+
+import { getPostComments, createComment } from "../../../Api/CommunityAPIs/postsApi";
 
 const Comments = ({ postId, onCommentsUpdate }) => {
   const { authData } = useContext(AuthContext);
   const [newComment, setNewComment] = useState("");
   const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!postId) return;
 
     const fetchComments = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/api/community/posts/${postId}/comments`,
-          { withCredentials: true }
-        );
-        setComments(res.data || []);
+        setLoading(true);
+        const commentsData = await getPostComments(postId);
+        setComments(commentsData);
       } catch (err) {
-        console.error("Failed to fetch comments", err);
+        console.error("Failed to fetch comments:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -43,39 +46,48 @@ const Comments = ({ postId, onCommentsUpdate }) => {
     const commentPayload = {
       userId: authData.id,
       username: authData.username || authData.name || "User",
-      text: newComment,
+      text: newComment.trim(),
     };
 
     try {
-      const res = await axios.post(
-        `http://localhost:8080/api/community/posts/${postId}/comments`,
-        commentPayload,
-        { withCredentials: true }
-      );
+      setLoading(true);
+      const response = await createComment(postId, commentPayload);
       
-      // Check what the server is returning
-      console.log("Server response after adding comment:", res.data);
-      
-      // Option 1: If server returns updated comments array
-      if (res.data.comments) {
-        setComments(res.data.comments);
-      } 
-      // Option 2: If server returns the new comment, add it to existing comments
-      else if (res.data.comment) {
-        setComments(prevComments => [...prevComments, res.data.comment]);
-      }
-      // Option 3: If server doesn't return comments, refetch them
-      else {
-        const updatedRes = await axios.get(
-          `http://localhost:8080/api/community/posts/${postId}/comments`,
-          { withCredentials: true }
-        );
-        setComments(updatedRes.data || []);
-      }
-      
+      // Add the new comment to local state immediately for better UX
+      const newCommentWithTimestamp = {
+        id: response.id || `temp_${Date.now()}`,
+        text: newComment.trim(),
+        username: authData.username || authData.name || "User",
+        profilePicture: authData.profilePic,
+        createdAt: new Date().toISOString(), // Add current timestamp
+        userId: authData.id
+      };
+
+      setComments(prevComments => [...prevComments, newCommentWithTimestamp]);
       setNewComment("");
+
+      // Optionally refresh comments from server to get proper data
+      setTimeout(async () => {
+        try {
+          const updatedComments = await getPostComments(postId);
+          setComments(updatedComments);
+        } catch (error) {
+          console.error('Failed to refresh comments:', error);
+        }
+      }, 1000);
+
     } catch (err) {
-      console.error("Failed to send comment", err);
+      console.error("Failed to create comment:", err);
+      alert("Failed to post comment. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
@@ -83,30 +95,56 @@ const Comments = ({ postId, onCommentsUpdate }) => {
     <div className="comments">
       <div className="write">
         <img
-          src={authData?.profilePic || "https://via.placeholder.com/40"}
+          src={authData?.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "user")}
           alt="User"
+          onError={(e) => {
+            e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "user");
+          }}
         />
         <input
           type="text"
-          placeholder="Write a comment"
+          placeholder="Write a comment..."
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+          onKeyPress={handleKeyPress}
+          disabled={loading}
         />
-        <button onClick={handleSend}>Send</button>
+        <button 
+          onClick={handleSend}
+          disabled={loading || !newComment.trim()}
+        >
+          {loading ? "..." : "Send"}
+        </button>
       </div>
-      {comments.length === 0 && <p>No comments yet.</p>}
+      
+      {loading && comments.length === 0 && (
+        <p className="loading">Loading comments...</p>
+      )}
+      
+      {!loading && comments.length === 0 && (
+        <p className="no-comments">No comments yet. Be the first to comment!</p>
+      )}
+      
       {comments.map((comment, idx) => (
-        <div className="comment" key={comment.id || idx}>
+        <div className="comment" key={comment.id || `comment_${idx}`}>
           <img
-            src={comment.profilePicture || "https://via.placeholder.com/40"}
+            src={comment.profilePicture || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (comment.username || "user")}
             alt={comment.username || "User"}
+            onError={(e) => {
+              e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (comment.username || "user");
+            }}
           />
           <div className="info">
-            <span>{comment.username || "User"}</span>
-            <p>{comment.text}</p>
+            <span className="username">{comment.username || "User"}</span>
+            <p className="comment-text">{comment.text}</p>
           </div>
-          <span className="date">just now</span>
+          <div className="comment-meta">
+            <RealTimeTimestamp 
+              createdAt={comment.createdAt} 
+              className="comment-date"
+              showTooltip={true}
+            />
+          </div>
         </div>
       ))}
     </div>
