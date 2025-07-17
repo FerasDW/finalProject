@@ -424,6 +424,8 @@ export default function GenericDashboard({ entityType = "students" }) {
                 </div>
               ) : (
                 <StudentTable
+                entityType="students"
+                icon="students"
                   data={filteredData}
                   showAddButton={true}
                   actionButtons={[

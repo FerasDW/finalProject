@@ -14,14 +14,19 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
               code: course.code,
               title: course.title,
               students: course.students,
-              rating: course.rating,
+              rating: course.rating || null, // Optional, add if you have rating data
               lessons: course.lessons,
               img: course.img,
               year: course.year,
               semester: course.semester,
               group: course.group,
               academicYear: course.academicYear,
-              
+              lecturer: course.lecturer,
+              description: course.description,
+              selectable: course.selectable,
+              createdAt: course.createdAt,
+              updatedAt: course.updatedAt,
+              credits: course.credits || 0, // Default to 0 if not provided
             }}
             onDelete={onDeleteCourse}
             onEdit={onEditCourse}

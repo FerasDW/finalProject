@@ -27,6 +27,9 @@ body {
   height: 100vh;
 }
 
+/* Global Reset - Add this to your main CSS file or index.css */
+
+
 
 
 @media (max-width: 576px) {

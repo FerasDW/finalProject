@@ -19,8 +19,8 @@ import PopUp from "../../Cards/PopUp.jsx";
 import {
   categoryFields,
   uploadFileFields,
-} from "../../../../Static/formsInputs.js";
-import { mockCourseCategories } from "../../../../Static/coursePageData.js";
+} from "../../../../Static/FIxed/formsInputs.js";
+import { mockCourseCategories }  from "../../../../Static/FIxed/coursePageData.js";
 
 const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
   const [categories, setCategories] = useState(mockCourseCategories);

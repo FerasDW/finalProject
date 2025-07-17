@@ -53,8 +53,8 @@ const CourseCard = ({ cardInfo, onDelete, onEdit }) => {
             <span className="regular-text">Students</span>
           </div>
           <div className="item">
-            <span className="big-text">{cardInfo.rating}</span>
-            <span className="regular-text">Rating</span>
+            <span className="big-text">{cardInfo.credits}</span>
+            <span className="regular-text">Credits</span>
           </div>
           <div className="item">
             <span className="big-text">{cardInfo.lessons}</span>
