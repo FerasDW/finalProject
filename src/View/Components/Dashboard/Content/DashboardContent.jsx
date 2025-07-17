@@ -5,7 +5,8 @@ import PieChart from "../../Charts/pieCharts";
 import LineChart from "../../Charts/lineChart";
 import ScrollList from "../../ScrollList/ScrollList";
 import ScrollListItem from "../../ScrollList/ScrollListItem";
-import dashboardContentData, { upcomingAssignments } from "../../../../Static/dashboardContentData";  
+import dashboardContentData from "../../../../Utils/dashboardUtils";
+import  { upcomingAssignments } from "../../../../Static/FIxed/calendarPageData";  
 import assignmentFields from "../../../../Static/AssigmentsFields";
 
 import Popup from "../../Cards/PopUp";
@@ -58,10 +59,10 @@ const DashboardContent = ({ userRole }) => {
 
               return <Box key={index} title={props.title} chart={ChartComp} {...props} />;
             }
-
             if (type === "assignments") {
               return (
                 <Box
+                  
                   key={index}
                   assignments={
                     <ScrollList

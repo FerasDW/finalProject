@@ -26,7 +26,7 @@ import {
 import {
   templateFormFields,
   announcementFormFields,
-} from "../../../Static/formsInputs.js";
+} from "../../../Static/FIxed/formsInputs.js";
 
 // Styles
 import "../../../CSS/Pages/Messages/messages.css";

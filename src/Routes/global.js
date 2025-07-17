@@ -5,7 +5,7 @@ import MainLayout from "../View/Components/MainLayout.jsx";
 import Dashboard from "../View/Pages/Global/Dashboard.jsx";
 import Courses from "../View/Pages/Courses/Courses.jsx";
 import CoursePage from "../View/Pages/Courses/CoursePage.jsx";
-import Calendar from "../View/Pages/Global/Calendar.jsx";
+import CalendarDashboard from "../View/Pages/Global/CalendarDashboard.jsx";
 import Messages from "../View/Pages/Global/messages.jsx";
 import Statistics from "../View/Pages/Admin/AdminReportPage.jsx";
 import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
@@ -57,7 +57,7 @@ function GlobalRoutes() {
     path="/Lecturers"
     element={<GenericDashboard entityType="lecturers" />}
   />
-        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/calendar" element={<CalendarDashboard />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/portfolio" element={<Portfolio />} /> 
         {/* <Route path="/coursepage" element={<CoursePage />} /> */}

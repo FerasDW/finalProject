@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import DynamicForm from "../../../View/Components/Forms/dynamicForm";
-import { cvFormFields } from "../../../Static/formsInputs"
+import { cvFormFields } from "../../../Static/FIxed/formsInputs"
 import "../../../CSS/Pages/Community/mycv.scss";
 
 const MyCV = () => {

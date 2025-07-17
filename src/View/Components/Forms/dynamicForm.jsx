@@ -28,6 +28,7 @@ const getFieldIcon = (fieldName, fieldType) => {
   // Name-based icon mapping (more specific)
   const nameIconMap = {
     'title': FileText,
+    'coursetitle': BookOpen,
     'name': User,
     'fullname': User,
     'firstname': User,
@@ -37,6 +38,14 @@ const getFieldIcon = (fieldName, fieldType) => {
     'instructor': Users,
     'teacher': Users,
     'professor': Users,
+    'lecturer': Users,
+    'program': GraduationCap,
+    'group': GraduationCap,
+    'department': GraduationCap,
+    'academicyear': GraduationCap,
+    'programyear': GraduationCap,
+    'year': Calendar,
+    'semester': Calendar,
     'duedate': Calendar,
     'duetime': Clock,
     'startdate': Calendar,
@@ -62,7 +71,11 @@ const getFieldIcon = (fieldName, fieldType) => {
     'website': Type,
     'grade': Hash,
     'score': Hash,
-    'points': Hash
+    'points': Hash,
+    'students': Users,
+    'lessons': BookOpen,
+    'credits': Hash,
+    'coursecode': Type
   };
   
   // Type-based icon mapping
@@ -91,13 +104,20 @@ const getFieldIcon = (fieldName, fieldType) => {
 };
 
 // Individual Field Component
-const FormField = ({ field, value, error, onChange, disabled }) => {
+const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const IconComponent = getFieldIcon(field.name, field.type);
   
   const fieldId = `field-${field.name}`;
   const hasError = Boolean(error);
+  const isDisabled = disabled || field.disabled;
+
+  // Use dynamic options if available, otherwise use field options
+  const fieldOptions = dynamicOptions || field.options || [];
+
+  // Ensure fieldOptions is always an array of strings or simple objects
+  const safeOptions = Array.isArray(fieldOptions) ? fieldOptions : [];
 
   const baseInputStyles = {
     width: '100%',
@@ -107,12 +127,13 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
     fontSize: '15px',
     fontFamily: 'inherit',
     transition: 'all 0.3s ease',
-    backgroundColor: disabled ? '#f8fafc' : 'white',
+    backgroundColor: isDisabled ? '#f8fafc' : 'white',
     outline: 'none',
     boxSizing: 'border-box',
-    color: '#1f2937',
+    color: isDisabled ? '#9ca3af' : '#1f2937',
     lineHeight: '1.5',
-    boxShadow: isFocused ? `0 0 0 4px ${hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'}` : 'none'
+    boxShadow: isFocused && !isDisabled ? `0 0 0 4px ${hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(59, 130, 246, 0.1)'}` : 'none',
+    cursor: isDisabled ? 'not-allowed' : 'auto'
   };
 
   const labelStyles = {
@@ -120,7 +141,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
     marginBottom: '12px',
     fontSize: '15px',
     fontWeight: '600',
-    color: hasError ? '#ef4444' : '#374151',
+    color: hasError ? '#ef4444' : isDisabled ? '#9ca3af' : '#374151',
     letterSpacing: '-0.025em'
   };
 
@@ -135,7 +156,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               top: '20px',
               left: '20px',
               zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused ? '#3b82f6' : '#9ca3af',
+              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
               transition: 'color 0.2s ease'
             }}>
               <IconComponent size={20} />
@@ -145,11 +166,11 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               name={field.name}
               value={value || ''}
               onChange={onChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => !isDisabled && setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder={field.placeholder}
+              placeholder={isDisabled ? (field.placeholder || value || 'Disabled') : field.placeholder}
               required={field.required}
-              disabled={disabled}
+              disabled={isDisabled}
               rows={field.rows || 4}
               style={{
                 ...baseInputStyles,
@@ -172,38 +193,43 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               left: '20px',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused ? '#3b82f6' : '#9ca3af',
+              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
               transition: 'color 0.2s ease'
             }}>
               <IconComponent size={20} />
             </div>
             <select
-            
               id={fieldId}
               name={field.name}
-              value={value } 
+              value={value || ''} 
               onChange={onChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => !isDisabled && setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               required={field.required}
-              disabled={disabled}
+              disabled={isDisabled}
               style={{
                 ...baseInputStyles,
                 appearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='${isFocused ? '%233b82f6' : '%236b7280'}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='${isFocused && !isDisabled ? '%233b82f6' : '%236b7280'}' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                 backgroundPosition: 'right 20px center',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: '20px',
-                cursor: disabled ? 'not-allowed' : 'pointer',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
                 paddingRight: '56px'
               }}
             >
               <option value="">{field.placeholder || 'Select an option'}</option>
-              {field.options?.map((option, index) => (
-                <option key={index} value={option.value || option}>
-                  {option.label || option}
-                </option>
-              ))}
+              {safeOptions.map((option, index) => {
+                // Handle both string options and object options
+                const optionValue = typeof option === 'object' ? option.value : option;
+                const optionLabel = typeof option === 'object' ? option.label : option;
+                
+                return (
+                  <option key={index} value={optionValue}>
+                    {optionLabel}
+                  </option>
+                );
+              })}
             </select>
           </div>
         );
@@ -211,70 +237,77 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
       case 'radio':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {field.options?.map((option, index) => (
-              <label 
-                key={index}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  padding: '16px 20px',
-                  border: `2px solid ${value === (option.value || option) ? '#3b82f6' : '#e2e8f0'}`,
-                  borderRadius: '16px',
-                  backgroundColor: value === (option.value || option) ? '#eff6ff' : 'white',
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
-                  boxShadow: value === (option.value || option) ? '0 0 0 4px rgba(59, 130, 246, 0.1)' : 'none'
-                }}
-                onMouseOver={(e) => {
-                  if (!disabled && value !== (option.value || option)) {
-                    e.target.style.backgroundColor = '#f8fafc';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (value !== (option.value || option)) {
-                    e.target.style.backgroundColor = 'white';
-                  }
-                }}
-              >
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  border: `2px solid ${value === (option.value || option) ? '#3b82f6' : '#d1d5db'}`,
-                  backgroundColor: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease'
-                }}>
-                  {value === (option.value || option) && (
-                    <div style={{
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      backgroundColor: '#3b82f6'
-                    }} />
-                  )}
-                </div>
-                <input
-                  type="radio"
-                  name={field.name}
-                  value={option.value || option}
-                  checked={value === (option.value || option)}
-                  onChange={onChange}
-                  disabled={disabled}
-                  style={{ display: 'none' }}
-                />
-                <span style={{ 
-                  fontSize: '15px', 
-                  color: '#374151',
-                  fontWeight: value === (option.value || option) ? '600' : '400'
-                }}>
-                  {option.label || option}
-                </span>
-              </label>
-            ))}
+            {safeOptions.map((option, index) => {
+              // Handle both string options and object options
+              const optionValue = typeof option === 'object' ? option.value : option;
+              const optionLabel = typeof option === 'object' ? option.label : option;
+              
+              return (
+                <label 
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    padding: '16px 20px',
+                    border: `2px solid ${value === optionValue ? '#3b82f6' : '#e2e8f0'}`,
+                    borderRadius: '16px',
+                    backgroundColor: value === optionValue ? '#eff6ff' : 'white',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: value === optionValue ? '0 0 0 4px rgba(59, 130, 246, 0.1)' : 'none',
+                    opacity: isDisabled ? 0.6 : 1
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isDisabled && value !== optionValue) {
+                      e.target.style.backgroundColor = '#f8fafc';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (value !== optionValue) {
+                      e.target.style.backgroundColor = 'white';
+                    }
+                  }}
+                >
+                  <div style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: `2px solid ${value === optionValue ? '#3b82f6' : '#d1d5db'}`,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    {value === optionValue && (
+                      <div style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        backgroundColor: '#3b82f6'
+                      }} />
+                    )}
+                  </div>
+                  <input
+                    type="radio"
+                    name={field.name}
+                    value={optionValue}
+                    checked={value === optionValue}
+                    onChange={onChange}
+                    disabled={isDisabled}
+                    style={{ display: 'none' }}
+                  />
+                  <span style={{ 
+                    fontSize: '15px', 
+                    color: isDisabled ? '#9ca3af' : '#374151',
+                    fontWeight: value === optionValue ? '600' : '400'
+                  }}>
+                    {optionLabel}
+                  </span>
+                </label>
+              );
+            })}
           </div>
         );
 
@@ -287,10 +320,11 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
             padding: '20px',
             border: `2px solid ${hasError ? '#ef4444' : value ? '#3b82f6' : '#e2e8f0'}`,
             borderRadius: '16px',
-            backgroundColor: disabled ? '#f8fafc' : value ? '#eff6ff' : 'white',
-            cursor: disabled ? 'not-allowed' : 'pointer',
+            backgroundColor: isDisabled ? '#f8fafc' : value ? '#eff6ff' : 'white',
+            cursor: isDisabled ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s ease',
-            boxShadow: value ? '0 0 0 4px rgba(59, 130, 246, 0.1)' : 'none'
+            boxShadow: value ? '0 0 0 4px rgba(59, 130, 246, 0.1)' : 'none',
+            opacity: isDisabled ? 0.6 : 1
           }}>
             <div style={{
               position: 'relative',
@@ -303,14 +337,14 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
                 name={field.name}
                 checked={value || false}
                 onChange={onChange}
-                disabled={disabled}
+                disabled={isDisabled}
                 style={{
                   position: 'absolute',
                   width: '24px',
                   height: '24px',
                   margin: 0,
                   opacity: 0,
-                  cursor: disabled ? 'not-allowed' : 'pointer'
+                  cursor: isDisabled ? 'not-allowed' : 'pointer'
                 }}
               />
               <div style={{
@@ -333,8 +367,8 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               htmlFor={fieldId}
               style={{
                 fontSize: '15px',
-                color: '#374151',
-                cursor: disabled ? 'not-allowed' : 'pointer',
+                color: isDisabled ? '#9ca3af' : '#374151',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
                 userSelect: 'none',
                 fontWeight: '500'
               }}
@@ -353,7 +387,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               left: '20px',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused ? '#3b82f6' : '#9ca3af',
+              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
               transition: 'color 0.2s ease'
             }}>
               <Upload size={20} />
@@ -363,14 +397,14 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               id={fieldId}
               name={field.name}
               onChange={onChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => !isDisabled && setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               required={field.required}
-              disabled={disabled}
+              disabled={isDisabled}
               accept={field.accept}
               style={{
                 ...baseInputStyles,
-                cursor: disabled ? 'not-allowed' : 'pointer'
+                cursor: isDisabled ? 'not-allowed' : 'pointer'
               }}
             />
           </div>
@@ -385,7 +419,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               left: '20px',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused ? '#3b82f6' : '#9ca3af',
+              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
               transition: 'color 0.2s ease'
             }}>
               <IconComponent size={20} />
@@ -396,48 +430,50 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               name={field.name}
               value={value || ''}
               onChange={onChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => !isDisabled && setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder={field.placeholder}
+              placeholder={isDisabled ? (field.placeholder || value || 'Disabled') : field.placeholder}
               required={field.required}
-              disabled={disabled}
+              disabled={isDisabled}
               style={{
                 ...baseInputStyles,
                 paddingRight: '56px'
               }}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                top: '50%',
-                right: '20px',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#9ca3af',
-                padding: '8px',
-                borderRadius: '8px',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.color = '#6b7280';
-                e.target.style.backgroundColor = '#f3f4f6';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.color = '#9ca3af';
-                e.target.style.backgroundColor = 'transparent';
-              }}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            {!isDisabled && (
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  right: '20px',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#9ca3af',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.color = '#6b7280';
+                  e.target.style.backgroundColor = '#f3f4f6';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.color = '#9ca3af';
+                  e.target.style.backgroundColor = 'transparent';
+                }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            )}
           </div>
         );
-        case 'hidden': 
-  return null;              // דלג על רינדור
 
+      case 'hidden': 
+        return null;
 
       default:  
         return (
@@ -448,7 +484,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               left: '20px',
               transform: 'translateY(-50%)',
               zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused ? '#3b82f6' : '#9ca3af',
+              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
               transition: 'color 0.2s ease'
             }}>
               <IconComponent size={20} />
@@ -459,11 +495,11 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
               name={field.name}
               value={value || ''}
               onChange={onChange}
-              onFocus={() => setIsFocused(true)}
+              onFocus={() => !isDisabled && setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder={field.placeholder}
+              placeholder={isDisabled ? (field.placeholder || value || 'Disabled') : field.placeholder}
               required={field.required}
-              disabled={disabled}
+              disabled={isDisabled}
               style={baseInputStyles}
             />
           </div>
@@ -473,7 +509,7 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
 
   return (
     <div style={{ marginBottom: '28px' }}>
-      {field.type !== 'checkbox' && (
+      {field.type !== 'checkbox' && field.type !== 'hidden' && (
         <label 
           htmlFor={fieldId}
           style={labelStyles}
@@ -481,6 +517,17 @@ const FormField = ({ field, value, error, onChange, disabled }) => {
           {field.label}
           {field.required && (
             <span style={{ color: '#ef4444', marginLeft: '4px', fontSize: '16px' }}>*</span>
+          )}
+          {isDisabled && (
+            <span style={{ 
+              color: '#9ca3af', 
+              marginLeft: '8px', 
+              fontSize: '12px',
+              fontWeight: '400',
+              fontStyle: 'italic'
+            }}>
+              (Disabled)
+            </span>
           )}
         </label>
       )}
@@ -538,17 +585,78 @@ const DynamicForm = ({
   initialData = {},
   validationRules = {},
   icon: CustomIcon,
+  onFieldChange,
+  getAcademicYearOptions,
+  errors: externalErrors = {},
   ...props
 }) => {
-  const [formData, setFormData] = useState(initialData || {});
+  const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  const [dynamicFieldOptions, setDynamicFieldOptions] = useState({});
 
+  // Initialize form data when initialData changes or component mounts
   useEffect(() => {
-    setFormData(initialData || {});
-  }, []);
+    console.log("DynamicForm: initialData changed:", initialData);
+    
+    if (initialData && Object.keys(initialData).length > 0) {
+      // EDIT mode - use provided data
+      setFormData(initialData);
+      
+      // Set dynamic options for academicYear if group is present
+      if (initialData.group && getAcademicYearOptions) {
+        const academicYearOptions = getAcademicYearOptions(initialData.group);
+        setDynamicFieldOptions(prev => ({
+          ...prev,
+          academicYear: academicYearOptions
+        }));
+      }
+    } else {
+      // ADD mode - initialize with defaults
+      const defaultData = {};
+      fields.forEach(field => {
+        if (field.disabled && field.name === 'year') {
+          defaultData[field.name] = new Date().getFullYear().toString();
+        } else if (field.type === 'checkbox') {
+          defaultData[field.name] = false;
+        } else {
+          defaultData[field.name] = '';
+        }
+      });
+      setFormData(defaultData);
+    }
+    
+    // Clear errors when data changes
+    setErrors({});
+  }, [initialData, fields, getAcademicYearOptions]);
+
+  // Update academic year options when group changes
+  useEffect(() => {
+    if (getAcademicYearOptions && formData.group) {
+      const academicYearOptions = getAcademicYearOptions(formData.group);
+      setDynamicFieldOptions(prev => ({
+        ...prev,
+        academicYear: academicYearOptions
+      }));
+    }
+  }, [formData.group, getAcademicYearOptions]);
+
+  // Update errors from external source
+  useEffect(() => {
+    if (externalErrors && Object.keys(externalErrors).length > 0) {
+      setErrors(externalErrors);
+    }
+  }, [externalErrors]);
 
   const handleInputChange = (e) => {
     const { name, type, value, checked, files } = e.target;
+    console.log("DynamicForm: Input changed:", name, "Value:", type === 'checkbox' ? checked : value);
+
+    // Don't allow changes to disabled fields
+    const field = fields.find(f => f.name === name);
+    if (field && field.disabled) {
+      console.log("Field is disabled, ignoring change");
+      return;
+    }
 
     let finalValue;
     if (type === "checkbox") {
@@ -561,10 +669,24 @@ const DynamicForm = ({
       finalValue = value;
     }
 
-    setFormData((prev) => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: finalValue,
-    }));
+    };
+
+    // If group changed, reset academic year
+    if (name === 'group' && formData.academicYear) {
+      newFormData.academicYear = '';
+      console.log("Group changed, clearing academicYear");
+    }
+
+    // Ensure year field always stays as current year for disabled fields
+    if (name === 'year' && field && field.disabled) {
+      return; // Prevent year field changes if disabled
+    }
+    
+    console.log("DynamicForm: Setting new form data:", newFormData);
+    setFormData(newFormData);
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -573,12 +695,23 @@ const DynamicForm = ({
         [name]: "",
       }));
     }
+
+    // Call external field change handler
+    if (onFieldChange) {
+      console.log("DynamicForm: Calling onFieldChange");
+      onFieldChange(name, finalValue, newFormData);
+    }
   };
 
   const validateForm = () => {
     const newErrors = {};
 
     fields.forEach((field) => {
+      // Skip validation for disabled fields
+      if (field.disabled) {
+        return;
+      }
+
       const value = formData[field.name];
 
       // Required field validation
@@ -632,20 +765,32 @@ const DynamicForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("DynamicForm: Form submitted with data:", formData);
+    
     if (validateForm()) {
-      onSubmit?.(formData);
+      // Ensure current year is always set for year field
+      const currentYear = new Date().getFullYear();
+      const finalFormData = {
+        ...formData,
+        year: formData.year || currentYear.toString()
+      };
+      console.log("DynamicForm: Calling onSubmit with:", finalFormData);
+      onSubmit?.(finalFormData);
+    } else {
+      console.log("DynamicForm: Validation failed");
     }
   };
 
   const handleCancel = () => {
-    setFormData(initialData || {});
+    console.log("DynamicForm: Cancel clicked");
+    setFormData({});
     setErrors({});
+    setDynamicFieldOptions({});
     onCancel?.();
   };
 
-  // No container styles - let the popup handle the styling
   return (
-    <div className={className}  style={{ padding: '20px'}}  {...props}>
+    <div className={className} style={{ padding: '20px' }} {...props}>
       {/* Header */}
       {showHeader && (
         <div style={{
@@ -695,14 +840,14 @@ const DynamicForm = ({
       }}>
         <form onSubmit={handleSubmit}>
           {fields.map((field, index) => (
-            
             <FormField
-              key={field.name || index}
+              key={`${field.name}-${index}`}
               field={field}
               value={formData[field.name]}
               error={errors[field.name]}
               onChange={handleInputChange}
               disabled={loading}
+              dynamicOptions={dynamicFieldOptions[field.name]}
             />
           ))}
         </form>
