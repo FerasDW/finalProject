@@ -14,19 +14,18 @@ const dashboardContentData = {
       type: "box",
       props: {
         title: "User Management",
-        subtitle: "1,245 Active Users",
+        // subtitle is now dynamic
         boxLink: "Manage all users",
         image: logoImg,
         bgColor: "#e6f3ff",
         gridRow: "span 8",
-        
       },
     },
     {
       type: "box",
       props: {
         title: "System Analytics",
-        subtitle: "View system performance",
+        // subtitle is now dynamic
         boxLink: "View detailed analytics",
         image: statImg,
         bgColor: "#fff2e6",
@@ -37,7 +36,7 @@ const dashboardContentData = {
       type: "box",
       props: {
         title: "Institution Overview",
-        subtitle: "12 Departments Active",
+        // subtitle is now dynamic
         boxLink: "Manage departments",
         image: coursesImg,
         bgColor: "#f0f8f0",
@@ -49,7 +48,7 @@ const dashboardContentData = {
       props: {
         title: "Department Enrollment Statistics",
         chartType: "bar",
-        chartData: sampleData,
+        // chartData is now dynamic
         gridColumn: "span 8",
         gridRow: "span 1",
       },
@@ -57,7 +56,7 @@ const dashboardContentData = {
     {
       type: "assignments",
       props: {
-        data: upcomingAssignments,
+        // assignments data is now dynamic
         gridRow: "span 1",
       },
     },
@@ -66,7 +65,7 @@ const dashboardContentData = {
       props: {
         title: "System Usage Distribution",
         chartType: "pie",
-        chartData: educationdata,
+        // chartData is now dynamic
         gridRow: "span 1",
       },
     },
@@ -75,7 +74,7 @@ const dashboardContentData = {
       props: {
         title: "Annual Enrollment Trends",
         chartType: "line",
-        chartData: lineChartData,
+        // chartData is now dynamic
         gridColumn: "span 8",
         gridRow: "span 1",
       },
@@ -228,5 +227,4 @@ const dashboardContentData = {
     },
   ],
 };
-
 export default dashboardContentData;

@@ -1,17 +1,11 @@
 // tableUtils.js - Table Utility Functions
-import {
-  Users,
-  GraduationCap,
-  Building,
-  BookOpen,
-  Calendar,
-  Settings,
-  Database,
-  UserCheck,
-  FileText,
-  Mail,
-  Phone
-} from "lucide-react";
+import { 
+  Users, GraduationCap, BookOpen, Building, Calendar, Settings, 
+  UserCheck, FileText, Mail, Phone, Database,
+  // Additional icons for new categories
+  MessageSquare, Megaphone, FolderOpen,
+  CalendarDays, UserPlus, ScrollText, Layout, Archive,
+} from 'lucide-react';
 
 /**
  * Format header names from camelCase or snake_case to proper display names
@@ -28,7 +22,10 @@ export const formatHeaderName = (name) => {
  * Get the appropriate icon component based on entity type or icon prop
  */
 export const getIconComponent = (icon, entityType) => {
+  console.log("getIconComponent called with icon:", icon, "entityType:", entityType);
+  
   const iconMap = {
+    // Core icons
     students: Users,
     lecturers: GraduationCap,
     courses: BookOpen,
@@ -39,12 +36,29 @@ export const getIconComponent = (icon, entityType) => {
     documents: FileText,
     contacts: Mail,
     phones: Phone,
-    default: Database
+    default: Database,
+    
+    // Extended icons for additional categories
+    messages: MessageSquare,
+    announcements: Megaphone,
+    templates: Layout,
+    files: FolderOpen,
+    'weekly-schedule': CalendarDays,
+    'student-requests': UserPlus,
+    'academic-records': ScrollText,
+    
+    // Additional entity types
+    requests: MessageSquare,        // For "requests" section in Messages
+    announcement: Megaphone,        // For "announcement" section  
+    records: Database,              // Generic records entity type
   };
 
+  // Handle string icons
   if (typeof icon === "string") {
     return iconMap[icon] || iconMap[entityType] || iconMap.default;
   }
+  
+  // Return icon component or fallback to entity type or default
   return icon || iconMap[entityType] || iconMap.default;
 };
 
@@ -148,6 +162,11 @@ export const renderCellContent = (row, header, columnConfig = {}) => {
   const value = row[header.key];
   const config = columnConfig[header.key] || {};
 
+  // Handle null/undefined values
+  if (value == null) {
+    return <span className="cell-content">-</span>;
+  }
+
   switch (config.type) {
     case "image":
       return <img src={value} alt="avatar" className="avatar" />;
@@ -202,7 +221,7 @@ export const renderCellContent = (row, header, columnConfig = {}) => {
     
     case "custom":
       return config.render ? config.render(value, row) : (
-        <span className="cell-content">{value}</span>
+        <span className="cell-content">{String(value)}</span>
       );
     
     default:
@@ -211,6 +230,27 @@ export const renderCellContent = (row, header, columnConfig = {}) => {
           header.key.toLowerCase().includes("image")) {
         return <img src={value} alt="avatar" className="avatar" />;
       }
-      return <span className="cell-content">{value}</span>;
+      
+      // Handle different value types safely
+      if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+          // Handle arrays - join them or show count
+          return (
+            <span className="cell-content">
+              {value.length > 0 ? value.join(', ') : 'Empty'}
+            </span>
+          );
+        } else {
+          // Handle objects - show specific properties or indicate it's an object
+          return (
+            <span className="cell-content">
+              {Object.keys(value).length} properties
+            </span>
+          );
+        }
+      }
+      
+      // Handle primitives (string, number, boolean)
+      return <span className="cell-content">{String(value)}</span>;
   }
 };

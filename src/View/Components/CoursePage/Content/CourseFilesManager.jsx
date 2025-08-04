@@ -1,17 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Upload,
   Download,
-  Eye,
   Trash2,
   Edit,
   Folder,
   File,
   Search,
-  MoreVertical,
-  X,
-  FolderPlus,
 } from "lucide-react";
 import "../../../../CSS/Pages/CoursePage/CourseFilesManager.css";
 import DynamicForm from "../../Forms/dynamicForm.jsx";
@@ -20,26 +16,77 @@ import {
   categoryFields,
   uploadFileFields,
 } from "../../../../Static/FIxed/formsInputs.js";
-import { mockCourseCategories }  from "../../../../Static/FIxed/coursePageData.js";
+import * as contentApi from "../../../../Api/coursePageApi.js";
 
-const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
-  const [categories, setCategories] = useState(mockCourseCategories);
-  const [activeCategory, setActiveCategory] = useState(
-    categories[0]?.id || null
-  );
+// --- CHANGE 1: The component now accepts 'academicYear' as a prop ---
+const CourseFilesManager = ({ courseId, academicYear, userRole = "1100" }) => {
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddFile, setShowAddFile] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [newCategory, setNewCategory] = useState({
-    name: "",
-    description: "",
-    color: "#3b82f6",
-  });
 
-  const isAdmin = userRole === "1100"; // Assuming 1100 is admin role
+  const isAdmin = userRole === "1100";
 
-  const getFileIcon = (type) => {
+  // --- CHANGE 2: The main data-loading useEffect now depends on 'academicYear' ---
+  useEffect(() => {
+    const loadInitialData = async () => {
+      // It won't run if courseId or academicYear are missing
+      if (!courseId || !academicYear) return;
+      setLoading(true);
+      try {
+        // It now passes the academicYear to the API call
+        const fetchedCategories = await contentApi.getCategoriesByCourse(courseId, academicYear);
+        const categoriesWithFiles = fetchedCategories.map(cat => ({
+          ...cat,
+          files: [],
+          filesLoaded: false // Add a flag to prevent re-fetching
+        }));
+        setCategories(categoriesWithFiles);
+        if (categoriesWithFiles.length > 0) {
+          setActiveCategory(categoriesWithFiles[0].id);
+        } else {
+          setActiveCategory(null); // No categories found for this year
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadInitialData();
+  }, [courseId, academicYear]); // <-- Dependency array updated
+
+  useEffect(() => {
+    const loadCategoryFiles = async () => {
+      if (!activeCategory) return;
+      
+      const currentCategory = categories.find(cat => cat.id === activeCategory);
+      if (currentCategory && currentCategory.filesLoaded) return;
+
+      try {
+        const files = await contentApi.getFilesByCategory(activeCategory);
+        
+        setCategories(prevCategories =>
+          prevCategories.map(cat =>
+            cat.id === activeCategory
+              ? { ...cat, files: files, filesLoaded: true }
+              : cat
+          )
+        );
+      } catch (error) {
+        console.error("Error loading files for category:", error);
+      }
+    };
+
+    loadCategoryFiles();
+  }, [activeCategory, categories]);
+
+  // ... (getFileIcon function is unchanged)
+    const getFileIcon = (type) => {
     const iconProps = { size: 24 };
     switch (type) {
       case "presentation":
@@ -56,322 +103,189 @@ const CourseFilesManager = ({ userRole = "1100", courseMaterials = [] }) => {
   };
 
   const handleDownloadFile = (file) => {
-    if (file.url) {
-      const link = document.createElement("a");
-      link.href = file.url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    if (file.id) {
+      window.open(`http://localhost:8080/api/files/${file.id}/download`, '_blank');
     } else {
-      // Fallback if no URL - could call an API endpoint
-      console.error("No download URL available for file:", file.name);
-      // You could show a toast notification here
+      console.error("No download method available for file:", file.name);
+      alert("Unable to download file.");
     }
   };
 
   const handleEditCategory = (category) => {
     setEditingCategory(category);
-    setNewCategory({
-      name: category.name,
-      description: category.description,
-      color: category.color,
-    });
     setShowAddCategory(true);
   };
+  
+  // --- CHANGE 3: The create category handler now passes the year to the API call ---
+  const handleAddCategory = async (data) => {
+    if (!data.name?.trim()) {
+      alert("Category name is required");
+      return;
+    }
 
-  const handleAddCategory = (data) => {
-    if (data.name?.trim()) {
+    try {
       if (editingCategory) {
-        // Edit existing category
+        const updatedCategory = await contentApi.updateCategory(editingCategory.id, data);
         setCategories(
           categories.map((cat) =>
             cat.id === editingCategory.id
-              ? {
-                  ...cat,
-                  name: data.name,
-                  description: data.description || "",
-                  color: data.color || "#3b82f6",
-                }
+              ? { ...cat, ...updatedCategory }
               : cat
           )
         );
-        setEditingCategory(null);
       } else {
-        // Add new category
-        const category = {
-          id: Date.now(),
-          name: data.name,
-          description: data.description || "",
-          color: data.color || "#3b82f6",
-          files: [],
-        };
-        setCategories([...categories, category]);
+        // The API call now correctly includes courseId, academicYear, and the form data
+        const newCategory = await contentApi.createCategory(courseId, academicYear, data);
+        setCategories([...categories, { ...newCategory, files: [], filesLoaded: false }]);
       }
-      setShowAddCategory(false);
-      setNewCategory({ name: "", description: "", color: "#3b82f6" });
+      handleCloseAddCategory();
+    } catch (error) {
+      console.error("Error saving category:", error);
+      alert("Error saving category. Please try again.");
     }
   };
 
   const handleCloseAddCategory = () => {
     setShowAddCategory(false);
     setEditingCategory(null);
-    setNewCategory({ name: "", description: "", color: "#3b82f6" });
   };
 
-  const handleDeleteCategory = (categoryId) => {
-    setCategories(categories.filter((cat) => cat.id !== categoryId));
-    if (activeCategory === categoryId) {
-      setActiveCategory(categories[0]?.id || null);
-    }
-  };
-
-  const handleDeleteFile = (categoryId, fileId) => {
-    setCategories(
-      categories.map((cat) =>
-        cat.id === categoryId
-          ? { ...cat, files: cat.files.filter((file) => file.id !== fileId) }
-          : cat
-      )
-    );
-  };
-
-  const handleFileUpload = (categoryId, file) => {
-    if (!categoryId || !file) {
-      console.error("Missing categoryId or file");
+  // ... (handleDeleteCategory, handleDeleteFile, handleFileUpload are mostly unchanged in logic)
+    const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm("Are you sure you want to delete this category and all its files?")) {
       return;
     }
 
-    const newFile = {
-      id: Date.now(),
-      name: file.name,
-      size: (file.size / 1024 / 1024).toFixed(2) + " MB",
-      uploadDate: new Date().toISOString().split("T")[0],
-      type: "document",
-      url: URL.createObjectURL(file), // Create a temporary URL for the uploaded file
-    };
-
-    setCategories(
-      categories.map((cat) =>
-        cat.id === categoryId ? { ...cat, files: [...cat.files, newFile] } : cat
-      )
-    );
-
-    setShowAddFile(false);
+    try {
+      await contentApi.deleteCategory(categoryId);
+      const remainingCategories = categories.filter((cat) => cat.id !== categoryId);
+      setCategories(remainingCategories);
+      if (activeCategory === categoryId) {
+        setActiveCategory(remainingCategories[0]?.id || null);
+      }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      alert("Error deleting category. Please try again.");
+    }
   };
+
+  const handleDeleteFile = async (categoryId, fileId) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) {
+      return;
+    }
+
+    try {
+      await contentApi.deleteFile(fileId);
+      setCategories(
+        categories.map((cat) =>
+          cat.id === categoryId
+            ? { ...cat, files: cat.files.filter((file) => file.id !== fileId) }
+            : cat
+        )
+      );
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      alert("Error deleting file. Please try again.");
+    }
+  };
+
+  const handleFileUpload = async (data) => {
+    if (!data.categoryId || !data.file) {
+      alert("Please select a category and file");
+      return;
+    }
+    try {
+      const newFile = await contentApi.uploadFile(data.categoryId, data.file);
+      setCategories(
+        categories.map((cat) =>
+          cat.id === data.categoryId 
+            ? { ...cat, files: [...cat.files, newFile] } 
+            : cat
+        )
+      );
+      setShowAddFile(false);
+      alert(`File "${newFile.fileName}" uploaded successfully!`);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      alert("Error uploading file. Please try again.");
+    }
+  };
+
 
   const activeFiles =
     categories.find((cat) => cat.id === activeCategory)?.files || [];
   const filteredFiles = activeFiles.filter((file) =>
-    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+    file?.fileName?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false
   );
 
+  if (loading) {
+    return <div className="files-manager"><div className="loading-state">Loading materials for {academicYear}...</div></div>;
+  }
+
   return (
+    // The JSX part is mostly the same, it will now render the state that is correctly fetched from the API
     <div className="files-manager">
       <div className="files-container">
-        {/* Sidebar - Categories */}
-        <div className="categories-sidebar">
-          <div className="categories-sidebar-content">
-            <h3 className="categories-sidebar-title">Categories</h3>
-            <div className="categories-list">
-              {categories.map((category) => (
-                <div
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`category-item ${
-                    activeCategory === category.id ? "active" : ""
-                  }`}
-                  style={{
-                    borderLeftColor:
-                      activeCategory === category.id
-                        ? category.color
-                        : "transparent",
-                  }}
-                >
-                  <div className="category-main">
-                    <div className="category-info">
-                      <div
-                        className="category-color"
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <div className="category-details">
-                        <h4 className="category-name">{category.name}</h4>
-                        <p className="category-count">
-                          {category.files.length} files
-                        </p>
+          <div className="categories-sidebar">
+            <div className="categories-sidebar-content">
+              <h3 className="categories-sidebar-title">Categories for {academicYear}</h3>
+              <div className="categories-list">
+                {categories.map((category) => (
+                  <div key={category.id} onClick={() => setActiveCategory(category.id)} className={`category-item ${activeCategory === category.id ? "active" : ""}`} style={{borderLeftColor: activeCategory === category.id ? category.color : "transparent"}}>
+                    <div className="category-main">
+                      <div className="category-info">
+                        <div className="category-color" style={{ backgroundColor: category.color }} />
+                        <div className="category-details">
+                          <h4 className="category-name">{category.name}</h4>
+                          <p className="category-count">{category.files.length} files</p>
+                        </div>
                       </div>
+                      {isAdmin && (
+                        <div className="category-actions">
+                          <button onClick={(e) => {e.stopPropagation(); handleEditCategory(category);}} className="action-btn"><Edit size={16} /></button>
+                          <button onClick={(e) => {e.stopPropagation(); handleDeleteCategory(category.id);}} className="action-btn delete"><Trash2 size={16} /></button>
+                        </div>
+                      )}
                     </div>
-                    {isAdmin && (
-                      <div className="category-actions">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditCategory(category);
-                          }}
-                          className="action-btn"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteCategory(category.id);
-                          }}
-                          className="action-btn delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
+                    <p className="category-description">{category.description}</p>
                   </div>
-                  <p className="category-description">{category.description}</p>
-                </div>
-              ))}
-
-              {/* Add Category Button */}
-              {isAdmin && (
-                <div
-                  onClick={() => setShowAddCategory(true)}
-                  className="add-category-item"
-                >
-                  <div className="category-main">
-                    <div className="category-info">
-                      <div className="add-category-icon">
-                        <Plus size={16} />
-                      </div>
-                      <div className="category-details">
-                        <h4 className="category-name">Add New Category</h4>
-                        <p className="category-count">Create a new category</p>
-                      </div>
-                    </div>
+                ))}
+                {isAdmin && (
+                  <div onClick={() => setShowAddCategory(true)} className="add-category-item">
+                    <div className="category-main"><div className="category-info"><div className="add-category-icon"><Plus size={16} /></div><div className="category-details"><h4 className="category-name">Add New Category</h4><p className="category-count">Create a new section</p></div></div></div>
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content - Files */}
-        <div className="main-content">
-          {/* Search Section */}
-          <div className="search-section">
-            <div className="search-container">
-              <div className="search-input-wrapper">
-                <Search className="search-icon" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search files..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input"
-                />
+                )}
               </div>
             </div>
           </div>
-
-          {/* Files Grid */}
-          {activeCategory ? (
-            <div className="files-grid">
-              {filteredFiles.map((file) => (
-                <div key={file.id} className="file-card" data-file-type={file.type}>
-                  {/* File Icon */}
-                  <div className="file-icon-container">
-                    <div className="file-icon-wrapper">
-                      {getFileIcon(file.type)}
+          <div className="main-content">
+            <div className="search-section"><div className="search-container"><div className="search-input-wrapper"><Search className="search-icon" size={20} /><input type="text" placeholder="Search files..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-input"/></div></div></div>
+            {activeCategory ? (
+              <div className="files-grid">
+                {filteredFiles.map((file) => (
+                  <div key={file.id} className="file-card">
+                    <div className="file-icon-container"><div className="file-icon-wrapper">{getFileIcon(file.fileType)}</div></div>
+                    <div className="file-info">
+                      <h4 className="file-name" title={file.fileName}>{file.fileName}</h4>
+                      <p className="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="file-date">Uploaded: {new Date(file.uploadDate).toLocaleDateString()}</p>
+                    </div>
+                    <div className="file-actions">
+                      <button className="file-action-btn download" onClick={() => handleDownloadFile(file)}><Download size={16} /> Download</button>
+                      {isAdmin && (<button onClick={() => handleDeleteFile(activeCategory, file.id)} className="file-action-btn delete"><Trash2 size={16} /> Delete</button>)}
                     </div>
                   </div>
-
-                  {/* File Info */}
-                  <div className="file-info">
-                    <h4 className="file-name">{file.name}</h4>
-                    <p className="file-size">{file.size}</p>
-                    <p className="file-date">Uploaded: {file.uploadDate}</p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="file-actions">
-                    <button
-                      className="file-action-btn download"
-                      onClick={() => handleDownloadFile(file)}
-                    >
-                      <Download size={16} />
-                      Download
-                    </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() =>
-                          handleDeleteFile(activeCategory, file.id)
-                        }
-                        className="file-action-btn delete"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {/* Upload Zone for Admin */}
-              {isAdmin && (
-                <div
-                  className="upload-zone"
-                  onClick={() => setShowAddFile(true)}
-                >
-                  <Upload className="upload-icon" size={32} />
-                  <p className="upload-title">Upload New File</p>
-                  <p className="upload-subtitle">Click to browse files</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <Folder className="empty-icon" size={48} />
-              <p className="empty-text">Select a category to view files</p>
-            </div>
-          )}
-        </div>
+                ))}
+                {isAdmin && (<div className="upload-zone" onClick={() => setShowAddFile(true)}><Upload className="upload-icon" size={32} /><p className="upload-title">Upload New File</p><p className="upload-subtitle">Click to browse files</p></div>)}
+              </div>
+            ) : (<div className="empty-state"><Folder className="empty-icon" size={48} /><p className="empty-text">No categories for this year. Please add one.</p></div>)}
+          </div>
       </div>
-
-      {/* Add/Edit Category with PopUp */}
-      <PopUp
-        isOpen={showAddCategory}
-        onClose={handleCloseAddCategory}
-        size="medium"
-        showCloseButton={false}
-      >
-        <DynamicForm
-          title={editingCategory ? "Edit Category" : "Add New Category"}
-          fields={categoryFields}
-          initialData={newCategory}
-          onSubmit={(data) => {
-            handleAddCategory(data);
-          }}
-          onCancel={handleCloseAddCategory}
-          submitText={editingCategory ? "Update Category" : "Add Category"}
-          cancelText="Cancel"
-        />
+      <PopUp isOpen={showAddCategory} onClose={handleCloseAddCategory}>
+        <DynamicForm title={editingCategory ? "Edit Category" : "Add New Category"} fields={categoryFields} initialData={editingCategory || { name: "", description: "", color: "#3b82f6" }} onSubmit={handleAddCategory} onCancel={handleCloseAddCategory} />
       </PopUp>
-
-      {/* File Upload Modal */}
-      <PopUp
-        isOpen={showAddFile}
-        onClose={() => setShowAddFile(false)}
-        size="medium"
-        showCloseButton={false}
-      >
-        <DynamicForm
-          title="Upload File"
-          fields={uploadFileFields(categories)}
-          initialData={{ categoryId: activeCategory }}
-          onSubmit={(data) => {
-            handleFileUpload(data.categoryId, data.file);
-            setShowAddFile(false);
-          }}
-          onCancel={() => setShowAddFile(false)}
-          submitText="Upload File"
-          cancelText="Cancel"
-        />
+      <PopUp isOpen={showAddFile} onClose={() => setShowAddFile(false)}>
+        <DynamicForm title="Upload File" fields={uploadFileFields(categories)} initialData={{ categoryId: activeCategory }} onSubmit={handleFileUpload} onCancel={() => setShowAddFile(false)} />
       </PopUp>
     </div>
   );

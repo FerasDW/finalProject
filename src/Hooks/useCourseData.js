@@ -1,32 +1,41 @@
-// hooks/useCourseData.js
 import { useState, useEffect } from "react";
-import { getCourseById } from "../Utils/courseUtils.js"; // Note: This function needs to be added to coursesUtils.js
-import { coursesList } from "../Static/FIxed/coursesData.js";
+// --- UPDATED ---
+// Import the new API function to get a single course
+import { getCourseById } from "../Api/coursePageApi.js";
 
-const useCourseData = (id, locationState) => {
+const useCourseData = (id) => {
   const [courseData, setCourseData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    try {
-      const course = getCourseById(parseInt(id), coursesList) || (locationState?.course ? locationState.course : null);
-      if (!course) {
-        setError(new Error("Course not found"));
-      } else {
-        setCourseData(course);
+    // --- UPDATED ---
+    // This effect now fetches a single course from the backend using its ID.
+    const fetchCourse = async () => {
+      // Don't try to fetch if there's no ID
+      if (!id) {
+        setLoading(false);
+        setError(new Error("No course ID provided."));
+        return;
       }
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, locationState]);
+      
+      setLoading(true);
+      setError(null);
+      try {
+        const course = await getCourseById(id);
+        setCourseData(course);
+      } catch (err) {
+        // If the API throws an error (e.g., 404 Not Found), we catch it here
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourse();
+  }, [id]); // Rerun the effect if the ID in the URL changes
 
   return { courseData, error, loading };
 };
 
 export default useCourseData;
-

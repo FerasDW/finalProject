@@ -1,4 +1,4 @@
-// Complete GenericProfile.jsx with DynamicTable integration and 0-100 grade system
+// Complete GenericProfile.jsx with Enhanced Resource Management
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -59,6 +59,10 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
   const [selectedYear, setSelectedYear] = useState("");
   const [showActions, setShowActions] = useState(false);
 
+  // File upload states
+  const [uploadedFiles, setUploadedFiles] = useState(new Map());
+  const [fileUploadProgress, setFileUploadProgress] = useState({});
+
   // Modal states
   const [editGradeModalOpen, setEditGradeModalOpen] = useState(false);
   const [addGradeModalOpen, setAddGradeModalOpen] = useState(false);
@@ -88,6 +92,35 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     { value: 'ENG101', label: 'ENG101 - English Composition' }
   ];
 
+  // Helper functions for file management
+  const getFileInfo = (file) => {
+    if (!file) return { extension: '', mimeType: '', category: 'unknown' };
+    
+    const extension = file.name.split('.').pop().toLowerCase();
+    const mimeType = file.type;
+    
+    let category = 'document';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) {
+      category = 'image';
+    } else if (['pdf'].includes(extension)) {
+      category = 'pdf';
+    } else if (['doc', 'docx'].includes(extension)) {
+      category = 'word';
+    } else if (['ppt', 'pptx'].includes(extension)) {
+      category = 'presentation';
+    }
+    
+    return { extension, mimeType, category };
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   // Helper function to convert numerical grade to letter grade
   const getLetterGrade = (numericGrade) => {
     if (numericGrade >= 97) return 'A+';
@@ -113,7 +146,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     }));
   };
 
-  // Form field configurations with updated grade system (0-100)
+  // Form field configurations
   const gradeFormFields = [
     { name: 'courseCode', label: 'Course', type: 'select', required: true, 
       options: getStudentEnrolledCourses() },
@@ -217,22 +250,121 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     { name: 'notes', label: 'Notes', type: 'textarea', required: false }
   ];
 
+  // Enhanced resource form fields with file upload
   const resourceFormFields = [
-    { name: 'type', label: 'Information Type', type: 'select', required: true, options: [
-      { value: 'cv', label: 'CV/Resume' },
-      { value: 'education', label: 'Educational Background' },
-      { value: 'research', label: 'Research Work' },
-      { value: 'milestone', label: 'Career Milestone' },
-      { value: 'publication', label: 'Publication' },
-      { value: 'award', label: 'Award/Recognition' }
-    ]},
-    { name: 'title', label: 'Title', type: 'text', required: true },
-    { name: 'description', label: 'Description', type: 'textarea', required: true },
-    { name: 'date', label: 'Date', type: 'date', required: false },
-    { name: 'institution', label: 'Institution/Organization', type: 'text', required: false },
-    { name: 'url', label: 'URL/Link', type: 'url', required: false },
-    { name: 'tags', label: 'Tags (comma separated)', type: 'text', required: false }
+    { 
+      name: 'type', 
+      label: 'Document Type', 
+      type: 'select', 
+      required: true, 
+      options: [
+        { value: 'cv', label: 'CV/Resume' },
+        { value: 'education', label: 'Educational Background' },
+        { value: 'research', label: 'Research Work' },
+        { value: 'milestone', label: 'Career Milestone' },
+        { value: 'publication', label: 'Publication' },
+        { value: 'award', label: 'Award/Recognition' }
+      ]
+    },
+    { 
+      name: 'title', 
+      label: 'Document Title', 
+      type: 'text', 
+      required: true,
+      placeholder: 'Enter a descriptive title for your document'
+    },
+    { 
+      name: 'description', 
+      label: 'Description', 
+      type: 'textarea', 
+      required: true,
+      placeholder: 'Provide a detailed description of the document content',
+      rows: 4
+    },
+    { 
+      name: 'file', 
+      label: 'Upload File', 
+      type: 'file', 
+      required: !selectedRecord, // Only required for new resources
+      accept: '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.ppt,.pptx',
+      helperText: 'Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, PPT, PPTX (Max 10MB)'
+    },
+    { 
+      name: 'date', 
+      label: 'Document Date', 
+      type: 'date', 
+      required: false,
+      helperText: 'Date when this document was created or published'
+    },
+    { 
+      name: 'institution', 
+      label: 'Institution/Organization', 
+      type: 'text', 
+      required: false,
+      placeholder: 'Associated institution or organization'
+    },
+    { 
+      name: 'url', 
+      label: 'External URL/Link', 
+      type: 'url', 
+      required: false,
+      placeholder: 'https://example.com/document-link'
+    },
+    { 
+      name: 'tags', 
+      label: 'Tags', 
+      type: 'text', 
+      required: false,
+      placeholder: 'research, machine learning, AI (comma separated)',
+      helperText: 'Add relevant tags separated by commas'
+    }
   ];
+
+  // File Upload Progress Component
+  const FileUploadProgress = ({ progress }) => {
+    if (!progress.status) return null;
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        background: 'white',
+        padding: '16px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: 10000,
+        minWidth: '200px'
+      }}>
+        <div style={{ marginBottom: '8px', fontWeight: '600' }}>
+          {progress.status === 'uploading' && 'Uploading...'}
+          {progress.status === 'completed' && 'Upload Complete!'}
+          {progress.status === 'error' && 'Upload Failed'}
+        </div>
+        <div style={{
+          width: '100%',
+          height: '4px',
+          background: '#e5e7eb',
+          borderRadius: '2px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: `${progress.progress}%`,
+            height: '100%',
+            background: progress.status === 'error' ? '#ef4444' : '#10b981',
+            transition: 'width 0.3s ease'
+          }} />
+        </div>
+        <div style={{ 
+          fontSize: '12px', 
+          color: '#666', 
+          marginTop: '4px' 
+        }}>
+          {progress.progress}%
+        </div>
+      </div>
+    );
+  };
 
   // Load profile data
   useEffect(() => {
@@ -309,7 +441,6 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
   };
 
   const handleGradeSubmit = (formData) => {
-    // Validate grade is between 0-100
     if (formData.grade < 0 || formData.grade > 100) {
       alert('Grade must be between 0 and 100');
       return;
@@ -374,14 +505,12 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
   const handleCourseSubmit = (formData) => {
     if (entityType === 'lecturer') {
       if (selectedRecord) {
-        // Edit existing course assignment
         const updatedCourses = profileData.courses.map(course => 
           course.id === selectedRecord.id ? { ...course, ...formData } : course
         );
         setProfileData({ ...profileData, courses: updatedCourses });
         setEditCourseModalOpen(false);
       } else {
-        // Add new course assignment
         const selectedCourse = availableCourses.find(course => course.value === formData.courseCode);
         const courseName = selectedCourse ? selectedCourse.label.split(' - ')[1] : '';
         
@@ -402,7 +531,6 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         setAddCourseModalOpen(false);
       }
     } else {
-      // Student course management
       if (selectedRecord) {
         const updatedCourses = profileData.courses.map(course => 
           course.id === selectedRecord.id ? { ...course, ...formData } : course
@@ -451,7 +579,6 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       setProfileData({ ...profileData, enrollments: updatedEnrollments });
       setEditEnrollmentModalOpen(false);
     } else {
-      // For new enrollments, get course details from availableCourses
       const selectedCourse = availableCourses.find(course => course.value === formData.courseCode);
       const courseName = selectedCourse ? selectedCourse.label.split(' - ')[1] : formData.courseCode;
       
@@ -460,7 +587,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         id: newId, 
         ...formData,
         courseName: courseName,
-        credits: 3 // Default credits, can be updated
+        credits: 3
       };
       setProfileData({ 
         ...profileData, 
@@ -495,19 +622,15 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
   };
 
   const handleScheduleSubmit = (formData) => {
-    // Validate time format
     if (formData.startTime >= formData.endTime) {
       alert('End time must be after start time');
       return;
     }
 
     if (selectedRecord) {
-      // For lecturer, update working hours
       if (entityType === 'lecturer') {
         console.log("Updating lecturer schedule:", formData);
-        // Update lecturer schedule logic here
       } else {
-        // For student, update teaching schedule
         const updatedSchedule = profileData.schedule?.map(item => 
           item.id === selectedRecord.id ? { ...item, ...formData } : item
         ) || [];
@@ -515,7 +638,6 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       }
       setEditScheduleModalOpen(false);
     } else {
-      // Add new schedule entry
       const newId = Math.max(...(profileData.schedule?.map(s => s.id) || [0])) + 1;
       const newScheduleEntry = { id: newId, ...formData };
       setProfileData({ 
@@ -528,7 +650,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     setFormData({});
   };
 
-  // Resource handlers
+  // Enhanced Resource handlers with file upload
   const handleEditResource = (row) => {
     setSelectedRecord(row);
     setFormData({
@@ -549,50 +671,335 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     setAddResourceModalOpen(true);
   };
 
-  const handleResourceSubmit = (formData) => {
-    if (selectedRecord) {
-      // Edit existing resource
-      const updatedResources = profileData.resources?.map(resource => 
-        resource.id === selectedRecord.id ? { ...resource, ...formData } : resource
-      ) || [];
-      setProfileData({ ...profileData, resources: updatedResources });
-      setEditResourceModalOpen(false);
-    } else {
-      // Add new resource
-      const newId = Math.max(...(profileData.resources?.map(r => r.id) || [0])) + 1;
-      const newResource = { 
-        id: newId, 
-        ...formData,
-        uploadDate: new Date().toISOString().split('T')[0],
-        downloads: 0,
-        rating: 0,
-        size: '1.2 MB' // Default size
-      };
-      setProfileData({ 
-        ...profileData, 
-        resources: [...(profileData.resources || []), newResource] 
-      });
-      setAddResourceModalOpen(false);
+  const handleResourceSubmit = async (formData) => {
+    try {
+      // Validate file upload for new resources
+      if (!selectedRecord && !formData.file) {
+        alert('Please select a file to upload');
+        return;
+      }
+
+      // Validate file size (10MB limit)
+      if (formData.file && formData.file.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+
+      setFileUploadProgress({ status: 'uploading', progress: 0 });
+
+      if (selectedRecord) {
+        // Edit existing resource
+        const updatedResources = profileData.resources?.map(resource => 
+          resource.id === selectedRecord.id ? { 
+            ...resource, 
+            ...formData,
+            // Keep existing file info if no new file uploaded
+            ...(formData.file ? {
+              fileName: formData.file.name,
+              fileSize: formatFileSize(formData.file.size),
+              ...getFileInfo(formData.file)
+            } : {})
+          } : resource
+        ) || [];
+        
+        // Store file object if new file uploaded
+        if (formData.file) {
+          setUploadedFiles(prev => new Map(prev.set(selectedRecord.id, formData.file)));
+        }
+        
+        setProfileData({ ...profileData, resources: updatedResources });
+        setEditResourceModalOpen(false);
+      } else {
+        // Add new resource
+        const newId = Math.max(...(profileData.resources?.map(r => r.id) || [0])) + 1;
+        const fileInfo = getFileInfo(formData.file);
+        
+        const newResource = { 
+          id: newId, 
+          ...formData,
+          fileName: formData.file.name,
+          fileSize: formatFileSize(formData.file.size),
+          uploadDate: new Date().toISOString().split('T')[0],
+          downloads: 0,
+          rating: 0,
+          size: formatFileSize(formData.file.size),
+          ...fileInfo
+        };
+        
+        // Store file object
+        setUploadedFiles(prev => new Map(prev.set(newId, formData.file)));
+        
+        setProfileData({ 
+          ...profileData, 
+          resources: [...(profileData.resources || []), newResource] 
+        });
+        setAddResourceModalOpen(false);
+      }
+
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setFileUploadProgress(prev => {
+          if (prev.progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => setFileUploadProgress({}), 1000);
+            return { status: 'completed', progress: 100 };
+          }
+          return { ...prev, progress: prev.progress + 10 };
+        });
+      }, 100);
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
+      setFileUploadProgress({ status: 'error', progress: 0 });
+    } finally {
+      setSelectedRecord(null);
+      setFormData({});
     }
-    setSelectedRecord(null);
-    setFormData({});
   };
 
   const handleDownloadResource = (row) => {
-    console.log("Downloading resource:", row.title);
-    // Update download count
-    const updatedResources = profileData.resources?.map(resource => 
-      resource.id === row.id ? { ...resource, downloads: resource.downloads + 1 } : resource
-    ) || [];
-    setProfileData({ ...profileData, resources: updatedResources });
-    
-    // Simulate download
-    alert(`Downloading: ${row.title}`);
+    try {
+      console.log("Downloading resource:", row.title);
+      
+      // Update download count first
+      const updatedResources = profileData.resources?.map(resource => 
+        resource.id === row.id ? { ...resource, downloads: resource.downloads + 1 } : resource
+      ) || [];
+      setProfileData({ ...profileData, resources: updatedResources });
+      
+      // Check if we have the actual file
+      const fileObject = uploadedFiles.get(row.id);
+      
+      if (fileObject) {
+        // Download actual uploaded file
+        const url = URL.createObjectURL(fileObject);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = row.fileName || row.title;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the URL object
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        
+        // Show success message
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #10b981;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          z-index: 10000;
+          font-weight: 500;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        toast.textContent = `Downloaded: ${row.title}`;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => document.body.removeChild(toast), 3000);
+      } else {
+        // Fallback for demo/existing files
+        alert(`Downloading: ${row.title}\n\nIn a real application, this would download the file from the server.`);
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error downloading file. Please try again.');
+    }
   };
 
   const handlePreviewResource = (row) => {
-    console.log("Previewing resource:", row.title);
-    alert(`Preview: ${row.title}\n\nDescription: ${row.description || 'No description available'}`);
+    try {
+      console.log("Previewing resource:", row.title);
+      
+      const fileObject = uploadedFiles.get(row.id);
+      
+      if (fileObject) {
+        // Preview actual uploaded file
+        const fileInfo = getFileInfo(fileObject);
+        const url = URL.createObjectURL(fileObject);
+        
+        if (fileInfo.category === 'image') {
+          // Open image in new tab
+          const newWindow = window.open('', '_blank');
+          newWindow.document.write(`
+            <html>
+              <head>
+                <title>${row.title} - Preview</title>
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: #f5f5f5; 
+                    display: flex; 
+                    justify-content: center; 
+                    align-items: center; 
+                    min-height: 100vh;
+                    font-family: Arial, sans-serif;
+                  }
+                  .container {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    text-align: center;
+                  }
+                  img { 
+                    max-width: 100%; 
+                    max-height: 80vh; 
+                    border-radius: 4px;
+                  }
+                  h2 { margin-top: 0; color: #333; }
+                  .info { color: #666; margin-bottom: 20px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h2>${row.title}</h2>
+                  <div class="info">${row.description || 'No description available'}</div>
+                  <img src="${url}" alt="${row.title}" />
+                </div>
+              </body>
+            </html>
+          `);
+        } else if (fileInfo.category === 'pdf' || fileInfo.mimeType === 'application/pdf') {
+          // Open PDF in new tab
+          window.open(url, '_blank');
+        } else {
+          // For other file types, show preview modal
+          const previewWindow = window.open('', '_blank', 'width=800,height=600');
+          previewWindow.document.write(`
+            <html>
+              <head>
+                <title>${row.title} - Preview</title>
+                <style>
+                  body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0; 
+                    padding: 20px; 
+                    background: #f5f5f5;
+                  }
+                  .header {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                  }
+                  .content {
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    text-align: center;
+                  }
+                  .download-btn {
+                    background: #3b82f6;
+                    color: white;
+                    padding: 10px 20px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    margin-top: 20px;
+                  }
+                  .download-btn:hover { background: #2563eb; }
+                </style>
+              </head>
+              <body>
+                <div class="header">
+                  <h1>${row.title}</h1>
+                  <p><strong>Type:</strong> ${row.type}</p>
+                  <p><strong>Size:</strong> ${row.fileSize || row.size}</p>
+                  <p><strong>Institution:</strong> ${row.institution || 'N/A'}</p>
+                </div>
+                <div class="content">
+                  <p>${row.description || 'No description available'}</p>
+                  <p><em>This file type cannot be previewed in the browser.</em></p>
+                  <button class="download-btn" onclick="alert('Download functionality would be implemented here')">
+                    Download File
+                  </button>
+                </div>
+              </body>
+            </html>
+          `);
+        }
+        
+        // Clean up URL after some time
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
+      } else {
+        // Fallback preview for demo/existing files
+        const previewWindow = window.open('', '_blank', 'width=800,height=600');
+        previewWindow.document.write(`
+          <html>
+            <head>
+              <title>${row.title} - Preview</title>
+              <style>
+                body { 
+                  font-family: Arial, sans-serif; 
+                  margin: 0; 
+                  padding: 20px; 
+                  background: #f5f5f5;
+                }
+                .container {
+                  background: white;
+                  padding: 30px;
+                  border-radius: 8px;
+                  max-width: 600px;
+                  margin: 0 auto;
+                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 { color: #333; margin-bottom: 10px; }
+                .meta { color: #666; margin-bottom: 20px; }
+                .description { line-height: 1.6; color: #444; }
+                .tags { 
+                  margin-top: 20px; 
+                  padding-top: 20px; 
+                  border-top: 1px solid #eee; 
+                }
+                .tag {
+                  display: inline-block;
+                  background: #e5e7eb;
+                  padding: 4px 8px;
+                  border-radius: 4px;
+                  margin-right: 8px;
+                  font-size: 12px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>${row.title}</h1>
+                <div class="meta">
+                  <strong>Type:</strong> ${row.type} | 
+                  <strong>Institution:</strong> ${row.institution || 'N/A'} | 
+                  <strong>Date:</strong> ${row.date || 'N/A'}
+                </div>
+                <div class="description">
+                  <h3>Description:</h3>
+                  <p>${row.description || 'No description available'}</p>
+                </div>
+                ${row.tags ? `
+                  <div class="tags">
+                    <strong>Tags:</strong><br>
+                    ${row.tags.split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </body>
+          </html>
+        `);
+      }
+    } catch (error) {
+      console.error('Preview error:', error);
+      alert('Error previewing file. Please try again.');
+    }
   };
 
   // Request handlers
@@ -755,7 +1162,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     onAddClick, 
     actionButtons = [],
     customColumns = [],
-    entityType: tableEntityType = "records",
+    entityType: tableEntityType = "weekly-schedule",
     icon = "default",
     columnConfig = {},
     hiddenColumns = [],
@@ -793,7 +1200,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             title="Academic Records" 
             description="Student grades and academic performance"
             data={profileData.grades || []}
-            entityType="grades"
+            entityType="academic-records"
             icon="award"
             showAddButton={true}
             onAddClick={handleAddGrade}
@@ -844,7 +1251,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             actionButtons={[
               (row) => (
                 <button 
-                style={{backgroundColor: '#3b82f6', color: '#fff', borderRadius: '5px'}}
+                  style={{backgroundColor: '#3b82f6', color: '#fff', borderRadius: '5px'}}
                   onClick={() => handleEditCourse(row)} 
                   className="action-btn edit-btn"
                   title="Edit Course"
@@ -863,7 +1270,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             title="Student Requests"
             description="Manage student requests and communications"
             data={profileData.requests || []}
-            entityType="requests"
+            entityType="student-requests"
             icon="mail"
             showAddButton={false}
             columnConfig={{
@@ -1026,7 +1433,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 title="Weekly Schedule" 
                 description="Set your working hours and availability"
                 data={workingHoursData}
-                entityType="schedule"
+                entityType="weekly-schedule"
                 icon="calendar"
                 showAddButton={true}
                 onAddClick={handleAddSchedule}
@@ -1073,7 +1480,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
               title="Teaching Schedule" 
               description="Current semester teaching schedule and class details"
               data={scheduleData.schedule}
-              entityType="schedule"
+              entityType="schedules"
               icon="calendar"
               showAddButton={true}
               onAddClick={handleAddSchedule}
@@ -1111,43 +1518,52 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
               id: 1,
               type: 'cv',
               title: 'Academic CV',
-              description: 'Complete academic curriculum vitae',
+              description: 'Complete academic curriculum vitae with research experience and publications',
               date: '2024-01-15',
               institution: 'University',
-              url: '/cv/academic-cv.pdf',
+              fileName: 'Academic_CV_2024.pdf',
+              fileSize: '2.3 MB',
               tags: 'cv, academic, professional',
               uploadDate: '2024-01-15',
               downloads: 45,
               rating: 4.8,
-              size: '2.3 MB'
+              size: '2.3 MB',
+              extension: 'pdf',
+              category: 'pdf'
             },
             {
               id: 2,
               type: 'research',
               title: 'Machine Learning Research',
-              description: 'Current research on deep learning applications',
+              description: 'Current research on deep learning applications in computer vision and natural language processing',
               date: '2024-02-01',
               institution: 'Research Lab',
-              url: '/research/ml-research.pdf',
+              fileName: 'ML_Research_Paper_2024.pdf',
+              fileSize: '5.1 MB',
               tags: 'research, machine learning, AI',
               uploadDate: '2024-02-01',
               downloads: 78,
               rating: 4.9,
-              size: '5.1 MB'
+              size: '5.1 MB',
+              extension: 'pdf',
+              category: 'pdf'
             },
             {
               id: 3,
               type: 'publication',
-              title: 'Neural Networks Paper',
-              description: 'Published paper on neural network optimization',
+              title: 'Neural Networks Optimization Paper',
+              description: 'Published paper on neural network optimization techniques for improved training efficiency',
               date: '2023-12-15',
               institution: 'IEEE Conference',
-              url: '/publications/neural-networks.pdf',
+              fileName: 'Neural_Networks_IEEE_2023.pdf',
+              fileSize: '3.8 MB',
               tags: 'publication, neural networks, optimization',
               uploadDate: '2023-12-15',
               downloads: 156,
               rating: 4.7,
-              size: '3.8 MB'
+              size: '3.8 MB',
+              extension: 'pdf',
+              category: 'pdf'
             }
           ];
           
@@ -1172,7 +1588,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 title="Professional Documents" 
                 description="Manage CV, research papers, and academic documents"
                 data={lecturerResources}
-                entityType="resources"
+                entityType="documents"
                 icon="documents"
                 showAddButton={true}
                 onAddClick={handleAddResource}
@@ -1268,7 +1684,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 title="Course Materials" 
                 description="Upload and manage course resources"
                 data={resourcesData.courseMaterials || []}
-                entityType="resources"
+                entityType="files"
                 icon="documents"
                 showAddButton={true}
                 onAddClick={handleAddResource}
@@ -1388,6 +1804,9 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         entityType={entityType}
         entity={mainEntity}
       />
+
+      {/* File Upload Progress Indicator */}
+      <FileUploadProgress progress={fileUploadProgress} />
 
       {/* Grade Edit Modal */}
       <PopUp

@@ -1,5 +1,3 @@
-// CourseDetails.jsx - Updated to use dynamic course data
-
 import React from "react";
 import "../../../CSS/Pages/CoursePage/CourseDetails.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,30 +17,30 @@ import CourseDetailRow from "./Content/courseDetailRow";
 import ProgressBar from "../Charts/Bar";
 
 const CourseDetails = ({ courseData }) => {
-  // Use courseData prop or fallback to default values
-  const details = courseData || {
-    courseCode: "N/A",
-    courseTitle: "Course Title Not Available",
-    instructor: "Unknown Instructor",
-    enrolledStudents: 0,
-    classTiming: "TBD",
-    faculty: "Unknown Faculty",
-    language: "English",
-    assignments: 0,
-    practicalType: "General Course",
-    finalExam: "TBD",
-    prerequisite: "None",
-  };
+  // --- UPDATED ---
+  // Add a safety check. If no course data is provided, don't render anything.
+  if (!courseData) {
+    return <div>Course details are not available.</div>;
+  }
+
+  // Map backend data to variables for easier use.
+  const courseTitle = courseData.name || "Untitled Course";
+  const courseCode = courseData.code || "N/A";
+  const enrolledStudents = courseData.student_ids ? courseData.student_ids.length : 0;
+  const department = courseData.department || "Unknown Department";
+  const credits = courseData.credits || 0;
+  // We can add instructor details later when we fetch them
+  const instructorName = courseData.lecturerId || "Not Assigned";
+
 
   return (
     <div className="course-details-container">
       <div className="course-description">
-        {/* Enhanced Course Header */}
         <div className="course-header-section">
           <div className="course-main-info">
-            <h3 className="course-title">{details.courseTitle}</h3>
+            <h3 className="course-title">{courseTitle}</h3>
             <div className="course-meta">
-              <span className="course-code">{details.courseCode}</span>
+              <span className="course-code">{courseCode}</span>
               <div className="course-rating">
                 <FontAwesomeIcon icon={faStar} className="star-icon" />
                 <span>4.5</span>
@@ -51,19 +49,12 @@ const CourseDetails = ({ courseData }) => {
           </div>
         </div>
 
-        {/* Course Description */}
         <div className="course-description-text">
           <p>
-            This comprehensive course covers essential concepts and practical
-            applications in {details.courseTitle.toLowerCase()}. Students will
-            engage in hands-on learning experiences and develop critical skills
-            necessary for success in this field. The course combines theoretical
-            foundations with practical implementation to ensure a well-rounded
-            educational experience.
+            {courseData.description || `This comprehensive course covers essential concepts and practical applications in ${courseTitle.toLowerCase()}.`}
           </p>
         </div>
 
-        {/* Enhanced Progress Section */}
         <div className="progress-section">
           <div className="progress-header">
             <span className="progress-label">Course Progress</span>
@@ -79,46 +70,46 @@ const CourseDetails = ({ courseData }) => {
           <div className="details-column">
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faUserGroup} />}
-              title={`${details.enrolledStudents} Students`}
+              title={`${enrolledStudents} Students`}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faClock} />}
-              title={details.classTiming}
+              title={"TBD"} // Placeholder for class timing
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faStar} />}
-              title="3 points"
+              title={`${credits} Credits`}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faChalkboardUser} />}
-              title={`Instructor: ${details.instructor}`}
+              title={`Instructor: ${instructorName}`}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faBuilding} />}
-              title={details.faculty}
+              title={department}
             />
           </div>
 
           <div className="details-column">
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faLanguage} />}
-              title={`Language: ${details.language}`}
+              title={"Language: English"} // Placeholder
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faTasks} />}
-              title={`Assignments: ${details.assignments} total`}
+              title={"Assignments: 4 total"} // Placeholder
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faFlask} />}
-              title={`Type: ${details.practicalType}`}
+              title={`Type: ${courseData.selectable ? 'Elective' : 'Mandatory'}`}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faPencilAlt} />}
-              title={`Final Exam: ${details.finalExam}`}
+              title={"Final Exam: TBD"} // Placeholder
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faLink} />}
-              title={`Prerequisite: ${details.prerequisite}`}
+              title={"Prerequisite: None"} // Placeholder
             />
           </div>
         </div>

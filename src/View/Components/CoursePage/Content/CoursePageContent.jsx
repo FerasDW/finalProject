@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import MidPageNavbar from "./MidPageNavBar";
 import Box from "../../Dashboard/Content/Box";
 import CourseDetails from "../CourseDetails";
@@ -6,7 +6,7 @@ import PieChart from "../../Charts/pieCharts";
 import BarChart from "../../Charts/barChart";
 import LineChart from "../../Charts/lineChart";
 import StudentTable from "../../Tables/Table";
-import studentsData from "../../../../Static/students.js";
+import MyResponsiveBar from "../../Charts/barChart";
 import {
   getContentConfig,
   getCourseChartData,
@@ -21,24 +21,87 @@ import {
 import Popup from "../../Cards/PopUp.jsx";
 import { Users, Calendar, CheckSquare, Award } from "lucide-react";
 
+// Import API functions
+import { getUsersByIds, fetchStudents } from "../../../../Api/userAPI.js";
+import { enrollStudent, getCourseAnalytics } from "../../../../Api/coursePageApi.js";
+
 const CoursePageContent = ({ courseData, userRole = "1100" }) => {
   const [activeSection, setActiveSection] = useState("charts");
-  const [selectedYear, setSelectedYear] = useState("");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Get course-specific data
+  // API-related state
+  const [students, setStudents] = useState([]);
+  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [allStudents, setAllStudents] = useState([]);
+  const [loadingAllStudents, setLoadingAllStudents] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loadingCharts, setLoadingCharts] = useState(false);
+
+  // UI state
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false);
+
+  const emptyInitialData = useMemo(() => ({}), []);
+
+  // Get course-specific data (keeping your original logic for fallbacks)
   const courseId = courseData?.id;
   const contentConfig = courseId ? getContentConfig(courseId, userRole) : null;
-  const gradeDistributionData = courseId
-    ? getCourseChartData(courseId, "gradeDistribution", selectedYear)
-    : [];
-  const assignmentProgressData = courseId
-    ? getCourseChartData(courseId, "assignmentProgress", selectedYear)
-    : [];
   const courseMaterials = courseId ? getCourseMaterials(courseId) : [];
-  const [showAddStudentForm, setShowAddStudentForm] = useState(false);
-  const [students, setStudents] = useState(studentsData || []);
 
-  // FIXED: Fallback data that matches your BarChart structure
+  // Fetch enrolled students based on selected year
+  useEffect(() => {
+    const fetchEnrolledStudents = async () => {
+      setLoadingStudents(true);
+      if (courseData && courseData.enrollments && selectedYear) {
+        // Find the enrollment object for the currently selected year
+        const yearlyEnrollment = courseData.enrollments.find(
+          e => e.academicYear === selectedYear
+        );
+        // Get the student IDs from that object
+        const studentIdsForYear = yearlyEnrollment ? yearlyEnrollment.studentIds : [];
+
+        if (studentIdsForYear.length > 0) {
+          try {
+            const studentDetails = await getUsersByIds(studentIdsForYear);
+            setStudents(studentDetails);
+          } catch (error) {
+            console.error("Failed to fetch student details for year:", error);
+            setStudents([]);
+          }
+        } else {
+          setStudents([]); // No students enrolled for this year
+        }
+      } else {
+        setStudents([]); // No course data or no enrollments array
+      }
+      setLoadingStudents(false);
+    };
+
+    fetchEnrolledStudents();
+  }, [courseData, selectedYear]);
+
+  // Fetch analytics based on selected year
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (activeSection === "charts" && courseData?.id && selectedYear) {
+        setLoadingCharts(true);
+        setAnalyticsData(null);
+        try {
+          // Pass the selectedYear to the API call
+          const data = await getCourseAnalytics(courseData.id, selectedYear);
+          setAnalyticsData(data);
+        } catch (error) {
+          console.error("Error setting analytics data:", error);
+        } finally {
+          setLoadingCharts(false);
+        }
+      }
+    };
+
+    fetchAnalytics();
+  }, [activeSection, courseData?.id, selectedYear]);
+
+  // Fallback data for when API data is not available
   const fallbackGradeData = [
     {
       Group: "A (90-100)",
@@ -95,31 +158,145 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
     },
   ];
 
-  const handleAddStudent = (studentData) => {
+  const fetchAllStudents = async () => {
+    setLoadingAllStudents(true);
     try {
-      const newStudent = {
-        ...studentData,
-        id: students && students.length > 0 ? Math.max(...students.map((s) => s.id || 0)) + 1 : 1,
-        photo: studentData.photo || "https://randomuser.me/api/portraits/lego/1.jpg",
-        enrollmentDate: new Date().toISOString().split('T')[0],
-        status: "Active"
-      };
-
-      setStudents((prev) => Array.isArray(prev) ? [...prev, newStudent] : [newStudent]);
-      setShowAddStudentForm(false);
-
-      // Optional: Show success message
-      console.log("Student added successfully:", newStudent);
+      const allStudentsData = await fetchStudents();
+      const enrolledIds = courseData.enrollments?.flatMap(e => e.studentIds) || [];
+      const availableStudents = allStudentsData.filter(student => !enrolledIds.includes(student.id));
+      setAllStudents(availableStudents);
     } catch (error) {
-      console.error("Error adding student:", error);
+      console.error("Failed to fetch all students:", error);
+      setAllStudents([]);
+    } finally {
+      setLoadingAllStudents(false);
+    }
+  };
+
+  const handleShowEnrollmentForm = () => {
+    setShowAddStudentForm(true);
+    fetchAllStudents();
+  };
+
+  const handleEnrollStudent = async (formData) => {
+    const { studentId, academicYear, learningGroup, graduationYear, yearGroup, status, enrollmentNotes } = formData;
+    if (!studentId || !academicYear || !learningGroup || !graduationYear || !yearGroup || !status) {
+      alert("Please fill in all required fields");
+      return;
+    }
+    setEnrolling(true);
+    try {
+      const enrollmentData = {
+        studentId,
+        academicYear: parseInt(academicYear.split('-')[0]), // Assuming year is like "2024-25", send "2024"
+        learningGroup,
+        graduationYear,
+        yearGroup,
+        status,
+        enrollmentNotes: enrollmentNotes || '',
+      };
+      // Note: This API call needs to trigger a re-fetch of courseData from the parent component
+      await enrollStudent(courseData.id, enrollmentData);
+      const enrolledStudent = allStudents.find(s => s.id === studentId);
+      
+      // Optimistically update the UI, but a full data reload is better
+      if (parseInt(academicYear.split('-')[0]) === selectedYear) {
+        const enrichedStudent = { 
+          ...enrolledStudent, 
+          academicYear, 
+          learningGroup, 
+          graduationYear, 
+          yearGroup, 
+          enrollmentStatus: status, 
+          enrollmentNotes, 
+          department: courseData.department, 
+          enrollmentDate: new Date().toLocaleDateString() 
+        };
+        setStudents(prev => [...prev, enrichedStudent]);
+      }
+      
+      setShowAddStudentForm(false);
+      alert(`Student ${enrolledStudent?.name || 'Unknown'} enrolled successfully!`);
+    } catch (error) {
+      console.error("Failed to enroll student:", error);
+      alert("Failed to enroll student. Please try again.");
+    } finally {
+      setEnrolling(false);
     }
   };
 
   const handleCancelAddStudent = () => {
     setShowAddStudentForm(false);
+    setAllStudents([]);
   };
 
-  // Render the dynamic content based on course and user role
+  const enrollmentFormFields = useMemo(() => {
+    const studentOptions = allStudents.map(student => ({ 
+      value: student.id, 
+      label: `${student.name} (${student.email}) - ${student.department || 'No Department'}` 
+    }));
+    return [
+      { 
+        name: "studentId", 
+        label: "Select Student to Enroll", 
+        type: "select", 
+        placeholder: loadingAllStudents ? "Loading students..." : "Choose a student", 
+        required: true, 
+        options: studentOptions, 
+        disabled: loadingAllStudents 
+      },
+      { 
+        name: "academicYear", 
+        label: "Academic Year", 
+        type: "select", 
+        required: true, 
+        options: ["2023-24", "2024-25", "2025-26"], 
+        placeholder: "Select academic year" 
+      },
+      { 
+        name: "learningGroup", 
+        label: "Learning Group", 
+        type: "select", 
+        required: true, 
+        options: ["group-a", "group-b", "group-c"], 
+        placeholder: "Assign to learning group" 
+      },
+      { 
+        name: "graduationYear", 
+        label: "Graduation Year", 
+        type: "select", 
+        required: true, 
+        options: ["2024", "2025", "2026", "2027"], 
+        placeholder: "Expected graduation year" 
+      },
+      { 
+        name: "yearGroup", 
+        label: "Year Group", 
+        type: "select", 
+        required: true, 
+        options: ["First Year", "Second Year", "Third Year", "Fourth Year"], 
+        placeholder: "Select year group" 
+      },
+      { 
+        name: "status", 
+        label: "Enrollment Status", 
+        type: "select", 
+        required: true, 
+        options: ["Active", "Inactive", "Graduated", "Suspended"], 
+        placeholder: "Set enrollment status" 
+      },
+      { 
+        name: "enrollmentNotes", 
+        label: "Enrollment Notes (Optional)", 
+        type: "textarea", 
+        placeholder: "Any additional notes...", 
+        required: false, 
+        rows: 3 
+      }
+    ];
+  }, [allStudents, loadingAllStudents]);
+
+  // Render the dynamic content based on course and user role (keeping your original design)
   const renderDynamicContent = () => {
     if (!contentConfig) return null;
 
@@ -229,14 +406,14 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
                     letterSpacing: "0.05em",
                     marginBottom: "4px"
                   }}>
-                    Attendance Rate
+                    Enrolled Students
                   </div>
                   <div style={{
                     fontSize: "20px",
                     fontWeight: "700",
                     textShadow: "0 1px 2px rgba(0,0,0,0.2)"
                   }}>
-                    {contentConfig?.stats?.attendanceRate || "85"}%
+                    {students.length}
                   </div>
                 </div>
 
@@ -275,14 +452,14 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
                     letterSpacing: "0.05em",
                     marginBottom: "4px"
                   }}>
-                    Next Assignment
+                    Academic Year
                   </div>
                   <div style={{
                     fontSize: "20px",
                     fontWeight: "700",
                     textShadow: "0 1px 2px rgba(0,0,0,0.2)"
                   }}>
-                    {contentConfig?.stats?.nextAssignmentDays || "7"} Days
+                    {selectedYear}
                   </div>
                 </div>
 
@@ -321,14 +498,14 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
                     letterSpacing: "0.05em",
                     marginBottom: "4px"
                   }}>
-                    Completed Tasks
+                    Average Grade
                   </div>
                   <div style={{
                     fontSize: "20px",
                     fontWeight: "700",
                     textShadow: "0 1px 2px rgba(0,0,0,0.2)"
                   }}>
-                    {contentConfig?.stats?.completedTasks?.completed || "2"}/{contentConfig?.stats?.completedTasks?.total || "4"}
+                    {analyticsData?.averageGrade || "N/A"}
                   </div>
                 </div>
 
@@ -367,14 +544,14 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
                     letterSpacing: "0.05em",
                     marginBottom: "4px"
                   }}>
-                    Current GPA
+                    Submissions
                   </div>
                   <div style={{
                     fontSize: "20px",
                     fontWeight: "700",
                     textShadow: "0 1px 2px rgba(0,0,0,0.2)"
                   }}>
-                    {contentConfig?.stats?.currentGPA || "3.2"}
+                    {analyticsData?.totalSubmissions || "0"}
                   </div>
                 </div>
               </div>
@@ -390,142 +567,110 @@ const CoursePageContent = ({ courseData, userRole = "1100" }) => {
   const renderSection = () => {
     switch (activeSection) {
       case "charts":
+        if (loadingCharts) {
+          return (
+            <div style={{ padding: "20px", textAlign: "center" }}>
+              Loading chart data for {selectedYear}...
+            </div>
+          );
+        }
+        
+        if (!analyticsData || analyticsData.totalSubmissions === 0) {
+          return (
+            <>
+              <div className="row">
+                {/* Grade Distribution Bar Chart - Fallback */}
+                <Box
+                  title={`Grade Distribution (${selectedYear}) - Sample Data`}
+                  chart={<BarChart data={fallbackGradeData} />}
+                  gridRow="span 4"
+                  gridColumn="span 6"
+                />
+
+                {/* Assignment Progress Line Chart - Fallback */}
+                <Box
+                  title="Assignment Progress Timeline - Sample Data"
+                  chart={<LineChart data={fallbackAssignmentData} />}
+                  gridRow="span 4"
+                  gridColumn="span 6"
+                />
+              </div>
+              <div style={{ padding: "20px", textAlign: "center", color: "#666" }}>
+                No analytics data available for this course in {selectedYear}. Showing sample data.
+              </div>
+            </>
+          );
+        }
+
+        // Convert API data to chart format
+        const nivoBarData = analyticsData.gradeDistribution.labels.map((label, index) => ({
+          name: label,
+          value: analyticsData.gradeDistribution.data[index],
+        }));
+
         return (
           <>
             <div className="row">
-              {/* Grade Distribution Bar Chart */}
+              {/* Real API Data Chart */}
               <Box
-                title="Grade Distribution"
+                title={`Grade Distribution for ${selectedYear}`}
                 chart={
-                  <BarChart
-                    data={
-                      gradeDistributionData.length > 0
-                        ? gradeDistributionData
-                        : fallbackGradeData
-                    }
-                  />
+                  <div style={{ height: '350px' }}>
+                    <h4 style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
+                      Overall Average Grade: {analyticsData.averageGrade}
+                    </h4>
+                    <MyResponsiveBar data={nivoBarData} />
+                  </div>
                 }
                 gridRow="span 4"
-                gridColumn="span 6"
-              />
-
-              {/* Assignment Progress Line Chart */}
-              <Box
-                title="Assignment Progress Timeline"
-                chart={
-                  <LineChart
-                    data={
-                      assignmentProgressData.length > 0
-                        ? assignmentProgressData
-                        : fallbackAssignmentData
-                    }
-                  />
-                }
-                gridRow="span 4"
-                gridColumn="span 6"
+                gridColumn="span 12"
               />
             </div>
           </>
         );
+
       case "students":
         return (
           <>
-            <StudentTable
-              icon="students"
-              title="Students List"
-              subtitle="Manage your students"
-              addButtonText="Add Student"
-              data={students}
-              showAddButton={true}
-              onAddClick={() => setShowAddStudentForm(true)}
-            />
+            {loadingStudents ? (
+              <div style={{ padding: "20px", textAlign: "center" }}>
+                Loading enrolled students for {selectedYear}...
+              </div>
+            ) : (
+              <StudentTable
+                icon="students"
+                title={`Enrolled Students for ${selectedYear}`}
+                subtitle={`Manage students enrolled in ${courseData?.name || 'this course'}`}
+                addButtonText="Enroll Student"
+                data={students}
+                showAddButton={true}
+                onAddClick={handleShowEnrollmentForm}
+              />
+            )}
             <Popup isOpen={showAddStudentForm} onClose={handleCancelAddStudent}>
               <DynamicForm
-                title="Add New Student"
-                fields={studentFormFields || [
-                  {
-                    name: "firstName",
-                    label: "First Name",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter first name"
-                  },
-                  {
-                    name: "lastName",
-                    label: "Last Name", 
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter last name"
-                  },
-                  {
-                    name: "email",
-                    label: "Email",
-                    type: "email",
-                    required: true,
-                    placeholder: "Enter email address"
-                  },
-                  {
-                    name: "studentId",
-                    label: "Student ID",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter student ID"
-                  },
-                  {
-                    name: "phone",
-                    label: "Phone Number",
-                    type: "tel",
-                    required: false,
-                    placeholder: "Enter phone number"
-                  },
-                  {
-                    name: "yearOfStudy",
-                    label: "Year of Study",
-                    type: "select",
-                    required: true,
-                    options: [
-                      { value: "", label: "Select year" },
-                      { value: "1", label: "First Year" },
-                      { value: "2", label: "Second Year" },
-                      { value: "3", label: "Third Year" },
-                      { value: "4", label: "Fourth Year" }
-                    ]
-                  },
-                  {
-                    name: "major",
-                    label: "Major",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter major/specialization"
-                  }
-                ]}
-                initialData={{
-                  firstName: "",
-                  lastName: "",
-                  email: "",
-                  studentId: "",
-                  phone: "",
-                  yearOfStudy: "",
-                  major: ""
-                }}
-                onSubmit={handleAddStudent}
+                title={`Enroll Student in ${courseData?.name || 'Course'}`}
+                subtitle={`Department: ${courseData?.department || 'Unknown'}`}
+                fields={enrollmentFormFields}
+                onSubmit={handleEnrollStudent}
                 onCancel={handleCancelAddStudent}
-                submitText="Add Student"
-                cancelText="Cancel"
-                validationRules={studentValidationRules || {
-                  firstName: { required: true, minLength: 2 },
-                  lastName: { required: true, minLength: 2 },
-                  email: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ },
-                  studentId: { required: true, minLength: 3 },
-                  yearOfStudy: { required: true },
-                  major: { required: true, minLength: 2 }
-                }}
+                submitText={enrolling ? "Enrolling..." : "Enroll Student"}
+                loading={enrolling}
+                initialData={emptyInitialData}
               />
             </Popup>
           </>
         );
+
       case "files":
-        return <CourseFilesManager courseId={courseId} userRole={userRole} />;
+        return (
+          <CourseFilesManager 
+            courseId={courseId} 
+            userRole={userRole} 
+            academicYear={selectedYear} 
+          />
+        );
+
       default:
         return null;
     }

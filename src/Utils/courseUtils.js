@@ -4,8 +4,8 @@ import { getYearOptionsForGroup, semesterOptions, getAllGroups, coursesList, lec
 export const courseFields = [
   { name: "courseTitle", label: "Course Title", type: "text", placeholder: "Enter course title", required: true },
   { name: "courseCode", label: "Course Code", type: "text", placeholder: "e.g., CS101", required: true },
-  { name: "group", label: "Program Group", type: "select", options: getAllGroups(), required: true },
-  { name: "academicYear", label: "Academic Year", type: "select", options: [], required: true, dependsOn: "group", getDynamicOptions: (formData) => getYearOptionsForGroup(formData.group || "Certificate IT") },
+  { name: "department", label: "Department", type: "select", options: getAllGroups(), required: true },
+  { name: "academicYear", label: "Academic Year", type: "select", options: [], required: true, dependsOn: "department", getDynamicOptions: (formData) => getYearOptionsForGroup(formData.department || "Certificate IT") },
   { name: "semester", label: "Semester", type: "select", options: semesterOptions, required: true },
   { name: "year", label: "Year", type: "text", value: new Date().getFullYear().toString(), required: true, disabled: true },
   { name: "students", label: "Maximum Students", type: "number", placeholder: "e.g., 30", required: false },
@@ -32,7 +32,7 @@ export const transformCourseForForm = (course) => {
     id: course.id, // Preserve the ID
     courseTitle: course.title || course.courseTitle || '',
     courseCode: course.code || course.courseCode || '',
-    group: course.group || '',
+    department: course.department || course.group || '',
     academicYear: course.academicYear || '',
     semester: course.semester || '',
     year: course.year || new Date().getFullYear().toString(),
@@ -55,7 +55,7 @@ export const transformFormToCourse = (formData, existingCourse = null) => {
     id: existingCourse ? existingCourse.id : Date.now(),
     code: formData.courseCode,
     title: formData.courseTitle,
-    group: formData.group,
+    department: formData.department,
     academicYear: formData.academicYear,
     semester: formData.semester,
     year: formData.year || new Date().getFullYear().toString(),
@@ -81,8 +81,8 @@ export const handleFieldDependencies = (fieldName, value, allValues) => {
   updatedValues[fieldName] = value;
   
   // Handle specific field dependencies
-  if (fieldName === 'group') {
-    // When group changes, clear academic year since it depends on group
+  if (fieldName === 'department') {
+    // When department changes, clear academic year since it depends on department
     updatedValues.academicYear = '';
   }
   
@@ -101,8 +101,8 @@ export const getUpdatedCourseFields = () => {
 export const filterCourses = (courses, filters, searchInput) => {
   let filtered = [...courses];
   
-  if (filters.group && filters.group !== "all") {
-    filtered = filtered.filter(c => c.group === filters.group);
+  if (filters.department && filters.department !== "all") {
+    filtered = filtered.filter(c => c.department === filters.department);
   }
   if (filters.academicYear && filters.academicYear !== "all") {
     filtered = filtered.filter(c => c.academicYear === filters.academicYear);
@@ -129,7 +129,7 @@ export const filterCourses = (courses, filters, searchInput) => {
 };
 
 export const getFilterOptions = (courses) => ({
-  groups: [...new Set(courses.map(c => c.group))].filter(Boolean),
+  departments: [...new Set(courses.map(c => c.department))].filter(Boolean),
   academicYears: [...new Set(courses.map(c => c.academicYear))].filter(Boolean),
   semesters: [...semesterOptions],
   years: [...new Set(courses.map(c => c.year))].filter(Boolean),
@@ -152,8 +152,8 @@ export const validateCourseData = (formData) => {
   if (!formData.courseCode || !formData.courseCode.trim()) {
     errors.courseCode = "Course code is required";
   }
-  if (!formData.group) {
-    errors.group = "Program group is required";
+  if (!formData.department) {
+    errors.department = "Department is required";
   }
   if (!formData.academicYear) {
     errors.academicYear = "Academic year is required";
@@ -189,7 +189,7 @@ export const getCourseById = (id, courses) => {
 
 export const COURSES_PER_PAGE = 12;
 export const DEFAULT_FILTERS = { 
-  group: "all", 
+  department: "all", 
   academicYear: "all", 
   semester: "all", 
   year: "all", 

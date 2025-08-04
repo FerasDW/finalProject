@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Plus, 
@@ -20,7 +20,8 @@ import {
   BookOpen,
   Users,
   GraduationCap,
-  MapPin
+  MapPin,
+  File
 } from 'lucide-react';
 
 // Enhanced field icon mapping with more specific icons
@@ -101,6 +102,432 @@ const getFieldIcon = (fieldName, fieldType) => {
   // First check field name, then field type, then default
   const fieldNameKey = fieldName?.toLowerCase().replace(/[^a-z]/g, '');
   return nameIconMap[fieldNameKey] || typeIconMap[fieldType] || FileText;
+};
+
+// Enhanced File Upload Component
+const EnhancedFileUpload = ({ 
+  field, 
+  value, 
+  error, 
+  onChange, 
+  disabled 
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(value || null);
+  const fileInputRef = useRef(null);
+  
+  const fieldId = `field-${field.name}`;
+  const hasError = Boolean(error);
+  const isDisabled = disabled || field.disabled;
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isDisabled) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (isDisabled) return;
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      handleFileSelect(file);
+    }
+  };
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+    
+    // Check file type if accept attribute is specified
+    if (field.accept) {
+      const acceptedTypes = field.accept.split(',').map(type => type.trim());
+      const fileType = file.type;
+      const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+      
+      const isAccepted = acceptedTypes.some(type => {
+        if (type.startsWith('.')) {
+          return type === fileExtension;
+        }
+        return fileType.match(new RegExp(type.replace('*', '.*')));
+      });
+      
+      if (!isAccepted) {
+        alert(`File type not accepted. Accepted types: ${field.accept}`);
+        return;
+      }
+    }
+    
+    setUploadedFile(file);
+    
+    // Create a synthetic event to match the expected onChange signature
+    const syntheticEvent = {
+      target: {
+        name: field.name,
+        type: 'file',
+        files: [file]
+      }
+    };
+    
+    onChange(syntheticEvent);
+  };
+
+  const handleBrowseClick = () => {
+    if (!isDisabled && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleRemoveFile = (e) => {
+    e.stopPropagation();
+    setUploadedFile(null);
+    
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    
+    // Create a synthetic event with no files
+    const syntheticEvent = {
+      target: {
+        name: field.name,
+        type: 'file',
+        files: []
+      }
+    };
+    
+    onChange(syntheticEvent);
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (fileName) => {
+    const extension = fileName?.split('.').pop()?.toLowerCase();
+    
+    switch (extension) {
+      case 'pdf':
+        return '📄';
+      case 'doc':
+      case 'docx':
+        return '📝';
+      case 'xls':
+      case 'xlsx':
+        return '📊';
+      case 'ppt':
+      case 'pptx':
+        return '📈';
+      case 'zip':
+      case 'rar':
+      case '7z':
+        return '🗜️';
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'svg':
+        return '🖼️';
+      case 'mp4':
+      case 'avi':
+      case 'mov':
+        return '🎥';
+      case 'mp3':
+      case 'wav':
+      case 'flac':
+        return '🎵';
+      default:
+        return '📄';
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: '28px' }}>
+      {/* Label */}
+      <label 
+        htmlFor={fieldId}
+        style={{
+          display: 'block',
+          marginBottom: '12px',
+          fontSize: '15px',
+          fontWeight: '600',
+          color: hasError ? '#ef4444' : isDisabled ? '#9ca3af' : '#374151',
+          letterSpacing: '-0.025em'
+        }}
+      >
+        {field.label}
+        {field.required && (
+          <span style={{ color: '#ef4444', marginLeft: '4px', fontSize: '16px' }}>*</span>
+        )}
+        {isDisabled && (
+          <span style={{ 
+            color: '#9ca3af', 
+            marginLeft: '8px', 
+            fontSize: '12px',
+            fontWeight: '400',
+            fontStyle: 'italic'
+          }}>
+            (Disabled)
+          </span>
+        )}
+      </label>
+
+      {/* Upload Area */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={handleBrowseClick}
+        style={{
+          border: `2px dashed ${
+            hasError ? '#ef4444' : 
+            isDragging ? '#3b82f6' : 
+            uploadedFile ? '#10b981' : '#cbd5e1'
+          }`,
+          borderRadius: '16px',
+          padding: '40px 20px',
+          textAlign: 'center',
+          backgroundColor: isDisabled ? '#f8fafc' : 
+                          isDragging ? '#eff6ff' : 
+                          uploadedFile ? '#f0fdf4' : '#fafafa',
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
+          transition: 'all 0.3s ease',
+          position: 'relative',
+          minHeight: '200px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '16px',
+          opacity: isDisabled ? 0.6 : 1
+        }}
+      >
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          id={fieldId}
+          name={field.name}
+          onChange={handleFileInputChange}
+          required={field.required}
+          disabled={isDisabled}
+          accept={field.accept}
+          style={{ display: 'none' }}
+        />
+
+        {uploadedFile ? (
+          // Uploaded file display
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            width: '100%'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '16px 20px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+              width: '100%',
+              maxWidth: '300px',
+              position: 'relative'
+            }}>
+              <div style={{ fontSize: '24px' }}>
+                {getFileIcon(uploadedFile.name)}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1f2937',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {uploadedFile.name}
+                </div>
+                <div style={{
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  marginTop: '2px'
+                }}>
+                  {formatFileSize(uploadedFile.size)}
+                </div>
+              </div>
+              {!isDisabled && (
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    borderRadius: '4px',
+                    color: '#6b7280',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.backgroundColor = '#fee2e2';
+                    e.target.style.color = '#dc2626';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = '#6b7280';
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#059669',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}>
+              <CheckCircle2 size={20} />
+              <span>File uploaded successfully</span>
+            </div>
+          </div>
+        ) : (
+          // Upload prompt
+          <>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              backgroundColor: isDragging ? '#3b82f6' : '#e2e8f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s ease'
+            }}>
+              <Upload size={28} style={{ 
+                color: isDragging ? 'white' : '#6b7280'
+              }} />
+            </div>
+            
+            <div>
+              <div style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1f2937',
+                marginBottom: '8px'
+              }}>
+                {isDragging ? 'Drop your file here' : 'Drag your file(s) to start uploading'}
+              </div>
+              
+              <div style={{
+                fontSize: '14px',
+                color: '#6b7280',
+                marginBottom: '20px'
+              }}>
+                OR
+              </div>
+              
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleBrowseClick();
+                }}
+                disabled={isDisabled}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#4f46e5',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: isDisabled ? 0.6 : 1
+                }}
+                onMouseOver={(e) => !isDisabled && (e.target.style.backgroundColor = '#4338ca')}
+                onMouseOut={(e) => (e.target.style.backgroundColor = '#4f46e5')}
+              >
+                Browse files
+              </button>
+            </div>
+            
+            {field.accept && (
+              <div style={{
+                fontSize: '12px',
+                color: '#6b7280',
+                fontStyle: 'italic',
+                marginTop: '16px'
+              }}>
+                Accepted file types: {field.accept}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '12px',
+          padding: '12px 16px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '12px',
+          color: '#dc2626',
+          fontSize: '13px',
+          fontWeight: '500'
+        }}>
+          <AlertCircle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+      
+      {/* Helper Text */}
+      {field.helperText && !error && (
+        <div style={{
+          marginTop: '8px',
+          fontSize: '13px',
+          color: '#6b7280',
+          fontStyle: 'italic',
+          lineHeight: '1.4'
+        }}>
+          {field.helperText}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Individual Field Component
@@ -380,34 +807,13 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
 
       case 'file':
         return (
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '20px',
-              transform: 'translateY(-50%)',
-              zIndex: 2,
-              color: hasError ? '#ef4444' : isFocused && !isDisabled ? '#3b82f6' : '#9ca3af',
-              transition: 'color 0.2s ease'
-            }}>
-              <Upload size={20} />
-            </div>
-            <input
-              type="file"
-              id={fieldId}
-              name={field.name}
-              onChange={onChange}
-              onFocus={() => !isDisabled && setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              required={field.required}
-              disabled={isDisabled}
-              accept={field.accept}
-              style={{
-                ...baseInputStyles,
-                cursor: isDisabled ? 'not-allowed' : 'pointer'
-              }}
-            />
-          </div>
+          <EnhancedFileUpload 
+            field={field}
+            value={value}
+            error={error}
+            onChange={onChange}
+            disabled={isDisabled}
+          />
         );
 
       case 'password':
@@ -506,6 +912,11 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
         );
     }
   };
+
+  // For file fields, the EnhancedFileUpload component handles its own label and error display
+  if (field.type === 'file') {
+    return renderField();
+  }
 
   return (
     <div style={{ marginBottom: '28px' }}>

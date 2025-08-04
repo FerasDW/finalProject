@@ -12,9 +12,9 @@ const MidPageNavbar = ({
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-  const handleYearChange = (e) => {
-    setSelectedYear(e.target.value);
-  };
+const handleYearChange = (e) => {
+  setSelectedYear(parseInt(e.target.value, 10)); // Convert the string "2025" to the number 2025
+};
 
   return (
     <nav className="mid-navbar">

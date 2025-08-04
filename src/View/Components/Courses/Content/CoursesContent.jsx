@@ -4,29 +4,21 @@ import CourseCard from "../CourseCard/CourseCard";
 const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
   return (
     <div className="courses-grid">
-      {courses.length > 0 ? (
+      {courses && courses.length > 0 ? (
         courses.map((course) => (
           <CourseCard
             key={course.id}
             cardInfo={{
-              // Pass all course data based on your actual course structure
               id: course.id,
-              code: course.code,
-              title: course.title,
-              students: course.students,
-              rating: course.rating || null, // Optional, add if you have rating data
-              lessons: course.lessons,
-              img: course.img,
-              year: course.year,
-              semester: course.semester,
-              group: course.group,
-              academicYear: course.academicYear,
-              lecturer: course.lecturer,
+              title: course.name,
+              students: course.enrollments?.reduce((total, enrollment) => total + (enrollment.studentIds?.length || 0), 0) || 0,
+              img: course.imageUrl,
+              credits: course.credits || 0,
+              lessons: course.lessons || 12,
               description: course.description,
-              selectable: course.selectable,
-              createdAt: course.createdAt,
-              updatedAt: course.updatedAt,
-              credits: course.credits || 0, // Default to 0 if not provided
+              code: course.code,
+              department: course.department,
+              ...course
             }}
             onDelete={onDeleteCourse}
             onEdit={onEditCourse}

@@ -17,7 +17,7 @@ import {
   promoteMemberFields,
   transferOwnershipFields,
   transferOwnershipValidation
-} from "../../../Static/formsInputs";
+} from "../../../Static/FIxed/formsInputs";
 
 // Import clean API functions instead of direct endpoints
 import { 

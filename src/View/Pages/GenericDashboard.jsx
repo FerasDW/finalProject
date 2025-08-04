@@ -7,7 +7,153 @@ import lecturersData from "../../Static/lecturers"; // You'll need to create thi
 import StudentTable from "../Components/Tables/Table";
 import StatCardsContainer from "../Components/Cards/StatCardsContainer";
 import DynamicFilter from "../Components/DynamicFilter"; // Import your dynamic filter
-import { Users, BookOpen, GraduationCap, CalendarDays, UserCheck, Clock, Calendar, ArrowRight, Star, Award, TrendingUp, Building } from "lucide-react";
+import DynamicForm from "../Components/Forms/dynamicForm"; // Import DynamicForm
+import PopUp from "../Components/Cards/PopUp"; // Import PopUp
+import { Users, BookOpen, GraduationCap, CalendarDays, UserCheck, Clock, Calendar, ArrowRight, Star, Award, TrendingUp, Building, User, Mail, Phone, MapPin, Hash, FileText, Briefcase } from "lucide-react";
+
+// Form field configurations
+const formConfigs = {
+  students: {
+    title: "Add New Student",
+    subtitle: "Enter student information",
+    icon: User,
+    fields: [
+  {
+    name: "name",
+    label: "Full Name",
+    type: "text",
+    placeholder: "Enter student's full name",
+    required: true
+  },
+  {
+    name: "email",
+    label: "Email Address",
+    type: "email",
+    placeholder: "student@example.com",
+    required: true
+  },
+  {
+    name: "gender",
+    label: "Gender",
+    type: "radio",
+    required: true,
+    options: [
+      { value: "male", label: "Male" },
+      { value: "female", label: "Female" },
+    ]
+  },
+  
+  {
+    name: "department",
+    label: "Department",
+    type: "select",
+    placeholder: "Select department",
+    options: ["Engineering", "Science", "Arts", "Business"],
+    required: true
+  },
+  {
+    name: "academicYear",
+    label: "Academic Year",
+    type: "select",
+    placeholder: "Select academic year",
+    options: ["First Year", "Second Year", "Third Year", "Fourth Year"],
+    required: true
+  },
+  {
+    name: "learningGroup",
+    label: "Learning Group",
+    type: "select",
+    placeholder: "Select learning group",
+    options: ["Group A", "Group B", "Group C"],
+    required: true
+  },
+  {
+    name: "status",
+    label: "Status",
+    type: "select",
+    placeholder: "Select status",
+    options: ["Active", "Inactive", "Graduated"],
+    required: true
+  }
+]
+  },
+  lecturers: {
+    title: "Add New Lecturer",
+    subtitle: "Enter lecturer information",
+    icon: User,
+    fields: [
+      {
+        name: "name",
+        label: "Full Name",
+        type: "text",
+        placeholder: "Enter lecturer's full name",
+        required: true
+      },
+      {
+        name: "email",
+        label: "Email Address",
+        type: "email",
+        placeholder: "lecturer@university.edu",
+        required: true
+      },
+      {
+        name: "department",
+        label: "Department",
+        type: "select",
+        placeholder: "Select department",
+        options: ["computer-science", "mathematics", "physics", "chemistry", "biology"],
+        required: true
+      },
+      {
+        name: "specialization",
+        label: "Specialization",
+        type: "select",
+        placeholder: "Select specialization",
+        options: ["artificial-intelligence", "machine-learning", "software-engineering", "data-science"],
+        required: true
+      },
+      {
+        name: "employmentType",
+        label: "Employment Type",
+        type: "select",
+        placeholder: "Select employment type",
+        options: ["Full-time", "Part-time", "Contract"],
+        required: true
+      },
+      {
+        name: "experience",
+        label: "Years of Experience",
+        type: "number",
+        placeholder: "Enter years of experience",
+        required: true
+      },
+      {
+        name: "status",
+        label: "Status",
+        type: "select",
+        placeholder: "Select status",
+        options: ["Active", "Inactive"],
+        required: true
+      },
+      {
+        name: "rating",
+        label: "Rating",
+        type: "number",
+        placeholder: "Enter rating (1-5)",
+        min: 1,
+        max: 5,
+        step: 0.1
+      },
+      {
+        name: "activeCourses",
+        label: "Active Courses",
+        type: "number",
+        placeholder: "Number of active courses",
+        min: 0
+      }
+    ]
+  }
+};
 
 // Dashboard configurations
 const dashboardConfigs = {
@@ -116,6 +262,7 @@ const dashboardConfigs = {
 
 export default function GenericDashboard({ entityType = "students" }) {
   const config = dashboardConfigs[entityType];
+  const formConfig = formConfigs[entityType];
   const navigate = useNavigate();
   
   // State management
@@ -123,6 +270,10 @@ export default function GenericDashboard({ entityType = "students" }) {
   const [filterValues, setFilterValues] = useState({});
   const [filteredData, setFilteredData] = useState(config?.data || []);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Popup form state
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isFormLoading, setIsFormLoading] = useState(false);
 
   // Validation on mount
   useEffect(() => {
@@ -330,6 +481,44 @@ export default function GenericDashboard({ entityType = "students" }) {
     }
   };
 
+  // Handle Add Record button click
+  const handleAddRecord = () => {
+    console.log('📝 Opening add record form for:', entityType);
+    setIsPopupOpen(true);
+  };
+
+  // Handle form submission
+  const handleFormSubmit = (formData) => {
+    console.log('💾 Form submitted with data:', formData);
+    setIsFormLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      // Generate new ID
+      const newId = Math.max(...config.data.map(item => item.id), 0) + 1;
+      const newRecord = {
+        id: newId,
+        ...formData
+      };
+      
+      console.log('✅ New record created:', newRecord);
+      
+      // In a real app, you would update your data source here
+      // For now, we'll just close the popup and show success
+      setIsFormLoading(false);
+      setIsPopupOpen(false);
+      
+      // Optional: Show success message
+      alert(`${config.entityName} added successfully!`);
+    }, 1500);
+  };
+
+  // Handle form cancel
+  const handleFormCancel = () => {
+    console.log('❌ Form cancelled');
+    setIsPopupOpen(false);
+  };
+
   // Loading state
   if (!config) {
     return (
@@ -424,10 +613,11 @@ export default function GenericDashboard({ entityType = "students" }) {
                 </div>
               ) : (
                 <StudentTable
-                entityType="students"
-                icon="students"
+                  entityType="students"
+                  icon="students"
                   data={filteredData}
                   showAddButton={true}
+                  onAddClick={handleAddRecord} // Pass the handler to the table
                   actionButtons={[
                     (item) => (
                       <button
@@ -446,6 +636,28 @@ export default function GenericDashboard({ entityType = "students" }) {
           </div>
         </main>
       </div>
+
+      {/* Add Record Popup */}
+      <PopUp
+        isOpen={isPopupOpen}
+        onClose={handleFormCancel}
+        size="large"
+        closeOnOverlay={true}
+      >
+        <DynamicForm
+          title={formConfig?.title}
+          subtitle={formConfig?.subtitle}
+          icon={formConfig?.icon}
+          fields={formConfig?.fields || []}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
+          submitText="Add Record"
+          cancelText="Cancel"
+          loading={isFormLoading}
+          showHeader={true}
+          showFooter={true}
+        />
+      </PopUp>
     </div>
   );
 }
