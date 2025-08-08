@@ -28,7 +28,7 @@ const CoursePage = () => {
 
   return (
     <div className={styles.coursePageContent}>
-      <CoursePageContent userRole={authData?.role || "1100"} courseData={courseData} />
+      <CoursePageContent userRole={authData?.role} courseData={courseData} />
     </div>
   );
 };

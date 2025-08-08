@@ -1,35 +1,43 @@
 import React from 'react';
 import BaseCard from './BaseCard';
-import { getEventStyle, getCourseIcon, getEndTime } from '../../../Static/eventUtils';
+// Import the necessary utility functions
+import { getEventStyle, getCourseIcon, formatTime, timeToMinutes } from '../../../Static/eventUtils';
 import '../../../CSS/Components/BigCalendar/EventTooltip.css';
 
 const EventTooltip = ({ event, position }) => {
-  const eventStyle = getEventStyle(event.color);
+  // Get style based on the event's TYPE
+  const eventStyle = getEventStyle(event.type);
+  
+  // Format start and end times directly from the event data
+  const startTime = formatTime(event.start);
+  const endTime = formatTime(event.end);
 
-  // Calculate tooltip position
+  // Calculate duration in minutes for display
+  const duration = event.end && event.start 
+    ? timeToMinutes(event.end) - timeToMinutes(event.start) 
+    : 0;
+
   const tooltipStyle = {
-    left: `${Math.max(10, Math.min(position.x, 1200))}px`,
-    top: `${Math.max(position.y - 50, 20)}px`
+    left: `${position.x}px`,
+    top: `${position.y}px`
   };
 
   return (
     <div className="event-tooltip" style={tooltipStyle}>
       <BaseCard className="tooltip-card">
         <div className="tooltip-content">
-          {/* Color Accent Bar */}
           <div 
             className="tooltip-accent"
             style={{ backgroundColor: eventStyle.bg }}
           />
           
-          {/* Tooltip Header */}
           <div className="tooltip-header">
-            {/* Professor Avatar */}
             <div className="professor-avatar">
               <img 
-                src={event.image} 
-                alt={event.professor}
+                src={event.instructorImage} 
+                alt={event.instructorName}
                 className="avatar-image"
+                // Fallback logic in case image fails to load
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextElementSibling.style.display = 'flex';
@@ -40,7 +48,6 @@ const EventTooltip = ({ event, position }) => {
               </div>
             </div>
             
-            {/* Event Info */}
             <div className="event-info">
               <div className="badges">
                 <span 
@@ -49,12 +56,6 @@ const EventTooltip = ({ event, position }) => {
                 >
                   {event.type}
                 </span>
-                <div 
-                  className="course-icon"
-                  style={{ backgroundColor: `${eventStyle.bg}20` }}
-                >
-                  <span>{getCourseIcon(event.title)}</span>
-                </div>
               </div>
               <h3 className="event-title">{event.title}</h3>
               <div className="event-date">
@@ -68,50 +69,44 @@ const EventTooltip = ({ event, position }) => {
             </div>
           </div>
           
-          {/* Tooltip Details */}
           <div className="tooltip-details">
-            {/* Professor Detail */}
-            <div className="detail-item">
-              <div className="detail-icon professor-icon">
-                <span>👨‍🏫</span>
+            {/* Use the correct property: event.instructorName */}
+            {event.instructorName && (
+              <div className="detail-item">
+                <div className="detail-icon professor-icon"><span>👨‍🏫</span></div>
+                <div className="detail-content">
+                  <div className="detail-label">Professor</div>
+                  <div className="detail-value">{event.instructorName}</div>
+                </div>
               </div>
-              <div className="detail-content">
-                <div className="detail-label">Professor</div>
-                <div className="detail-value">{event.professor}</div>
-              </div>
-            </div>
+            )}
             
-            {/* Location Detail */}
-            <div className="detail-item">
-              <div className="detail-icon location-icon">
-                <span>📍</span>
+            {/* Use the correct property: event.location */}
+            {event.location && (
+              <div className="detail-item">
+                <div className="detail-icon location-icon"><span>📍</span></div>
+                <div className="detail-content">
+                  <div className="detail-label">Location</div>
+                  <div className="detail-value">{event.location}</div>
+                </div>
               </div>
-              <div className="detail-content">
-                <div className="detail-label">Location</div>
-                <div className="detail-value">{event.room}</div>
-              </div>
-            </div>
+            )}
             
-            {/* Time and Duration Grid */}
+            {/* Correctly display the time range and duration */}
             <div className="detail-grid">
               <div className="detail-item">
-                <div className="detail-icon time-icon">
-                  <span>⏰</span>
-                </div>
+                <div className="detail-icon time-icon"><span>⏰</span></div>
                 <div className="detail-content">
                   <div className="detail-label">Time</div>
-                  <div className="detail-value">{event.start}</div>
-                  <div className="detail-sub">{getEndTime(event.start, event.duration)}</div>
+                  <div className="detail-value">{startTime} - {endTime}</div>
                 </div>
               </div>
               
               <div className="detail-item">
-                <div className="detail-icon duration-icon">
-                  <span>⏱️</span>
-                </div>
+                <div className="detail-icon duration-icon"><span>⏱️</span></div>
                 <div className="detail-content">
                   <div className="detail-label">Duration</div>
-                  <div className="detail-value">{event.duration}</div>
+                  <div className="detail-value">{duration}</div>
                   <div className="detail-sub">minutes</div>
                 </div>
               </div>

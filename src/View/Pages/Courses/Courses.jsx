@@ -8,6 +8,8 @@ import useCourses from "../../../Hooks/useCourses.js";
 import styles from "../../../CSS/Pages/Courses/courses.module.css";
 
 export default function Courses() {
+  console.log("🔧 Courses component initialized");
+  
   const {
     displayedCourses,
     loading,
@@ -37,11 +39,19 @@ export default function Courses() {
 
   const loadMoreRef = useRef();
 
+  console.log("📊 Courses component state:", {
+    coursesCount: displayedCourses.length,
+    fieldsCount: updatedCourseFields.length,
+    isLoading: loading,
+    isPopupOpen: isCoursePopupOpen,
+    isEditing: editingCourse
+  });
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          console.log("Intersection detected, loading more..."); // Debug log
+          console.log("Intersection detected, loading more courses...");
           loadMoreCourses();
         }
       },
@@ -60,6 +70,34 @@ export default function Courses() {
     };
   }, [loadMoreCourses, hasMore, loading]);
 
+  // Safe render of form fields
+  const renderDynamicForm = () => {
+    console.log("🔧 Rendering DynamicForm with fields:", updatedCourseFields.length);
+    
+    if (!Array.isArray(updatedCourseFields) || updatedCourseFields.length === 0) {
+      console.log("⏳ Waiting for course fields to load...");
+      return (
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          Loading form fields...
+        </div>
+      );
+    }
+
+    return (
+      <DynamicForm
+        fields={updatedCourseFields}
+        onSubmit={handleSubmit}
+        onCancel={handlePopupClose}
+        submitText={editingCourse ? "Update Course" : "Add Course"}
+        initialData={formData}
+        onFieldChange={handleFieldChange}
+        getAcademicYearOptions={getAcademicYearOptions}
+        errors={errors}
+        key={editingCourse ? `edit-${formData.id}` : 'add'}
+      />
+    );
+  };
+
   return (
     <div className={styles.coursesWrapper}>
       <div className={styles.coursesHeader}>
@@ -71,11 +109,13 @@ export default function Courses() {
             </button>
           </div>
           <div className={styles.filterContainer}>
-            <DynamicFilter
-              filters={filterFields}
-              values={filters}
-              onChange={handleFilterChange}
-            />
+            {Array.isArray(filterFields) && filterFields.length > 0 && (
+              <DynamicFilter
+                filters={filterFields}
+                values={filters}
+                onChange={handleFilterChange}
+              />
+            )}
             <div className={styles.searchContainer}>
               <input
                 type="text"
@@ -91,6 +131,7 @@ export default function Courses() {
           </div>
         </div>
       </div>
+      
       <div className={styles.cardsSection}>
         <div className={styles.cardsContainer}>
           <CoursesContent
@@ -98,42 +139,67 @@ export default function Courses() {
             onDeleteCourse={handleDeleteCourse}
             onEditCourse={handleEditCourse}
           />
+          
           {loading && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', width: '100%' }}>
-              <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #3498db', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              padding: '20px', 
+              width: '100%' 
+            }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                border: '4px solid #f3f3f3', 
+                borderTop: '4px solid #3498db', 
+                borderRadius: '50%', 
+                animation: 'spin 1s linear infinite' 
+              }} />
             </div>
           )}
+          
           <div ref={loadMoreRef} className={styles.loadMoreTrigger} />
+          
           {!hasMore && displayedCourses.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#666', width: '100%' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '20px', 
+              color: '#666', 
+              width: '100%' 
+            }}>
               All courses loaded ({displayedCourses.length} total)
             </div>
           )}
+          
           {!loading && displayedCourses.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#666', width: '100%' }}>
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              color: '#666', 
+              width: '100%' 
+            }}>
               No courses found matching your criteria.
             </div>
           )}
         </div>
       </div>
+      
       {isCoursePopupOpen && (
         <Popup isOpen={isCoursePopupOpen} onClose={handlePopupClose}>
-          <DynamicForm
-            fields={updatedCourseFields}
-            onSubmit={handleSubmit}
-            onCancel={handlePopupClose}
-            submitText={editingCourse ? "Update Course" : "Add Course"}
-            initialData={formData}
-            onFieldChange={handleFieldChange}
-            getAcademicYearOptions={getAcademicYearOptions}
-            errors={errors}
-            key={editingCourse ? `edit-${formData.id}` : 'add'} // Force re-render when switching modes
-          />
+          {renderDynamicForm()}
         </Popup>
       )}
+      
       <style>{`
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .${styles.loadMoreTrigger} { height: 20px; width: 100%; }
+        @keyframes spin { 
+          0% { transform: rotate(0deg); } 
+          100% { transform: rotate(360deg); } 
+        }
+        .${styles.loadMoreTrigger} { 
+          height: 20px; 
+          width: 100%; 
+        }
       `}</style>
     </div>
   );

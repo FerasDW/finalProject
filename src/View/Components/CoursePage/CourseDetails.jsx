@@ -16,9 +16,8 @@ import {
 import CourseDetailRow from "./Content/courseDetailRow";
 import ProgressBar from "../Charts/Bar";
 
-const CourseDetails = ({ courseData }) => {
-  // --- UPDATED ---
-  // Add a safety check. If no course data is provided, don't render anything.
+// --- CHANGE 1: Accept the new 'totalStudents' prop ---
+const CourseDetails = ({ courseData, totalStudents }) => {
   if (!courseData) {
     return <div>Course details are not available.</div>;
   }
@@ -26,12 +25,9 @@ const CourseDetails = ({ courseData }) => {
   // Map backend data to variables for easier use.
   const courseTitle = courseData.name || "Untitled Course";
   const courseCode = courseData.code || "N/A";
-  const enrolledStudents = courseData.student_ids ? courseData.student_ids.length : 0;
   const department = courseData.department || "Unknown Department";
   const credits = courseData.credits || 0;
-  // We can add instructor details later when we fetch them
   const instructorName = courseData.lecturerId || "Not Assigned";
-
 
   return (
     <div className="course-details-container">
@@ -60,6 +56,7 @@ const CourseDetails = ({ courseData }) => {
             <span className="progress-label">Course Progress</span>
           </div>
           <div className="progress-bar">
+            {/* Note: This progress is still static. We can build a feature for it later. */}
             <ProgressBar progress={80} />
           </div>
         </div>
@@ -70,11 +67,12 @@ const CourseDetails = ({ courseData }) => {
           <div className="details-column">
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faUserGroup} />}
-              title={`${enrolledStudents} Students`}
+              // --- CHANGE 2: Use the 'totalStudents' prop for the correct total count ---
+              title={`${totalStudents} Total Students`}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faClock} />}
-              title={"TBD"} // Placeholder for class timing
+              title={"TBD"}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faStar} />}
@@ -93,11 +91,11 @@ const CourseDetails = ({ courseData }) => {
           <div className="details-column">
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faLanguage} />}
-              title={"Language: English"} // Placeholder
+              title={"Language: English"}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faTasks} />}
-              title={"Assignments: 4 total"} // Placeholder
+              title={"Assignments: 4 total"}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faFlask} />}
@@ -105,11 +103,11 @@ const CourseDetails = ({ courseData }) => {
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faPencilAlt} />}
-              title={"Final Exam: TBD"} // Placeholder
+              title={"Final Exam: TBD"}
             />
             <CourseDetailRow
               icon={<FontAwesomeIcon icon={faLink} />}
-              title={"Prerequisite: None"} // Placeholder
+              title={"Prerequisite: None"}
             />
           </div>
         </div>
