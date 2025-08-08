@@ -1,4 +1,5 @@
 // hooks/useCourses.js
+
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   filterCourses, 
@@ -50,6 +51,7 @@ const useCourses = () => {
   const [displayedCourses, setDisplayedCourses] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+
   const [hasMore, setHasMore] = useState(true);
   const [isCoursePopupOpen, setCoursePopupOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
@@ -58,6 +60,7 @@ const useCourses = () => {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [filterFields, setFilterFields] = useState([]);
   const [errors, setErrors] = useState({});
+
   const [formData, setFormData] = useState(DEFAULT_COURSE_FORM_DATA);
   const [updatedCourseFields, setUpdatedCourseFields] = useState([]);
 
@@ -143,6 +146,7 @@ const useCourses = () => {
     }
   }, [fetchInitialData]);
 
+
   // Update course fields when departments change
   useEffect(() => {
     const updateCourseFields = async () => {
@@ -191,6 +195,7 @@ const useCourses = () => {
     }
   }, [page, filteredCourses]);
 
+
   useEffect(() => {
     console.log("🔧 Setup filter fields effect triggered");
     console.log("Available data - courses:", courses.length, "departments:", departments.length);
@@ -223,6 +228,7 @@ const useCourses = () => {
     }
   }, [courses.length, departments.length, filters.department]);
 
+
   const loadMoreCourses = useCallback(() => {
     if (loading || !hasMore) {
       console.log("Cannot load more:", { loading, hasMore });
@@ -238,6 +244,7 @@ const useCourses = () => {
     }, 500);
   }, [loading, hasMore, page]);
 
+
   const handleFilterChange = useCallback((name, value) => {
     console.log("🔧 handleFilterChange called:", { name, value });
     
@@ -248,6 +255,7 @@ const useCourses = () => {
       setFilters(prev => ({ ...prev, [name]: value }));
     }
   }, []);
+
 
   const handleSearch = useCallback(() => {
     console.log("🔧 handleSearch called");
@@ -263,7 +271,7 @@ const useCourses = () => {
     console.log("🔧 handleAddCourse called");
     setEditingCourse(null);
     setEditingCourseId(null);
-    
+
     const defaultFormData = { ...DEFAULT_COURSE_FORM_DATA };
     if (departments.length > 0) {
       defaultFormData.department = departments[0].name;
@@ -271,6 +279,7 @@ const useCourses = () => {
     }
     
     setFormData(defaultFormData);
+
     setErrors({});
     setCoursePopupOpen(true);
     console.log("✅ Add course popup opened");
@@ -288,6 +297,7 @@ const useCourses = () => {
     setCoursePopupOpen(true);
     console.log("✅ Edit course popup opened");
   }, [lecturers]);
+
 
   const handleDeleteCourse = useCallback(async (id) => {
     console.log("🔧 handleDeleteCourse called for ID:", id);
@@ -308,6 +318,7 @@ const useCourses = () => {
   const handleSubmit = useCallback(async (submittedFormData) => {
     console.log("🔧 handleSubmit called with:", submittedFormData.courseTitle);
     
+
     const newErrors = validateCourseData(submittedFormData);
     if (Object.keys(newErrors).length > 0) {
       console.log("❌ Validation errors:", newErrors);
@@ -321,8 +332,13 @@ const useCourses = () => {
       return;
     }
 
-    try {
+    // Create the course object
+    const courseToSave = transformFormToCourse(submittedFormData, editingCourse);
+
+    setCourses(prev => {
+      let updated;
       if (editingCourseId) {
+
         console.log("📝 Updating existing course");
         const courseToUpdate = transformFormToCourse(submittedFormData, editingCourse);
         await updateCourse(editingCourseId, courseToUpdate);
@@ -332,7 +348,10 @@ const useCourses = () => {
         const courseToCreate = transformFormToCourse(submittedFormData, null);
         await createCourse(courseToCreate);
         console.log("✅ Course created successfully");
+
       }
+      return updated;
+    });
 
       // Force a fresh fetch
       initialDataFetchedRef.current = false;
@@ -352,6 +371,7 @@ const useCourses = () => {
       
       if (fieldName === 'department') {
         console.log("🔄 Department field changed, clearing academic year");
+
         updatedData.academicYear = '';
       }
       
@@ -370,7 +390,7 @@ const useCourses = () => {
   const handleGroupChange = useCallback((fieldName, value, allValues) => {
     console.log("🔧 handleGroupChange called:", { fieldName, value });
     const updatedValues = handleFieldDependencies(fieldName, value, allValues);
-    if (fieldName === 'department') {
+    if (fieldName === 'group') {
       updatedValues.academicYear = '';
     }
     return updatedValues;
@@ -381,15 +401,18 @@ const useCourses = () => {
     setCoursePopupOpen(false);
     setEditingCourse(null);
     setEditingCourseId(null);
+
     
     const defaultFormData = { ...DEFAULT_COURSE_FORM_DATA };
     if (departments.length > 0) {
       defaultFormData.department = departments[0].name;
     }
     setFormData(defaultFormData);
+
     setErrors({});
     console.log("✅ Popup closed and state reset");
   }, [departments]);
+
 
   const getAcademicYearOptions = useCallback((department) => {
     console.log("🔧 getAcademicYearOptions called with department:", department);
@@ -415,6 +438,7 @@ const useCourses = () => {
   }, [formData.department, departments]);
 
   console.log("🔧 useCourses hook rendering, returning functions and state");
+
 
   return {
     displayedCourses,
@@ -442,9 +466,11 @@ const useCourses = () => {
     errors,
     getAcademicYearOptions,
     courseStats: calculateCourseStats(courses),
+
     departments,
     lecturers,
     fetchInitialData,
+
   };
 };
 

@@ -25,7 +25,7 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
           />
         ))
       ) : (
-        <p>No courses found</p>
+        <p></p>
       )}
     </div>
   );

@@ -1,97 +1,142 @@
-import { useState, useEffect, useMemo } from "react";
+// hooks/useGenericDashboard.js (CORRECTED)
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { genericDashboardConfigs } from "../Static/genericDashboardPageData.js";
-import { getPrimaryOptions, getFilterOptions } from "../Utils/genericDashboardUtils.js";
+import * as genericDashboardAPI from "../Api/GenericDashboard";
+import { getGenericDashboardConfig, getPrimaryOptions, getFilterOptions } from "../Utils/genericDashboardUtils";
 
 const useGenericDashboard = (entityType) => {
-  const config = genericDashboardConfigs[entityType];
+  const config = getGenericDashboardConfig(entityType);
   const navigate = useNavigate();
+  
+  // State management
+  const [data, setData] = useState([]);
   const [primaryFilter, setPrimaryFilter] = useState("All");
   const [filterValues, setFilterValues] = useState({});
-  const [filteredData, setFilteredData] = useState(config?.data || []);
-  const [isLoading, setIsLoading] = useState(false);
+  const [filteredData, setFilteredData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
+  // Memoized fetch function to prevent infinite re-renders
+  const fetchData = useCallback(async () => {
     if (!config) {
       navigate("/students");
       return;
     }
 
-    if (!config.data || config.data.length === 0) {
-      console.warn(`⚠️ No data available for ${entityType}`);
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const result = await genericDashboardAPI.getData(entityType);
+      
+      // Ensure we always have an array
+      const validData = Array.isArray(result) ? result : [];
+      setData(validData);
+      
+      if (validData.length === 0) {
+        console.warn(`⚠️ No data available for ${entityType}`);
+      }
+    } catch (err) {
+      console.error(`Failed to load ${entityType}:`, err);
+      setError(err.message || `Failed to load ${entityType} data`);
+      setData([]);
+    } finally {
+      setIsLoading(false);
     }
   }, [entityType, config, navigate]);
 
+  // Load data on mount or entity type change
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Initialize filter values when config changes (not data)
   useEffect(() => {
     if (!config) return;
 
     const initialValues = {};
-    config.secondaryFilters.forEach((filter) => {
+    config.secondaryFilters?.forEach((filter) => {
       initialValues[filter.name] = "all";
     });
     setFilterValues(initialValues);
     setPrimaryFilter("All");
-  }, [entityType, config]);
+  }, [config, entityType]); // Remove data dependency
 
+  // Apply filters with better error handling
   useEffect(() => {
-    if (!config?.data) {
+    if (!data.length || !config) {
       setFilteredData([]);
       return;
     }
 
     try {
-      setIsLoading(true);
-      let temp = [...config.data];
+      let temp = [...data];
 
-      if (primaryFilter !== "All") {
-        temp = temp.filter((item) => item[config.primaryFilter] === primaryFilter);
+      // Apply primary filter with safety checks
+      if (primaryFilter !== "All" && config.primaryFilter) {
+        temp = temp.filter((item) => {
+          const itemValue = item?.[config.primaryFilter];
+          return itemValue === primaryFilter;
+        });
       }
 
+      // Apply secondary filters with safety checks
       Object.entries(filterValues).forEach(([key, value]) => {
-        if (value !== "all" && value !== undefined) {
-          temp = temp.filter((item) => item[key] === value);
+        if (value !== "all" && value !== undefined && value !== null) {
+          temp = temp.filter((item) => {
+            const itemValue = item?.[key];
+            return itemValue === value;
+          });
         }
       });
 
       setFilteredData(temp);
     } catch (error) {
-      setFilteredData(config.data);
-    } finally {
-      setIsLoading(false);
+      console.error("Filter error:", error);
+      setFilteredData(data); // Fallback to unfiltered data
     }
-  }, [primaryFilter, filterValues, config]);
+  }, [primaryFilter, filterValues, data, config]);
 
-  const handleFilterChange = (name, value) => {
+  // Handle filter changes
+  const handleFilterChange = useCallback((name, value) => {
     setFilterValues((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleButtonFilterChange = (filterName, value) => {
+  const handleButtonFilterChange = useCallback((filterName, value) => {
     setFilterValues((prev) => ({
       ...prev,
       [filterName]: prev[filterName] === value ? "all" : value,
     }));
-  };
+  }, []);
 
+  // Calculate stats with better error handling
   const stats = useMemo(() => {
-    if (!config?.stats || !filteredData) return {};
+    if (!config?.stats || !filteredData.length) return {};
 
     try {
       return Object.entries(config.stats).reduce((acc, [key, calculator]) => {
         try {
-          acc[key] = calculator(filteredData);
+          if (typeof calculator === 'function') {
+            acc[key] = calculator(filteredData);
+          } else {
+            acc[key] = 0;
+          }
         } catch (error) {
+          console.error(`Error calculating stat ${key}:`, error);
           acc[key] = 0;
         }
         return acc;
       }, {});
     } catch (error) {
+      console.error('Stats calculation error:', error);
       return {};
     }
-  }, [filteredData, config]);
+  }, [filteredData, config?.stats]);
 
+  // Generate dashboard cards
   const dashboardCards = useMemo(() => {
     if (!config?.cards) return [];
 
@@ -99,21 +144,26 @@ const useGenericDashboard = (entityType) => {
       ...card,
       value: (stats[card.statKey] ?? 0).toString(),
     }));
-  }, [config, stats]);
+  }, [config?.cards, stats]);
 
-  const goToProfile = (item) => {
+  // Navigation function with better error handling
+  const goToProfile = useCallback((item) => {
     try {
-      if (!item || !item.id || (typeof item.id !== "number" && typeof item.id !== "string") || !config?.entityName) {
+      if (!item?.id || !config?.entityName) {
+        console.warn('Invalid navigation parameters:', { item, entityName: config?.entityName });
         return;
       }
 
       const sanitizedId = parseInt(item.id);
       if (isNaN(sanitizedId) || sanitizedId <= 0) {
+        console.warn('Invalid ID for navigation:', item.id);
         return;
       }
 
-      const entityExists = config.data?.some((entity) => entity.id === sanitizedId);
+      // Check if entity exists
+      const entityExists = data.some((entity) => entity?.id === sanitizedId);
       if (!entityExists) {
+        console.warn('Entity not found in data:', sanitizedId);
         return;
       }
 
@@ -127,11 +177,13 @@ const useGenericDashboard = (entityType) => {
 
       navigate(targetUrl);
     } catch (error) {
+      console.error('Navigation error:', error);
       alert("Unable to navigate to profile. Please try again.");
     }
-  };
+  }, [data, config?.entityName, navigate]);
 
-  const handleCardClick = (card, index) => {
+  // Handle card clicks
+  const handleCardClick = useCallback((card) => {
     if (!card?.id) return;
 
     try {
@@ -149,47 +201,75 @@ const useGenericDashboard = (entityType) => {
           break;
         case "top-performers":
           console.log("🏆 Show top performers filter");
+          // Add specific filter logic here
           break;
         default:
           console.log(`📊 Card action not defined for: ${card.id}`);
       }
-    } catch (error) {}
-  };
+    } catch (error) {
+      console.error("Card click error:", error);
+    }
+  }, []);
 
-  const getFilterTitle = () => {
+  // Utility functions
+  const getFilterTitle = useCallback(() => {
     return entityType === "students" ? "Student Filters" : "Lecturer Filters";
-  };
+  }, [entityType]);
 
-  const dynamicFilters = config?.secondaryFilters
-    ?.filter((filter) => filter.type === "select")
-    ?.map((filter) => ({
-      label: filter.label,
-      name: filter.name,
-      title: filter.name,
-      options: getFilterOptions(filter.name, config.data),
-    })) || [];
+  const dynamicFilters = useMemo(() => {
+    if (!config?.secondaryFilters || !data.length) return [];
+    
+    return config.secondaryFilters
+      .filter((filter) => filter.type === "select")
+      .map((filter) => ({
+        label: filter.label,
+        name: filter.name,
+        title: filter.name,
+        options: getFilterOptions(filter.name, data),
+      }));
+  }, [config?.secondaryFilters, data]);
 
-  const buttonFilters = config?.secondaryFilters?.filter((filter) => filter.type === "buttons") || [];
+  const buttonFilters = useMemo(() => {
+    return config?.secondaryFilters?.filter((filter) => filter.type === "buttons") || [];
+  }, [config?.secondaryFilters]);
+
+  // Refresh data function
+  const refreshData = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
-    config: {
+    // Data
+    data,
+    filteredData,
+    isLoading,
+    error,
+    
+    // Config
+    config: config ? {
       ...config,
-      getPrimaryOptions: () => getPrimaryOptions(config.data, config.primaryFilter),
-      getFilterOptions: (fieldName) => getFilterOptions(fieldName, config.data),
-    },
+      getPrimaryOptions: () => getPrimaryOptions(data, config.primaryFilter),
+      getFilterOptions: (fieldName) => getFilterOptions(fieldName, data),
+    } : null,
+    
+    // State
     primaryFilter,
     setPrimaryFilter,
     filterValues,
-    filteredData,
-    isLoading,
+    
+    // Computed
+    stats,
+    dashboardCards,
     dynamicFilters,
     buttonFilters,
-    dashboardCards,
-    getFilterTitle,
+    
+    // Functions
     handleFilterChange,
     handleButtonFilterChange,
     goToProfile,
     handleCardClick,
+    getFilterTitle,
+    refreshData
   };
 };
 

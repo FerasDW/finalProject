@@ -8,7 +8,12 @@ import {
   Users,
   BarChart2,
   Settings,
-  LogOut
+  LogOut,
+  Layers,
+  Zap, 
+  Sparkles
+
+
 } from "lucide-react";
 import maleFace1 from "../Assets/Images/Logo/PNG/maleFace1.png";
 import maleFace2 from "../Assets/Images/Logo/PNG/maleFace2.png";
@@ -26,6 +31,7 @@ export const leftMenuItems = {
     { title: "Calendar", icon: <Calendar /> },
     { title: "Messages", icon: <Mail /> },
     { title: "Community", icon: <Users /> },
+    { title: "Generate Semester", icon: <Sparkles /> },
     { title: "Statistics", icon: <BarChart2 /> },
     { title: "Settings", icon: <Settings /> },
     { title: "Logout", icon: <LogOut /> },
