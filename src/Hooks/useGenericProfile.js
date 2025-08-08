@@ -1,33 +1,29 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Edit,
-  Eye,
-  Check,
-  X,
-  Download,
-  FileText,
-  Book,
-  Calendar,
-  Users,
-  Award,
-  TrendingUp,
-  Clock,
-  Star,
-} from "lucide-react";
-import { profileConfigs } from "../Static/genericProfilePageData.js";
-import { getLetterGrade, getStudentEnrolledCourses } from "../Utils/genericProfileUtils.js";
+// useGenericProfile.js - Custom Hook for Generic Profile
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import * as profileAPI from '../Api/genericProfilePageApi';
 
-const useGenericProfile = (entityType, id, initialSection) => {
+export const useGenericProfile = (initialSection = "overview") => {
+  const { entityType, id } = useParams();
   const navigate = useNavigate();
+  
+  // Core state
   const [profileData, setProfileData] = useState(null);
   const [stats, setStats] = useState({});
   const [statCards, setStatCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // UI state
   const [activeSection, setActiveSection] = useState(initialSection);
   const [selectedYear, setSelectedYear] = useState("");
   const [showActions, setShowActions] = useState(false);
+  
+  // File upload states
+  const [uploadedFiles, setUploadedFiles] = useState(new Map());
+  const [fileUploadProgress, setFileUploadProgress] = useState({});
+  
+  // Modal states
   const [editGradeModalOpen, setEditGradeModalOpen] = useState(false);
   const [addGradeModalOpen, setAddGradeModalOpen] = useState(false);
   const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
@@ -40,364 +36,462 @@ const useGenericProfile = (entityType, id, initialSection) => {
   const [addResourceModalOpen, setAddResourceModalOpen] = useState(false);
   const [viewRequestModalOpen, setViewRequestModalOpen] = useState(false);
   const [responseRequestModalOpen, setResponseRequestModalOpen] = useState(false);
+  
+  // Form state
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [formData, setFormData] = useState({});
   const [requestResponse, setRequestResponse] = useState("");
-  const { availableCourses, generateScheduleData, generateResourcesData } = profileConfigs;
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Load profile data
+  const loadProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const validEntityTypes = ["student", "lecturer"];
-        if (!entityType || !validEntityTypes.includes(entityType)) {
-          throw new Error(`Invalid entity type: "${entityType}"`);
-        }
-
-        const sanitizedId = parseInt(id);
-        if (isNaN(sanitizedId) || sanitizedId <= 0) {
-          throw new Error(`Invalid ID: "${id}"`);
-        }
-
-        const config = profileConfigs[entityType];
-        if (!config || !config.dataSource?.length) {
-          throw new Error(`No data available for ${entityType}`);
-        }
-
-        const data = config.getProfileData(sanitizedId);
-        const mainEntity = entityType === "student" ? data.student : data.lecturer;
-        if (!mainEntity) {
-          throw new Error(`${entityType} with ID ${sanitizedId} not found`);
-        }
-
-        setProfileData({ ...data, config });
-        setStats(config.getStats(data));
-        setStatCards(config.getStatCards(config.getStats(data)));
-      } catch (err) {
-        console.error("Profile loading error:", err.message);
-        setError(err.message);
-        setTimeout(() => {
-          const dashboardRoute = entityType === "student" ? "/students" : "/lecturers";
-          navigate(dashboardRoute, { replace: true });
-        }, 5000);
-      } finally {
-        setLoading(false);
+      const validEntityTypes = ['student', 'lecturer'];
+      if (!entityType || !validEntityTypes.includes(entityType)) {
+        throw new Error(`Invalid entity type: "${entityType}"`);
       }
-    };
 
-    if (entityType && id) {
-      loadProfile();
-    } else {
-      setError("Missing required parameters");
+      const sanitizedId = parseInt(id);
+      if (isNaN(sanitizedId) || sanitizedId <= 0) {
+        throw new Error(`Invalid ID: "${id}"`);
+      }
+
+      const data = await profileAPI.getProfileData(entityType, sanitizedId);
+      const calculatedStats = await profileAPI.getProfileStats(entityType, sanitizedId);
+      const cards = await profileAPI.getStatCards(entityType, calculatedStats);
+
+      setProfileData(data);
+      setStats(calculatedStats);
+      setStatCards(cards);
+
+    } catch (err) {
+      console.error('Profile loading error:', err.message);
+      setError(err.message);
+      setTimeout(() => {
+        const dashboardRoute = entityType === 'student' ? '/students' : '/lecturers';
+        navigate(dashboardRoute, { replace: true });
+      }, 5000);
+    } finally {
       setLoading(false);
     }
   }, [entityType, id, navigate]);
 
-  const gradeFormFields = useMemo(
-    () => [
-      {
-        name: "courseCode",
-        label: "Course",
-        type: "select",
-        required: true,
-        options: getStudentEnrolledCourses(profileData),
-      },
-      {
-        name: "grade",
-        label: "Grade (0-100)",
-        type: "number",
-        required: true,
-        min: 0,
-        max: 100,
-        step: 0.1,
-        placeholder: "Enter grade between 0 and 100",
-      },
-      { name: "credits", label: "Credits", type: "number", required: true, min: 1, max: 6 },
-      {
-        name: "semester",
-        label: "Semester",
-        type: "select",
-        required: true,
-        options: [
-          { value: "Fall 2024", label: "Fall 2024" },
-          { value: "Spring 2025", label: "Spring 2025" },
-          { value: "Summer 2025", label: "Summer 2025" },
-          { value: "Fall 2025", label: "Fall 2025" },
-        ],
-      },
-    ],
-    [profileData]
-  );
-
-  const editGradeFormFields = [
-    { name: "courseCode", label: "Course Code", type: "text", required: true, disabled: true },
-    { name: "courseName", label: "Course Name", type: "text", required: true, disabled: true },
-    {
-      name: "grade",
-      label: "Grade (0-100)",
-      type: "number",
-      required: true,
-      min: 0,
-      max: 100,
-      step: 0.1,
-      placeholder: "Enter grade between 0 and 100",
-    },
-    { name: "credits", label: "Credits", type: "number", required: true, min: 1, max: 6 },
-    { name: "semester", label: "Semester", type: "text", required: true, disabled: true },
-  ];
-
-  const lecturerCourseFormFields = [
-    {
-      name: "courseCode",
-      label: "Course to Assign",
-      type: "select",
-      required: true,
-      options: availableCourses,
-    },
-    {
-      name: "semester",
-      label: "Semester",
-      type: "select",
-      required: true,
-      options: [
-        { value: "Fall 2024", label: "Fall 2024" },
-        { value: "Spring 2025", label: "Spring 2025" },
-        { value: "Summer 2025", label: "Summer 2025" },
-        { value: "Fall 2025", label: "Fall 2025" },
-      ],
-    },
-    { name: "classSize", label: "Expected Class Size", type: "number", required: true, min: 1, max: 200 },
-    { name: "notes", label: "Additional Notes", type: "textarea", required: false },
-  ];
-
-  const courseFormFields = [
-    {
-      name: "courseCode",
-      label: "Course Code",
-      type: "text",
-      required: true,
-      pattern: "[A-Z]{2,4}[0-9]{3}",
-      placeholder: "e.g., CS101",
-    },
-    { name: "courseName", label: "Course Name", type: "text", required: true },
-    { name: "credits", label: "Credits", type: "number", required: true, min: 1, max: 6 },
-    {
-      name: "semester",
-      label: "Semester",
-      type: "select",
-      required: true,
-      options: [
-        { value: "Fall 2024", label: "Fall 2024" },
-        { value: "Spring 2025", label: "Spring 2025" },
-        { value: "Summer 2025", label: "Summer 2025" },
-        { value: "Fall 2025", label: "Fall 2025" },
-      ],
-    },
-    { name: "department", label: "Department", type: "text", required: true },
-    { name: "description", label: "Description", type: "textarea", required: false },
-  ];
-
-  const enrollmentFormFields = [
-    {
-      name: "courseCode",
-      label: "Course Code",
-      type: "select",
-      required: true,
-      options: availableCourses,
-    },
-    {
-      name: "semester",
-      label: "Semester",
-      type: "select",
-      required: true,
-      options: [
-        { value: "Fall 2024", label: "Fall 2024" },
-        { value: "Spring 2025", label: "Spring 2025" },
-        { value: "Summer 2025", label: "Summer 2025" },
-        { value: "Fall 2025", label: "Fall 2025" },
-      ],
-    },
-    { name: "instructor", label: "Instructor", type: "text", required: true },
-    {
-      name: "status",
-      label: "Status",
-      type: "select",
-      required: true,
-      options: [
-        { value: "enrolled", label: "Enrolled" },
-        { value: "pending", label: "Pending" },
-        { value: "dropped", label: "Dropped" },
-      ],
-    },
-  ];
-
-  const scheduleFormFields = [
-    {
-      name: "day",
-      label: "Day",
-      type: "select",
-      required: true,
-      options: [
-        { value: "Monday", label: "Monday" },
-        { value: "Tuesday", label: "Tuesday" },
-        { value: "Wednesday", label: "Wednesday" },
-        { value: "Thursday", label: "Thursday" },
-        { value: "Friday", label: "Friday" },
-        { value: "Saturday", label: "Saturday" },
-      ],
-    },
-    { name: "startTime", label: "Start Time", type: "time", required: true },
-    { name: "endTime", label: "End Time", type: "time", required: true },
-    {
-      name: "availability",
-      label: "Availability Status",
-      type: "select",
-      required: true,
-      options: [
-        { value: "available", label: "Available" },
-        { value: "busy", label: "Busy" },
-        { value: "preferred", label: "Preferred Hours" },
-      ],
-    },
-    { name: "notes", label: "Notes", type: "textarea", required: false },
-  ];
-
-  const resourceFormFields = [
-    {
-      name: "type",
-      label: "Information Type",
-      type: "select",
-      required: true,
-      options: [
-        { value: "cv", label: "CV/Resume" },
-        { value: "education", label: "Educational Background" },
-        { value: "research", label: "Research Work" },
-        { value: "milestone", label: "Career Milestone" },
-        { value: "publication", label: "Publication" },
-        { value: "award", label: "Award/Recognition" },
-      ],
-    },
-    { name: "title", label: "Title", type: "text", required: true },
-    { name: "description", label: "Description", type: "textarea", required: true },
-    { name: "date", label: "Date", type: "date", required: false },
-    { name: "institution", label: "Institution/Organization", type: "text", required: false },
-    { name: "url", label: "URL/Link", type: "url", required: false },
-    { name: "tags", label: "Tags (comma separated)", type: "text", required: false },
-  ];
-
-  const generateWorkingHoursCards = () => [
-    {
-      id: "weekly-hours",
-      title: "Weekly Hours",
-      value: "40",
-      icon: <Clock />,
-      trend: { value: "5%", isPositive: true },
-      description: "Total working hours per week",
-      backgroundColor: "#6366f1",
-    },
-    {
-      id: "available-days",
-      title: "Available Days",
-      value: "5",
-      icon: <Calendar />,
-      trend: { value: "2", isPositive: true },
-      description: "Days available for teaching",
-      backgroundColor: "#ec4899",
-    },
-    {
-      id: "office-hours",
-      title: "Office Hours",
-      value: "12",
-      icon: <Users />,
-      trend: { value: "3", isPositive: true },
-      description: "Weekly office hours",
-      backgroundColor: "#06b6d4",
-    },
-    {
-      id: "preferred-slots",
-      title: "Preferred Slots",
-      value: "8",
-      icon: <Star />,
-      trend: { value: "2", isPositive: true },
-      description: "Preferred teaching time slots",
-      backgroundColor: "#10b981",
-    },
-  ];
-
-  const generateProfileCards = () => [
-    {
-      id: "cv-status",
-      title: "CV Status",
-      value: "Updated",
-      icon: <FileText />,
-      trend: { value: "Jan 2024", isPositive: true },
-      description: "Last CV update",
-      backgroundColor: "#f59e0b",
-    },
-    {
-      id: "education-records",
-      title: "Education",
-      value: "3",
-      icon: <Award />,
-      trend: { value: "Degrees", isPositive: true },
-      description: "Educational qualifications",
-      backgroundColor: "#8b5cf6",
-    },
-    {
-      id: "research-projects",
-      title: "Research",
-      value: "5",
-      icon: <Book />,
-      trend: { value: "Active", isPositive: true },
-      description: "Research projects",
-      backgroundColor: "#3b82f6",
-    },
-    {
-      id: "career-milestones",
-      title: "Milestones",
-      value: "12",
-      icon: <TrendingUp />,
-      trend: { value: "Achievements", isPositive: true },
-      description: "Career achievements",
-      backgroundColor: "#ef4444",
-    },
-  ];
-
-  const TableSection = ({
-    title,
-    description,
-    data,
-    showAddButton = true,
-    onAddClick,
-    actionButtons = [],
-    entityType = "records",
-    icon = "default",
-    columnConfig = {},
-    hiddenColumns = [],
-    children,
-  }) => (
-    <div className="table-section">
-      {children}
-      <DynamicTable
-        data={data}
-        title={title}
-        entityType={entityType}
-        icon={icon}
-        searchPlaceholder={`Search ${entityType}...`}
-        addButtonText={`Add ${entityType.slice(0, -1)}`}
-        showAddButton={showAddButton}
-        onAddClick={onAddClick}
-        actionButtons={actionButtons}
-        columnConfig={columnConfig}
-        hiddenColumns={hiddenColumns}
-        rowsPerPage={10}
-        compact={false}
-      />
-    </div>
-  );
-
-  const handleEditGrade = (row) => {
+  // Grade handlers
+  const handleEditGrade = useCallback((row) => {
     setSelectedRecord(row);
-    setFormData
+    setFormData({
+      courseCode: row.courseCode,
+      courseName: row.courseName,
+      grade: row.grade,
+      credits: row.credits,
+      semester: row.semester
+    });
+    setEditGradeModalOpen(true);
+  }, []);
+
+  const handleAddGrade = useCallback(() => {
+    setSelectedRecord(null);
+    setFormData({});
+    setAddGradeModalOpen(true);
+  }, []);
+
+  const handleGradeSubmit = useCallback(async (formData) => {
+    try {
+      if (formData.grade < 0 || formData.grade > 100) {
+        throw new Error('Grade must be between 0 and 100');
+      }
+
+      if (selectedRecord) {
+        await profileAPI.updateGrade(entityType, id, selectedRecord.id, formData);
+        setEditGradeModalOpen(false);
+      } else {
+        await profileAPI.addGrade(entityType, id, formData);
+        setAddGradeModalOpen(false);
+      }
+      
+      await loadProfile();
+      setSelectedRecord(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error submitting grade:', error);
+      alert(error.message);
+    }
+  }, [selectedRecord, entityType, id, loadProfile]);
+
+  // Course handlers
+  const handleEditCourse = useCallback((row) => {
+    setSelectedRecord(row);
+    setFormData({
+      courseCode: row.courseCode,
+      courseName: row.courseName,
+      credits: row.credits,
+      semester: row.semester,
+      department: row.department || '',
+      description: row.description || '',
+      classSize: row.classSize || '',
+      notes: row.notes || ''
+    });
+    setEditCourseModalOpen(true);
+  }, []);
+
+  const handleAddCourse = useCallback(() => {
+    setSelectedRecord(null);
+    setFormData({});
+    setAddCourseModalOpen(true);
+  }, []);
+
+  const handleCourseSubmit = useCallback(async (formData) => {
+    try {
+      if (selectedRecord) {
+        await profileAPI.updateCourse(entityType, id, selectedRecord.id, formData);
+        setEditCourseModalOpen(false);
+      } else {
+        await profileAPI.addCourse(entityType, id, formData);
+        setAddCourseModalOpen(false);
+      }
+      
+      await loadProfile();
+      setSelectedRecord(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error submitting course:', error);
+      alert(error.message);
+    }
+  }, [selectedRecord, entityType, id, loadProfile]);
+
+  // Enrollment handlers
+  const handleEditEnrollment = useCallback((row) => {
+    setSelectedRecord(row);
+    setFormData({
+      courseCode: row.courseCode,
+      courseName: row.courseName,
+      credits: row.credits,
+      semester: row.semester,
+      instructor: row.instructor,
+      status: row.status || 'enrolled'
+    });
+    setEditEnrollmentModalOpen(true);
+  }, []);
+
+  const handleAddEnrollment = useCallback(() => {
+    setSelectedRecord(null);
+    setFormData({});
+    setAddEnrollmentModalOpen(true);
+  }, []);
+
+  const handleEnrollmentSubmit = useCallback(async (formData) => {
+    try {
+      if (selectedRecord) {
+        await profileAPI.updateEnrollment(entityType, id, selectedRecord.id, formData);
+        setEditEnrollmentModalOpen(false);
+      } else {
+        await profileAPI.addEnrollment(entityType, id, formData);
+        setAddEnrollmentModalOpen(false);
+      }
+      
+      await loadProfile();
+      setSelectedRecord(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error submitting enrollment:', error);
+      alert(error.message);
+    }
+  }, [selectedRecord, entityType, id, loadProfile]);
+
+  // Schedule handlers
+  const handleEditSchedule = useCallback((row) => {
+    setSelectedRecord(row);
+    setFormData({
+      day: row.day,
+      startTime: row.startTime,
+      endTime: row.endTime,
+      availability: row.availability,
+      notes: row.notes || '',
+      courseCode: row.courseCode || '',
+      room: row.room || '',
+      students: row.students || ''
+    });
+    setEditScheduleModalOpen(true);
+  }, []);
+
+  const handleAddSchedule = useCallback(() => {
+    setSelectedRecord(null);
+    setFormData({});
+    setAddScheduleModalOpen(true);
+  }, []);
+
+  const handleScheduleSubmit = useCallback(async (formData) => {
+    try {
+      if (formData.startTime >= formData.endTime) {
+        throw new Error('End time must be after start time');
+      }
+
+      if (selectedRecord) {
+        await profileAPI.updateSchedule(entityType, id, selectedRecord.id, formData);
+        setEditScheduleModalOpen(false);
+      } else {
+        await profileAPI.addSchedule(entityType, id, formData);
+        setAddScheduleModalOpen(false);
+      }
+      
+      await loadProfile();
+      setSelectedRecord(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error submitting schedule:', error);
+      alert(error.message);
+    }
+  }, [selectedRecord, entityType, id, loadProfile]);
+
+  // Resource handlers
+  const handleEditResource = useCallback((row) => {
+    setSelectedRecord(row);
+    setFormData({
+      type: row.type,
+      title: row.title,
+      description: row.description,
+      date: row.date || '',
+      institution: row.institution || '',
+      url: row.url || '',
+      tags: row.tags || ''
+    });
+    setEditResourceModalOpen(true);
+  }, []);
+
+  const handleAddResource = useCallback(() => {
+    setSelectedRecord(null);
+    setFormData({});
+    setAddResourceModalOpen(true);
+  }, []);
+
+  const handleResourceSubmit = useCallback(async (formData) => {
+    try {
+      if (!selectedRecord && !formData.file) {
+        throw new Error('Please select a file to upload');
+      }
+
+      if (formData.file && formData.file.size > 10 * 1024 * 1024) {
+        throw new Error('File size must be less than 10MB');
+      }
+
+      setFileUploadProgress({ status: 'uploading', progress: 0 });
+
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setFileUploadProgress(prev => {
+          if (prev.progress >= 100) {
+            clearInterval(interval);
+            setTimeout(() => setFileUploadProgress({}), 1000);
+            return { status: 'completed', progress: 100 };
+          }
+          return { ...prev, progress: prev.progress + 10 };
+        });
+      }, 100);
+
+      if (selectedRecord) {
+        await profileAPI.updateResource(entityType, id, selectedRecord.id, formData);
+        if (formData.file) {
+          setUploadedFiles(prev => new Map(prev.set(selectedRecord.id, formData.file)));
+        }
+        setEditResourceModalOpen(false);
+      } else {
+        const newResource = await profileAPI.addResource(entityType, id, formData);
+        if (formData.file && newResource.id) {
+          setUploadedFiles(prev => new Map(prev.set(newResource.id, formData.file)));
+        }
+        setAddResourceModalOpen(false);
+      }
+
+      await loadProfile();
+      setSelectedRecord(null);
+      setFormData({});
+    } catch (error) {
+      console.error('Error uploading resource:', error);
+      alert(error.message);
+      setFileUploadProgress({ status: 'error', progress: 0 });
+    }
+  }, [selectedRecord, entityType, id, loadProfile]);
+
+  const handleDownloadResource = useCallback(async (row) => {
+    try {
+      await profileAPI.downloadResource(entityType, id, row.id);
+      await loadProfile(); // Refresh to update download count
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error downloading file. Please try again.');
+    }
+  }, [entityType, id, loadProfile]);
+
+  const handlePreviewResource = useCallback(async (row) => {
+    try {
+      await profileAPI.previewResource(entityType, id, row.id);
+    } catch (error) {
+      console.error('Preview error:', error);
+      alert('Error previewing file. Please try again.');
+    }
+  }, [entityType, id]);
+
+  // Request handlers
+  const handleViewRequest = useCallback((row) => {
+    setSelectedRecord(row);
+    setViewRequestModalOpen(true);
+  }, []);
+
+  const handleResponseRequest = useCallback((row) => {
+    setSelectedRecord(row);
+    setRequestResponse("");
+    setResponseRequestModalOpen(true);
+  }, []);
+
+  const handleApproveRequest = useCallback(async (row) => {
+    try {
+      await profileAPI.updateRequestStatus(entityType, id, row.id, 'approved');
+      await loadProfile();
+    } catch (error) {
+      console.error('Error approving request:', error);
+      alert('Error approving request. Please try again.');
+    }
+  }, [entityType, id, loadProfile]);
+
+  const handleRejectRequest = useCallback(async (row) => {
+    try {
+      await profileAPI.updateRequestStatus(entityType, id, row.id, 'rejected');
+      await loadProfile();
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      alert('Error rejecting request. Please try again.');
+    }
+  }, [entityType, id, loadProfile]);
+
+  const handleSubmitResponse = useCallback(async () => {
+    try {
+      if (!requestResponse.trim()) {
+        throw new Error('Please enter a response');
+      }
+
+      await profileAPI.submitRequestResponse(entityType, id, selectedRecord.id, requestResponse);
+      setResponseRequestModalOpen(false);
+      setRequestResponse("");
+      setSelectedRecord(null);
+      await loadProfile();
+    } catch (error) {
+      console.error('Error submitting response:', error);
+      alert(error.message);
+    }
+  }, [requestResponse, selectedRecord, entityType, id, loadProfile]);
+
+  // Card click handler
+  const handleCardClick = useCallback((card) => {
+    const sectionMap = {
+      "completed-courses": "grades",
+      "active-courses": "courses",
+      "pending-requests": "requests",
+      "current-enrollments": "enrollments",
+      "avg-rating": "resources",
+      "total-students": "resources",
+      "weekly-hours": "schedule",
+      "cv-status": "resources",
+      "education-records": "resources",
+      "research-projects": "resources",
+      "career-milestones": "resources"
+    };
+    
+    if (sectionMap[card.id]) {
+      setActiveSection(sectionMap[card.id]);
+    }
+  }, []);
+
+  // Load profile on mount
+  useEffect(() => {
+    if (entityType && id) {
+      loadProfile();
+    } else {
+      setError('Missing required parameters');
+      setLoading(false);
+    }
+  }, [entityType, id, loadProfile]);
+
+  return {
+    // State
+    profileData,
+    stats,
+    statCards,
+    loading,
+    error,
+    activeSection,
+    selectedYear,
+    showActions,
+    uploadedFiles,
+    fileUploadProgress,
+    
+    // Modal states
+    editGradeModalOpen,
+    addGradeModalOpen,
+    editCourseModalOpen,
+    addCourseModalOpen,
+    editEnrollmentModalOpen,
+    addEnrollmentModalOpen,
+    editScheduleModalOpen,
+    addScheduleModalOpen,
+    editResourceModalOpen,
+    addResourceModalOpen,
+    viewRequestModalOpen,
+    responseRequestModalOpen,
+    
+    // Form state
+    selectedRecord,
+    formData,
+    requestResponse,
+    
+    // Setters
+    setActiveSection,
+    setSelectedYear,
+    setShowActions,
+    setUploadedFiles,
+    setEditGradeModalOpen,
+    setAddGradeModalOpen,
+    setEditCourseModalOpen,
+    setAddCourseModalOpen,
+    setEditEnrollmentModalOpen,
+    setAddEnrollmentModalOpen,
+    setEditScheduleModalOpen,
+    setAddScheduleModalOpen,
+    setEditResourceModalOpen,
+    setAddResourceModalOpen,
+    setViewRequestModalOpen,
+    setResponseRequestModalOpen,
+    setRequestResponse,
+    
+    // Handlers
+    handleEditGrade,
+    handleAddGrade,
+    handleGradeSubmit,
+    handleEditCourse,
+    handleAddCourse,
+    handleCourseSubmit,
+    handleEditEnrollment,
+    handleAddEnrollment,
+    handleEnrollmentSubmit,
+    handleEditSchedule,
+    handleAddSchedule,
+    handleScheduleSubmit,
+    handleEditResource,
+    handleAddResource,
+    handleResourceSubmit,
+    handleDownloadResource,
+    handlePreviewResource,
+    handleViewRequest,
+    handleResponseRequest,
+    handleApproveRequest,
+    handleRejectRequest,
+    handleSubmitResponse,
+    handleCardClick,
+    
+    // Derived data
+    entityType,
+    id,
+    mainEntity: profileData ? (entityType === "student" ? profileData.student : profileData.lecturer) : null
+  };
+};

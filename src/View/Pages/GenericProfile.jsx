@@ -1,143 +1,131 @@
-// Complete GenericProfile.jsx with Enhanced Resource Management
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+// GenericProfile.jsx - Main Component
+import React from "react";
 import { 
   Edit, 
   Eye, 
   Check, 
   X, 
-  Plus, 
-  Download, 
-  FileText,
-  Book,
-  Calendar,
-  Users,
-  Award,
-  TrendingUp,
+  Download,
   Clock,
-  Star,
-  MapPin,
-  Phone,
-  Mail,
-  GraduationCap,
-  Briefcase,
-  Target,
-  BookOpen,
   User,
-  Building,
-  Globe,
-  AlertCircle
+  Book,
+  FileText,
+  Users,
+  TrendingUp
 } from "lucide-react";
 
 import ProfileHeader from "../Components/StudentProfile/profileHeader";
 import ProfileInfoCard from "../Components/StudentProfile/profileInfoCard";
 import QuickActions from "../Components/StudentProfile/QuickActions";
-import RequestsList from "../Components/StudentProfile/RequestsList";
 import StatCardsContainer from "../Components/Cards/StatCardsContainer";
 import MidPageNavbar from "../Components/CoursePage/Content/MidPageNavBar";
 import DynamicTable from "../Components/Tables/Table";
-import Modal from "../Components/Modal/Modal.jsx";
 import PopUp from "../Components/Cards/PopUp.jsx";
 import DynamicForm from "../Components/Forms/dynamicForm.jsx";
 
-import { profileConfigs } from "../../Static/GenericProfile/profileConfig";
-import { ActionButtons, SummaryCards } from "../../Static/GenericProfile/UIHelper";
-import { generateScheduleData, generateResourcesData } from "../../Static/GenericProfile/dataUtils";
+import { useGenericProfile } from "../../Hooks/useGenericProfile";
+import { 
+  profileConfigs,
+  generateWorkingHoursCards,
+  generateProfileCards,
+  getColumnConfigs,
+  getHiddenColumns,
+  processScheduleData,
+  processResourcesData,
+  getGradeFormFields,
+  getEditGradeFormFields,
+  getLecturerCourseFormFields,
+  getCourseFormFields,
+  getEnrollmentFormFields,
+  getScheduleFormFields,
+  getResourceFormFields
+} from "../../Utils/genericProfileUtils.js";
 
 import "./GenericProfile.css";
 
 const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) => {
-  const { entityType, id } = useParams();
-  const navigate = useNavigate();
-  
-  const [profileData, setProfileData] = useState(null);
-  const [stats, setStats] = useState({});
-  const [statCards, setStatCards] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeSection, setActiveSection] = useState(initialSection);
-  const [selectedYear, setSelectedYear] = useState("");
-  const [showActions, setShowActions] = useState(false);
-
-  // File upload states
-  const [uploadedFiles, setUploadedFiles] = useState(new Map());
-  const [fileUploadProgress, setFileUploadProgress] = useState({});
-
-  // Modal states
-  const [editGradeModalOpen, setEditGradeModalOpen] = useState(false);
-  const [addGradeModalOpen, setAddGradeModalOpen] = useState(false);
-  const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
-  const [addCourseModalOpen, setAddCourseModalOpen] = useState(false);
-  const [editEnrollmentModalOpen, setEditEnrollmentModalOpen] = useState(false);
-  const [addEnrollmentModalOpen, setAddEnrollmentModalOpen] = useState(false);
-  const [editScheduleModalOpen, setEditScheduleModalOpen] = useState(false);
-  const [addScheduleModalOpen, setAddScheduleModalOpen] = useState(false);
-  const [editResourceModalOpen, setEditResourceModalOpen] = useState(false);
-  const [addResourceModalOpen, setAddResourceModalOpen] = useState(false);
-  const [viewRequestModalOpen, setViewRequestModalOpen] = useState(false);
-  const [responseRequestModalOpen, setResponseRequestModalOpen] = useState(false);
-  
-  const [selectedRecord, setSelectedRecord] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [requestResponse, setRequestResponse] = useState("");
-
-  // Mock data for available courses
-  const availableCourses = [
-    { value: 'CS101', label: 'CS101 - Introduction to Computer Science' },
-    { value: 'CS201', label: 'CS201 - Data Structures' },
-    { value: 'CS301', label: 'CS301 - Algorithms' },
-    { value: 'MATH101', label: 'MATH101 - Calculus I' },
-    { value: 'MATH201', label: 'MATH201 - Calculus II' },
-    { value: 'PHYS101', label: 'PHYS101 - Physics I' },
-    { value: 'ENG101', label: 'ENG101 - English Composition' }
-  ];
-
-  // Helper functions for file management
-  const getFileInfo = (file) => {
-    if (!file) return { extension: '', mimeType: '', category: 'unknown' };
+  const {
+    // State
+    profileData,
+    stats,
+    statCards,
+    loading,
+    error,
+    activeSection,
+    selectedYear,
+    showActions,
+    uploadedFiles,
+    fileUploadProgress,
     
-    const extension = file.name.split('.').pop().toLowerCase();
-    const mimeType = file.type;
+    // Modal states
+    editGradeModalOpen,
+    addGradeModalOpen,
+    editCourseModalOpen,
+    addCourseModalOpen,
+    editEnrollmentModalOpen,
+    addEnrollmentModalOpen,
+    editScheduleModalOpen,
+    addScheduleModalOpen,
+    editResourceModalOpen,
+    addResourceModalOpen,
+    viewRequestModalOpen,
+    responseRequestModalOpen,
     
-    let category = 'document';
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) {
-      category = 'image';
-    } else if (['pdf'].includes(extension)) {
-      category = 'pdf';
-    } else if (['doc', 'docx'].includes(extension)) {
-      category = 'word';
-    } else if (['ppt', 'pptx'].includes(extension)) {
-      category = 'presentation';
-    }
+    // Form state
+    selectedRecord,
+    formData,
+    requestResponse,
     
-    return { extension, mimeType, category };
-  };
+    // Setters
+    setActiveSection,
+    setSelectedYear,
+    setShowActions,
+    setEditGradeModalOpen,
+    setAddGradeModalOpen,
+    setEditCourseModalOpen,
+    setAddCourseModalOpen,
+    setEditEnrollmentModalOpen,
+    setAddEnrollmentModalOpen,
+    setEditScheduleModalOpen,
+    setAddScheduleModalOpen,
+    setEditResourceModalOpen,
+    setAddResourceModalOpen,
+    setViewRequestModalOpen,
+    setResponseRequestModalOpen,
+    setRequestResponse,
+    
+    // Handlers
+    handleEditGrade,
+    handleAddGrade,
+    handleGradeSubmit,
+    handleEditCourse,
+    handleAddCourse,
+    handleCourseSubmit,
+    handleEditEnrollment,
+    handleAddEnrollment,
+    handleEnrollmentSubmit,
+    handleEditSchedule,
+    handleAddSchedule,
+    handleScheduleSubmit,
+    handleEditResource,
+    handleAddResource,
+    handleResourceSubmit,
+    handleDownloadResource,
+    handlePreviewResource,
+    handleViewRequest,
+    handleResponseRequest,
+    handleApproveRequest,
+    handleRejectRequest,
+    handleSubmitResponse,
+    handleCardClick,
+    
+    // Derived data
+    entityType,
+    id,
+    mainEntity
+  } = useGenericProfile(initialSection);
 
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  // Helper function to convert numerical grade to letter grade
-  const getLetterGrade = (numericGrade) => {
-    if (numericGrade >= 97) return 'A+';
-    if (numericGrade >= 93) return 'A';
-    if (numericGrade >= 90) return 'A-';
-    if (numericGrade >= 87) return 'B+';
-    if (numericGrade >= 83) return 'B';
-    if (numericGrade >= 80) return 'B-';
-    if (numericGrade >= 77) return 'C+';
-    if (numericGrade >= 73) return 'C';
-    if (numericGrade >= 70) return 'C-';
-    if (numericGrade >= 67) return 'D+';
-    if (numericGrade >= 60) return 'D';
-    return 'F';
-  };
-
-  // Get student's enrolled courses for grade form
+  // Get enrolled courses for grade form
   const getStudentEnrolledCourses = () => {
     if (!profileData || !profileData.enrollments) return [];
     return profileData.enrollments.map(enrollment => ({
@@ -145,180 +133,6 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       label: `${enrollment.courseCode} - ${enrollment.courseName}`
     }));
   };
-
-  // Form field configurations
-  const gradeFormFields = [
-    { name: 'courseCode', label: 'Course', type: 'select', required: true, 
-      options: getStudentEnrolledCourses() },
-    { 
-      name: 'grade', 
-      label: 'Grade (0-100)', 
-      type: 'number', 
-      required: true,
-      min: 0,
-      max: 100,
-      step: 0.1,
-      placeholder: 'Enter grade between 0 and 100'
-    },
-    { name: 'credits', label: 'Credits', type: 'number', required: true, min: 1, max: 6 },
-    { name: 'semester', label: 'Semester', type: 'select', required: true, options: [
-      { value: 'Fall 2024', label: 'Fall 2024' },
-      { value: 'Spring 2025', label: 'Spring 2025' },
-      { value: 'Summer 2025', label: 'Summer 2025' },
-      { value: 'Fall 2025', label: 'Fall 2025' }
-    ]}
-  ];
-
-  const editGradeFormFields = [
-    { name: 'courseCode', label: 'Course Code', type: 'text', required: true, disabled: true },
-    { name: 'courseName', label: 'Course Name', type: 'text', required: true, disabled: true },
-    { 
-      name: 'grade', 
-      label: 'Grade (0-100)', 
-      type: 'number', 
-      required: true,
-      min: 0,
-      max: 100,
-      step: 0.1,
-      placeholder: 'Enter grade between 0 and 100'
-    },
-    { name: 'credits', label: 'Credits', type: 'number', required: true, min: 1, max: 6 },
-    { name: 'semester', label: 'Semester', type: 'text', required: true, disabled: true }
-  ];
-
-  const lecturerCourseFormFields = [
-    { name: 'courseCode', label: 'Course to Assign', type: 'select', required: true, 
-      options: availableCourses },
-    { name: 'semester', label: 'Semester', type: 'select', required: true, options: [
-      { value: 'Fall 2024', label: 'Fall 2024' },
-      { value: 'Spring 2025', label: 'Spring 2025' },
-      { value: 'Summer 2025', label: 'Summer 2025' },
-      { value: 'Fall 2025', label: 'Fall 2025' }
-    ]},
-    { name: 'classSize', label: 'Expected Class Size', type: 'number', required: true, min: 1, max: 200 },
-    { name: 'notes', label: 'Additional Notes', type: 'textarea', required: false }
-  ];
-
-  const courseFormFields = [
-    { name: 'courseCode', label: 'Course Code', type: 'text', required: true, 
-      pattern: '[A-Z]{2,4}[0-9]{3}', placeholder: 'e.g., CS101' },
-    { name: 'courseName', label: 'Course Name', type: 'text', required: true },
-    { name: 'credits', label: 'Credits', type: 'number', required: true, min: 1, max: 6 },
-    { name: 'semester', label: 'Semester', type: 'select', required: true, options: [
-      { value: 'Fall 2024', label: 'Fall 2024' },
-      { value: 'Spring 2025', label: 'Spring 2025' },
-      { value: 'Summer 2025', label: 'Summer 2025' },
-      { value: 'Fall 2025', label: 'Fall 2025' }
-    ]},
-    { name: 'department', label: 'Department', type: 'text', required: true },
-    { name: 'description', label: 'Description', type: 'textarea', required: false }
-  ];
-
-  const enrollmentFormFields = [
-    { name: 'courseCode', label: 'Course Code', type: 'select', required: true, 
-      options: availableCourses },
-    { name: 'semester', label: 'Semester', type: 'select', required: true, options: [
-      { value: 'Fall 2024', label: 'Fall 2024' },
-      { value: 'Spring 2025', label: 'Spring 2025' },
-      { value: 'Summer 2025', label: 'Summer 2025' },
-      { value: 'Fall 2025', label: 'Fall 2025' }
-    ]},
-    { name: 'instructor', label: 'Instructor', type: 'text', required: true },
-    { name: 'status', label: 'Status', type: 'select', required: true, options: [
-      { value: 'enrolled', label: 'Enrolled' },
-      { value: 'pending', label: 'Pending' },
-      { value: 'dropped', label: 'Dropped' }
-    ]}
-  ];
-
-  const scheduleFormFields = [
-    { name: 'day', label: 'Day', type: 'select', required: true, options: [
-      { value: 'Monday', label: 'Monday' },
-      { value: 'Tuesday', label: 'Tuesday' },
-      { value: 'Wednesday', label: 'Wednesday' },
-      { value: 'Thursday', label: 'Thursday' },
-      { value: 'Friday', label: 'Friday' },
-      { value: 'Saturday', label: 'Saturday' }
-    ]},
-    { name: 'startTime', label: 'Start Time', type: 'time', required: true },
-    { name: 'endTime', label: 'End Time', type: 'time', required: true },
-    { name: 'availability', label: 'Availability Status', type: 'select', required: true, options: [
-      { value: 'available', label: 'Available' },
-      { value: 'busy', label: 'Busy' },
-      { value: 'preferred', label: 'Preferred Hours' }
-    ]},
-    { name: 'notes', label: 'Notes', type: 'textarea', required: false }
-  ];
-
-  // Enhanced resource form fields with file upload
-  const resourceFormFields = [
-    { 
-      name: 'type', 
-      label: 'Document Type', 
-      type: 'select', 
-      required: true, 
-      options: [
-        { value: 'cv', label: 'CV/Resume' },
-        { value: 'education', label: 'Educational Background' },
-        { value: 'research', label: 'Research Work' },
-        { value: 'milestone', label: 'Career Milestone' },
-        { value: 'publication', label: 'Publication' },
-        { value: 'award', label: 'Award/Recognition' }
-      ]
-    },
-    { 
-      name: 'title', 
-      label: 'Document Title', 
-      type: 'text', 
-      required: true,
-      placeholder: 'Enter a descriptive title for your document'
-    },
-    { 
-      name: 'description', 
-      label: 'Description', 
-      type: 'textarea', 
-      required: true,
-      placeholder: 'Provide a detailed description of the document content',
-      rows: 4
-    },
-    { 
-      name: 'file', 
-      label: 'Upload File', 
-      type: 'file', 
-      required: !selectedRecord, // Only required for new resources
-      accept: '.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.ppt,.pptx',
-      helperText: 'Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG, PPT, PPTX (Max 10MB)'
-    },
-    { 
-      name: 'date', 
-      label: 'Document Date', 
-      type: 'date', 
-      required: false,
-      helperText: 'Date when this document was created or published'
-    },
-    { 
-      name: 'institution', 
-      label: 'Institution/Organization', 
-      type: 'text', 
-      required: false,
-      placeholder: 'Associated institution or organization'
-    },
-    { 
-      name: 'url', 
-      label: 'External URL/Link', 
-      type: 'url', 
-      required: false,
-      placeholder: 'https://example.com/document-link'
-    },
-    { 
-      name: 'tags', 
-      label: 'Tags', 
-      type: 'text', 
-      required: false,
-      placeholder: 'research, machine learning, AI (comma separated)',
-      helperText: 'Add relevant tags separated by commas'
-    }
-  ];
 
   // File Upload Progress Component
   const FileUploadProgress = ({ progress }) => {
@@ -366,794 +180,147 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     );
   };
 
-  // Load profile data
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const validEntityTypes = ['student', 'lecturer'];
-        if (!entityType || !validEntityTypes.includes(entityType)) {
-          throw new Error(`Invalid entity type: "${entityType}"`);
-        }
-
-        const sanitizedId = parseInt(id);
-        if (isNaN(sanitizedId) || sanitizedId <= 0) {
-          throw new Error(`Invalid ID: "${id}"`);
-        }
-
-        const config = profileConfigs[entityType];
-        if (!config || !config.dataSource?.length) {
-          throw new Error(`No data available for ${entityType}`);
-        }
-
-        const data = config.getProfileData(sanitizedId);
-        const mainEntity = entityType === "student" ? data.student : data.lecturer;
-        if (!mainEntity) {
-          throw new Error(`${entityType} with ID ${sanitizedId} not found`);
-        }
-
-        const calculatedStats = config.getStats(data);
-        const cards = config.getStatCards(calculatedStats);
-
-        setProfileData(data);
-        setStats(calculatedStats);
-        setStatCards(cards);
-
-      } catch (err) {
-        console.error('Profile loading error:', err.message);
-        setError(err.message);
-        setTimeout(() => {
-          const dashboardRoute = entityType === 'student' ? '/students' : '/lecturers';
-          navigate(dashboardRoute, { replace: true });
-        }, 5000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (entityType && id) {
-      loadProfile();
-    } else {
-      setError('Missing required parameters');
-      setLoading(false);
-    }
-  }, [entityType, id, navigate]);
-
-  // Grade handlers
-  const handleEditGrade = (row) => {
-    setSelectedRecord(row);
-    setFormData({
-      courseCode: row.courseCode,
-      courseName: row.courseName,
-      grade: row.grade,
-      credits: row.credits,
-      semester: row.semester
-    });
-    setEditGradeModalOpen(true);
+  // Summary Cards Component
+  const SummaryCards = ({ data, colorScheme }) => {
+    return (
+      <div className="summary-cards-container" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '20px',
+        marginBottom: '24px'
+      }}>
+        {data.map((item, index) => (
+          <div 
+            key={index}
+            className="summary-card"
+            style={{
+              background: colorScheme[index] || '#3b82f6',
+              borderRadius: '12px',
+              padding: '20px',
+              color: 'white',
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s ease'
+            }}
+          >
+            <div style={{ fontSize: '32px', fontWeight: 'bold', marginBottom: '8px' }}>
+              {item.value}
+            </div>
+            <div style={{ fontSize: '14px', opacity: 0.9 }}>
+              {item.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
-  const handleAddGrade = () => {
-    setSelectedRecord(null);
-    setFormData({});
-    setAddGradeModalOpen(true);
-  };
-
-  const handleGradeSubmit = (formData) => {
-    if (formData.grade < 0 || formData.grade > 100) {
-      alert('Grade must be between 0 and 100');
-      return;
-    }
-
-    if (selectedRecord) {
-      const updatedGrades = profileData.grades.map(grade => 
-        grade.id === selectedRecord.id ? { 
-          ...grade, 
-          ...formData,
-          letterGrade: getLetterGrade(formData.grade)
-        } : grade
-      );
-      setProfileData({ ...profileData, grades: updatedGrades });
-      setEditGradeModalOpen(false);
-    } else {
-      const selectedCourse = getStudentEnrolledCourses().find(course => course.value === formData.courseCode);
-      const courseName = selectedCourse ? selectedCourse.label.split(' - ')[1] : '';
-      
-      const newId = Math.max(...(profileData.grades?.map(g => g.id) || [0])) + 1;
-      const newGrade = { 
-        id: newId, 
-        courseCode: formData.courseCode,
-        courseName: courseName,
-        grade: formData.grade,
-        letterGrade: getLetterGrade(formData.grade),
-        credits: formData.credits,
-        semester: formData.semester
-      };
-      setProfileData({ 
-        ...profileData, 
-        grades: [...(profileData.grades || []), newGrade] 
-      });
-      setAddGradeModalOpen(false);
-    }
-    setSelectedRecord(null);
-    setFormData({});
-  };
-
-  // Course handlers
-  const handleEditCourse = (row) => {
-    setSelectedRecord(row);
-    setFormData({
-      courseCode: row.courseCode,
-      courseName: row.courseName,
-      credits: row.credits,
-      semester: row.semester,
-      department: row.department || '',
-      description: row.description || '',
-      classSize: row.classSize || '',
-      notes: row.notes || ''
-    });
-    setEditCourseModalOpen(true);
-  };
-
-  const handleAddCourse = () => {
-    setSelectedRecord(null);
-    setFormData({});
-    setAddCourseModalOpen(true);
-  };
-
-  const handleCourseSubmit = (formData) => {
-    if (entityType === 'lecturer') {
-      if (selectedRecord) {
-        const updatedCourses = profileData.courses.map(course => 
-          course.id === selectedRecord.id ? { ...course, ...formData } : course
-        );
-        setProfileData({ ...profileData, courses: updatedCourses });
-        setEditCourseModalOpen(false);
-      } else {
-        const selectedCourse = availableCourses.find(course => course.value === formData.courseCode);
-        const courseName = selectedCourse ? selectedCourse.label.split(' - ')[1] : '';
-        
-        const newId = Math.max(...(profileData.courses?.map(c => c.id) || [0])) + 1;
-        const newCourseAssignment = { 
-          id: newId, 
-          courseCode: formData.courseCode,
-          courseName: courseName,
-          semester: formData.semester,
-          classSize: formData.classSize,
-          notes: formData.notes || '',
-          status: 'active'
-        };
-        setProfileData({ 
-          ...profileData, 
-          courses: [...(profileData.courses || []), newCourseAssignment] 
-        });
-        setAddCourseModalOpen(false);
-      }
-    } else {
-      if (selectedRecord) {
-        const updatedCourses = profileData.courses.map(course => 
-          course.id === selectedRecord.id ? { ...course, ...formData } : course
-        );
-        setProfileData({ ...profileData, courses: updatedCourses });
-        setEditCourseModalOpen(false);
-      } else {
-        const newId = Math.max(...(profileData.courses?.map(c => c.id) || [0])) + 1;
-        const newCourse = { id: newId, ...formData };
-        setProfileData({ 
-          ...profileData, 
-          courses: [...(profileData.courses || []), newCourse] 
-        });
-        setAddCourseModalOpen(false);
-      }
-    }
-    setSelectedRecord(null);
-    setFormData({});
-  };
-
-  // Enrollment handlers
-  const handleEditEnrollment = (row) => {
-    setSelectedRecord(row);
-    setFormData({
-      courseCode: row.courseCode,
-      courseName: row.courseName,
-      credits: row.credits,
-      semester: row.semester,
-      instructor: row.instructor,
-      status: row.status || 'enrolled'
-    });
-    setEditEnrollmentModalOpen(true);
-  };
-
-  const handleAddEnrollment = () => {
-    setSelectedRecord(null);
-    setFormData({});
-    setAddEnrollmentModalOpen(true);
-  };
-
-  const handleEnrollmentSubmit = (formData) => {
-    if (selectedRecord) {
-      const updatedEnrollments = profileData.enrollments.map(enrollment => 
-        enrollment.id === selectedRecord.id ? { ...enrollment, ...formData } : enrollment
-      );
-      setProfileData({ ...profileData, enrollments: updatedEnrollments });
-      setEditEnrollmentModalOpen(false);
-    } else {
-      const selectedCourse = availableCourses.find(course => course.value === formData.courseCode);
-      const courseName = selectedCourse ? selectedCourse.label.split(' - ')[1] : formData.courseCode;
-      
-      const newId = Math.max(...(profileData.enrollments?.map(e => e.id) || [0])) + 1;
-      const newEnrollment = { 
-        id: newId, 
-        ...formData,
-        courseName: courseName,
-        credits: 3
-      };
-      setProfileData({ 
-        ...profileData, 
-        enrollments: [...(profileData.enrollments || []), newEnrollment] 
-      });
-      setAddEnrollmentModalOpen(false);
-    }
-    setSelectedRecord(null);
-    setFormData({});
-  };
-
-  // Schedule handlers
-  const handleEditSchedule = (row) => {
-    setSelectedRecord(row);
-    setFormData({
-      day: row.day,
-      startTime: row.startTime,
-      endTime: row.endTime,
-      availability: row.availability,
-      notes: row.notes || '',
-      courseCode: row.courseCode || '',
-      room: row.room || '',
-      students: row.students || ''
-    });
-    setEditScheduleModalOpen(true);
-  };
-
-  const handleAddSchedule = () => {
-    setSelectedRecord(null);
-    setFormData({});
-    setAddScheduleModalOpen(true);
-  };
-
-  const handleScheduleSubmit = (formData) => {
-    if (formData.startTime >= formData.endTime) {
-      alert('End time must be after start time');
-      return;
-    }
-
-    if (selectedRecord) {
-      if (entityType === 'lecturer') {
-        console.log("Updating lecturer schedule:", formData);
-      } else {
-        const updatedSchedule = profileData.schedule?.map(item => 
-          item.id === selectedRecord.id ? { ...item, ...formData } : item
-        ) || [];
-        setProfileData({ ...profileData, schedule: updatedSchedule });
-      }
-      setEditScheduleModalOpen(false);
-    } else {
-      const newId = Math.max(...(profileData.schedule?.map(s => s.id) || [0])) + 1;
-      const newScheduleEntry = { id: newId, ...formData };
-      setProfileData({ 
-        ...profileData, 
-        schedule: [...(profileData.schedule || []), newScheduleEntry] 
-      });
-      setAddScheduleModalOpen(false);
-    }
-    setSelectedRecord(null);
-    setFormData({});
-  };
-
-  // Enhanced Resource handlers with file upload
-  const handleEditResource = (row) => {
-    setSelectedRecord(row);
-    setFormData({
-      type: row.type,
-      title: row.title,
-      description: row.description,
-      date: row.date || '',
-      institution: row.institution || '',
-      url: row.url || '',
-      tags: row.tags || ''
-    });
-    setEditResourceModalOpen(true);
-  };
-
-  const handleAddResource = () => {
-    setSelectedRecord(null);
-    setFormData({});
-    setAddResourceModalOpen(true);
-  };
-
-  const handleResourceSubmit = async (formData) => {
-    try {
-      // Validate file upload for new resources
-      if (!selectedRecord && !formData.file) {
-        alert('Please select a file to upload');
-        return;
-      }
-
-      // Validate file size (10MB limit)
-      if (formData.file && formData.file.size > 10 * 1024 * 1024) {
-        alert('File size must be less than 10MB');
-        return;
-      }
-
-      setFileUploadProgress({ status: 'uploading', progress: 0 });
-
-      if (selectedRecord) {
-        // Edit existing resource
-        const updatedResources = profileData.resources?.map(resource => 
-          resource.id === selectedRecord.id ? { 
-            ...resource, 
-            ...formData,
-            // Keep existing file info if no new file uploaded
-            ...(formData.file ? {
-              fileName: formData.file.name,
-              fileSize: formatFileSize(formData.file.size),
-              ...getFileInfo(formData.file)
-            } : {})
-          } : resource
-        ) || [];
-        
-        // Store file object if new file uploaded
-        if (formData.file) {
-          setUploadedFiles(prev => new Map(prev.set(selectedRecord.id, formData.file)));
-        }
-        
-        setProfileData({ ...profileData, resources: updatedResources });
-        setEditResourceModalOpen(false);
-      } else {
-        // Add new resource
-        const newId = Math.max(...(profileData.resources?.map(r => r.id) || [0])) + 1;
-        const fileInfo = getFileInfo(formData.file);
-        
-        const newResource = { 
-          id: newId, 
-          ...formData,
-          fileName: formData.file.name,
-          fileSize: formatFileSize(formData.file.size),
-          uploadDate: new Date().toISOString().split('T')[0],
-          downloads: 0,
-          rating: 0,
-          size: formatFileSize(formData.file.size),
-          ...fileInfo
-        };
-        
-        // Store file object
-        setUploadedFiles(prev => new Map(prev.set(newId, formData.file)));
-        
-        setProfileData({ 
-          ...profileData, 
-          resources: [...(profileData.resources || []), newResource] 
-        });
-        setAddResourceModalOpen(false);
-      }
-
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setFileUploadProgress(prev => {
-          if (prev.progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setFileUploadProgress({}), 1000);
-            return { status: 'completed', progress: 100 };
-          }
-          return { ...prev, progress: prev.progress + 10 };
-        });
-      }, 100);
-
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Error uploading file. Please try again.');
-      setFileUploadProgress({ status: 'error', progress: 0 });
-    } finally {
-      setSelectedRecord(null);
-      setFormData({});
-    }
-  };
-
-  const handleDownloadResource = (row) => {
-    try {
-      console.log("Downloading resource:", row.title);
-      
-      // Update download count first
-      const updatedResources = profileData.resources?.map(resource => 
-        resource.id === row.id ? { ...resource, downloads: resource.downloads + 1 } : resource
-      ) || [];
-      setProfileData({ ...profileData, resources: updatedResources });
-      
-      // Check if we have the actual file
-      const fileObject = uploadedFiles.get(row.id);
-      
-      if (fileObject) {
-        // Download actual uploaded file
-        const url = URL.createObjectURL(fileObject);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = row.fileName || row.title;
-        link.style.display = 'none';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // Clean up the URL object
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-        
-        // Show success message
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #10b981;
-          color: white;
-          padding: 12px 20px;
-          border-radius: 8px;
-          z-index: 10000;
-          font-weight: 500;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        toast.textContent = `Downloaded: ${row.title}`;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => document.body.removeChild(toast), 3000);
-      } else {
-        // Fallback for demo/existing files
-        alert(`Downloading: ${row.title}\n\nIn a real application, this would download the file from the server.`);
-      }
-    } catch (error) {
-      console.error('Download error:', error);
-      alert('Error downloading file. Please try again.');
-    }
-  };
-
-  const handlePreviewResource = (row) => {
-    try {
-      console.log("Previewing resource:", row.title);
-      
-      const fileObject = uploadedFiles.get(row.id);
-      
-      if (fileObject) {
-        // Preview actual uploaded file
-        const fileInfo = getFileInfo(fileObject);
-        const url = URL.createObjectURL(fileObject);
-        
-        if (fileInfo.category === 'image') {
-          // Open image in new tab
-          const newWindow = window.open('', '_blank');
-          newWindow.document.write(`
-            <html>
-              <head>
-                <title>${row.title} - Preview</title>
-                <style>
-                  body { 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: #f5f5f5; 
-                    display: flex; 
-                    justify-content: center; 
-                    align-items: center; 
-                    min-height: 100vh;
-                    font-family: Arial, sans-serif;
-                  }
-                  .container {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    text-align: center;
-                  }
-                  img { 
-                    max-width: 100%; 
-                    max-height: 80vh; 
-                    border-radius: 4px;
-                  }
-                  h2 { margin-top: 0; color: #333; }
-                  .info { color: #666; margin-bottom: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <h2>${row.title}</h2>
-                  <div class="info">${row.description || 'No description available'}</div>
-                  <img src="${url}" alt="${row.title}" />
-                </div>
-              </body>
-            </html>
-          `);
-        } else if (fileInfo.category === 'pdf' || fileInfo.mimeType === 'application/pdf') {
-          // Open PDF in new tab
-          window.open(url, '_blank');
-        } else {
-          // For other file types, show preview modal
-          const previewWindow = window.open('', '_blank', 'width=800,height=600');
-          previewWindow.document.write(`
-            <html>
-              <head>
-                <title>${row.title} - Preview</title>
-                <style>
-                  body { 
-                    font-family: Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 20px; 
-                    background: #f5f5f5;
-                  }
-                  .header {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin-bottom: 20px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                  }
-                  .content {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    text-align: center;
-                  }
-                  .download-btn {
-                    background: #3b82f6;
-                    color: white;
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    margin-top: 20px;
-                  }
-                  .download-btn:hover { background: #2563eb; }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <h1>${row.title}</h1>
-                  <p><strong>Type:</strong> ${row.type}</p>
-                  <p><strong>Size:</strong> ${row.fileSize || row.size}</p>
-                  <p><strong>Institution:</strong> ${row.institution || 'N/A'}</p>
-                </div>
-                <div class="content">
-                  <p>${row.description || 'No description available'}</p>
-                  <p><em>This file type cannot be previewed in the browser.</em></p>
-                  <button class="download-btn" onclick="alert('Download functionality would be implemented here')">
-                    Download File
-                  </button>
-                </div>
-              </body>
-            </html>
-          `);
-        }
-        
-        // Clean up URL after some time
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      } else {
-        // Fallback preview for demo/existing files
-        const previewWindow = window.open('', '_blank', 'width=800,height=600');
-        previewWindow.document.write(`
-          <html>
-            <head>
-              <title>${row.title} - Preview</title>
-              <style>
-                body { 
-                  font-family: Arial, sans-serif; 
-                  margin: 0; 
-                  padding: 20px; 
-                  background: #f5f5f5;
-                }
-                .container {
-                  background: white;
-                  padding: 30px;
-                  border-radius: 8px;
-                  max-width: 600px;
-                  margin: 0 auto;
-                  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 { color: #333; margin-bottom: 10px; }
-                .meta { color: #666; margin-bottom: 20px; }
-                .description { line-height: 1.6; color: #444; }
-                .tags { 
-                  margin-top: 20px; 
-                  padding-top: 20px; 
-                  border-top: 1px solid #eee; 
-                }
-                .tag {
-                  display: inline-block;
-                  background: #e5e7eb;
-                  padding: 4px 8px;
-                  border-radius: 4px;
-                  margin-right: 8px;
-                  font-size: 12px;
-                }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h1>${row.title}</h1>
-                <div class="meta">
-                  <strong>Type:</strong> ${row.type} | 
-                  <strong>Institution:</strong> ${row.institution || 'N/A'} | 
-                  <strong>Date:</strong> ${row.date || 'N/A'}
-                </div>
-                <div class="description">
-                  <h3>Description:</h3>
-                  <p>${row.description || 'No description available'}</p>
-                </div>
-                ${row.tags ? `
-                  <div class="tags">
-                    <strong>Tags:</strong><br>
-                    ${row.tags.split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
-                  </div>
-                ` : ''}
-              </div>
-            </body>
-          </html>
-        `);
-      }
-    } catch (error) {
-      console.error('Preview error:', error);
-      alert('Error previewing file. Please try again.');
-    }
-  };
-
-  // Request handlers
-  const handleViewRequest = (row) => {
-    setSelectedRecord(row);
-    setViewRequestModalOpen(true);
-  };
-
-  const handleResponseRequest = (row) => {
-    setSelectedRecord(row);
-    setRequestResponse("");
-    setResponseRequestModalOpen(true);
-  };
-
-  const handleApproveRequest = (row) => {
-    const updatedRequests = profileData.requests?.map(request => 
-      request.id === row.id ? { ...request, status: 'approved' } : request
-    ) || [];
-    setProfileData({ ...profileData, requests: updatedRequests });
-  };
-
-  const handleRejectRequest = (row) => {
-    const updatedRequests = profileData.requests?.map(request => 
-      request.id === row.id ? { ...request, status: 'rejected' } : request
-    ) || [];
-    setProfileData({ ...profileData, requests: updatedRequests });
-  };
-
-  const handleSubmitResponse = () => {
-    if (!requestResponse.trim()) {
-      alert('Please enter a response');
-      return;
-    }
-
-    const updatedRequests = profileData.requests?.map(request => 
-      request.id === selectedRecord.id ? { 
-        ...request, 
-        status: 'responded',
-        response: requestResponse,
-        responseDate: new Date().toISOString().split('T')[0]
-      } : request
-    ) || [];
-    
-    setProfileData({ ...profileData, requests: updatedRequests });
-    setResponseRequestModalOpen(false);
-    setRequestResponse("");
-    setSelectedRecord(null);
-  };
-
-  // Card click handler
-  const handleCardClick = (card) => {
-    const sectionMap = {
-      "completed-courses": "grades",
-      "active-courses": "courses",
-      "pending-requests": "requests",
-      "current-enrollments": "enrollments",
-      "avg-rating": "resources",
-      "total-students": "resources",
-      "weekly-hours": "schedule",
-      "cv-status": "resources",
-      "education-records": "resources",
-      "research-projects": "resources",
-      "career-milestones": "resources"
-    };
-    
-    if (sectionMap[card.id]) {
-      setActiveSection(sectionMap[card.id]);
-    }
-  };
-
-  // Generate stat cards functions
-  const generateWorkingHoursCards = () => {
-    return [
+  // Resources Stats Component
+  const ResourcesStats = ({ data }) => {
+    const stats = [
       {
-        id: "weekly-hours",
-        title: "Weekly Hours",
-        value: "40",
-        icon: <Clock />,
-        trend: { value: "5%", isPositive: true },
-        description: "Total working hours per week",
-        backgroundColor: "#6366f1"
+        icon: <FileText className="stat-icon" />,
+        number: data?.length || 0,
+        label: "Total Resources"
       },
       {
-        id: "available-days",
-        title: "Available Days",
-        value: "5",
-        icon: <Calendar />,
-        trend: { value: "2", isPositive: true },
-        description: "Days available for teaching",
-        backgroundColor: "#ec4899"
+        icon: <Download className="stat-icon" />,
+        number: "127",
+        label: "Downloads"
       },
       {
-        id: "office-hours",
-        title: "Office Hours",
-        value: "12",
-        icon: <Users />,
-        trend: { value: "3", isPositive: true },
-        description: "Weekly office hours",
-        backgroundColor: "#06b6d4"
+        icon: <Users className="stat-icon" />,
+        number: "89",
+        label: "Active Users"
       },
       {
-        id: "preferred-slots",
-        title: "Preferred Slots",
-        value: "8",
-        icon: <Star />,
-        trend: { value: "2", isPositive: true },
-        description: "Preferred teaching time slots",
-        backgroundColor: "#10b981"
+        icon: <TrendingUp className="stat-icon" />,
+        number: "4.8",
+        label: "Avg Rating"
       }
     ];
+
+    return (
+      <div className="resources-stats" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '20px',
+        marginBottom: '24px'
+      }}>
+        {stats.map((stat, index) => (
+          <div key={index} className="stat-card" style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            border: '1px solid #e5e7eb'
+          }}>
+            <div style={{ 
+              color: '#3b82f6', 
+              background: '#eff6ff', 
+              borderRadius: '8px', 
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {stat.icon}
+            </div>
+            <div className="stat-content">
+              <span style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold', 
+                color: '#1f2937',
+                display: 'block'
+              }}>
+                {stat.number}
+              </span>
+              <span style={{ 
+                fontSize: '14px', 
+                color: '#6b7280'
+              }}>
+                {stat.label}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
-  const generateProfileCards = () => {
-    return [
-      {
-        id: "cv-status",
-        title: "CV Status",
-        value: "Updated",
-        icon: <FileText />,
-        trend: { value: "Jan 2024", isPositive: true },
-        description: "Last CV update",
-        backgroundColor: "#f59e0b"
-      },
-      {
-        id: "education-records",
-        title: "Education",
-        value: "3",
-        icon: <GraduationCap />,
-        trend: { value: "Degrees", isPositive: true },
-        description: "Educational qualifications",
-        backgroundColor: "#8b5cf6"
-      },
-      {
-        id: "research-projects",
-        title: "Research",
-        value: "5",
-        icon: <BookOpen />,
-        trend: { value: "Active", isPositive: true },
-        description: "Research projects",
-        backgroundColor: "#3b82f6"
-      },
-      {
-        id: "career-milestones",
-        title: "Milestones",
-        value: "12",
-        icon: <Award />,
-        trend: { value: "Achievements", isPositive: true },
-        description: "Career achievements",
-        backgroundColor: "#ef4444"
-      }
-    ];
-  };
+  // Section Header Component
+  const SectionHeader = ({ icon, title, description }) => (
+    <div className="section-header" style={{
+      marginBottom: '24px',
+      paddingBottom: '16px',
+      borderBottom: '1px solid #e5e7eb'
+    }}>
+      <h3 style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        fontSize: '20px',
+        fontWeight: '600',
+        color: '#1f2937',
+        margin: '0 0 8px 0'
+      }}>
+        <span style={{ color: '#3b82f6' }}>{icon}</span>
+        {title}
+      </h3>
+      <p style={{
+        color: '#6b7280',
+        margin: 0,
+        fontSize: '14px'
+      }}>
+        {description}
+      </p>
+    </div>
+  );
 
-  // Helper function to create a TableSection with DynamicTable
+  // Table Section Wrapper Component
   const TableSection = ({ 
     title, 
     description, 
@@ -1161,12 +328,11 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
     showAddButton = true, 
     onAddClick, 
     actionButtons = [],
-    customColumns = [],
-    entityType: tableEntityType = "weekly-schedule",
+    entityType = "weekly-schedule",
     icon = "default",
     columnConfig = {},
     hiddenColumns = [],
-    children 
+    children
   }) => {
     return (
       <div className="table-section">
@@ -1174,10 +340,10 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         <DynamicTable
           data={data}
           title={title}
-          entityType={tableEntityType}
+          entityType={entityType}
           icon={icon}
-          searchPlaceholder={`Search ${tableEntityType}...`}
-          addButtonText={`Add ${tableEntityType.slice(0, -1)}`}
+          searchPlaceholder={`Search ${entityType}...`}
+          addButtonText={`Add ${entityType.slice(0, -1)}`}
           showAddButton={showAddButton}
           onAddClick={onAddClick}
           actionButtons={actionButtons}
@@ -1204,21 +370,26 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             icon="award"
             showAddButton={true}
             onAddClick={handleAddGrade}
-            columnConfig={{
-              courseCode: { displayName: "Course Code", sortable: true },
-              courseName: { displayName: "Course Name", sortable: true },
-              grade: { displayName: "Grade (%)", sortable: true, type: "number" },
-              letterGrade: { displayName: "Letter Grade", sortable: true, type: "status" },
-              credits: { displayName: "Credits", sortable: true, type: "number" },
-              semester: { displayName: "Semester", sortable: true }
-            }}
-            hiddenColumns={["id"]}
+            columnConfig={getColumnConfigs('academic-records')}
+            hiddenColumns={getHiddenColumns('academic-records')}
             actionButtons={[
               (row) => (
                 <button 
                   onClick={() => handleEditGrade(row)} 
                   className="action-btn edit-btn"
                   title="Edit Grade"
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
                 >
                   <Edit size={14} />
                   Edit
@@ -1238,23 +409,26 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             icon="courses"
             showAddButton={true}
             onAddClick={handleAddCourse}
-            columnConfig={{
-              courseCode: { displayName: "Course Code", sortable: true },
-              courseName: { displayName: "Course Name", sortable: true },
-              credits: { displayName: "Credits", sortable: true, type: "number" },
-              semester: { displayName: "Semester", sortable: true },
-              department: { displayName: "Department", sortable: true },
-              classSize: { displayName: "Class Size", sortable: true, type: "number" },
-              status: { displayName: "Status", sortable: true, type: "status" }
-            }}
-            hiddenColumns={["id", "notes"]}
+            columnConfig={getColumnConfigs('courses')}
+            hiddenColumns={getHiddenColumns('courses')}
             actionButtons={[
               (row) => (
                 <button 
-                  style={{backgroundColor: '#3b82f6', color: '#fff', borderRadius: '5px'}}
                   onClick={() => handleEditCourse(row)} 
                   className="action-btn edit-btn"
                   title="Edit Course"
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
                 >
                   <Edit size={14} />
                   Edit
@@ -1273,24 +447,27 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             entityType="student-requests"
             icon="mail"
             showAddButton={false}
-            columnConfig={{
-              student: { displayName: "Student", sortable: true },
-              sender: { displayName: "From", sortable: true },
-              type: { displayName: "Type", sortable: true },
-              requestType: { displayName: "Request Type", sortable: true },
-              subject: { displayName: "Subject", sortable: true },
-              date: { displayName: "Date", sortable: true, type: "date" },
-              time: { displayName: "Time", sortable: true },
-              priority: { displayName: "Priority", sortable: true, type: "status" },
-              status: { displayName: "Status", sortable: true, type: "status" }
-            }}
-            hiddenColumns={["id", "description", "message", "response", "responseDate"]}
+            columnConfig={getColumnConfigs('student-requests')}
+            hiddenColumns={getHiddenColumns('student-requests')}
             actionButtons={[
               (row) => (
                 <button 
                   onClick={() => handleViewRequest(row)} 
                   className="action-btn view-btn"
                   title="View Request"
+                  style={{
+                    background: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginRight: '4px'
+                  }}
                 >
                   <Eye size={14} />
                   View
@@ -1301,6 +478,19 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                   onClick={() => handleResponseRequest(row)} 
                   className="action-btn response-btn"
                   title="Respond"
+                  style={{
+                    background: '#f59e0b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginRight: '4px'
+                  }}
                 >
                   <FileText size={14} />
                   Respond
@@ -1312,6 +502,19 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                   className="action-btn approve-btn"
                   title="Approve"
                   disabled={row.status === 'approved'}
+                  style={{
+                    background: row.status === 'approved' ? '#d1d5db' : '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: row.status === 'approved' ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    marginRight: '4px'
+                  }}
                 >
                   <Check size={14} />
                   Approve
@@ -1323,6 +526,18 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                   className="action-btn reject-btn"
                   title="Reject"
                   disabled={row.status === 'rejected'}
+                  style={{
+                    background: row.status === 'rejected' ? '#d1d5db' : '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: row.status === 'rejected' ? 'not-allowed' : 'pointer',
+                    fontSize: '12px'
+                  }}
                 >
                   <X size={14} />
                   Reject
@@ -1342,21 +557,26 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             icon="users"
             showAddButton={true}
             onAddClick={handleAddEnrollment}
-            columnConfig={{
-              courseCode: { displayName: "Course Code", sortable: true },
-              courseName: { displayName: "Course Name", sortable: true },
-              credits: { displayName: "Credits", sortable: true, type: "number" },
-              semester: { displayName: "Semester", sortable: true },
-              instructor: { displayName: "Instructor", sortable: true },
-              status: { displayName: "Status", sortable: true, type: "status" }
-            }}
-            hiddenColumns={["id"]}
+            columnConfig={getColumnConfigs('enrollments')}
+            hiddenColumns={getHiddenColumns('enrollments')}
             actionButtons={[
               (row) => (
                 <button 
                   onClick={() => handleEditEnrollment(row)} 
                   className="action-btn edit-btn"
                   title="Edit Enrollment"
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
                 >
                   <Edit size={14} />
                   Edit
@@ -1414,13 +634,11 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
           
           return (
             <div className="working-hours-section">
-              <div className="section-header">
-                <h3>
-                  <Clock className="section-icon" />
-                  Working Hours & Availability
-                </h3>
-                <p>Manage your weekly schedule and availability for teaching and office hours</p>
-              </div>
+              <SectionHeader
+                icon={<Clock />}
+                title="Working Hours & Availability"
+                description="Manage your weekly schedule and availability for teaching and office hours"
+              />
 
               <StatCardsContainer
                 cards={workingHoursCards}
@@ -1437,20 +655,26 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 icon="calendar"
                 showAddButton={true}
                 onAddClick={handleAddSchedule}
-                columnConfig={{
-                  day: { displayName: "Day", sortable: true },
-                  startTime: { displayName: "Start Time", sortable: true },
-                  endTime: { displayName: "End Time", sortable: true },
-                  availability: { displayName: "Status", sortable: true, type: "status" },
-                  notes: { displayName: "Notes", sortable: false }
-                }}
-                hiddenColumns={["id"]}
+                columnConfig={getColumnConfigs('weekly-schedule')}
+                hiddenColumns={getHiddenColumns('weekly-schedule')}
                 actionButtons={[
                   (row) => (
                     <button 
                       onClick={() => handleEditSchedule(row)} 
                       className="action-btn edit-btn"
                       title="Edit Hours"
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
                     >
                       <Edit size={14} />
                       Edit
@@ -1461,7 +685,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             </div>
           );
         } else {
-          const scheduleData = generateScheduleData(profileData);
+          const scheduleData = processScheduleData(profileData.enrollments);
           const summaryData = [
             { value: scheduleData.summary.weeklyHours, label: 'Weekly Hours' },
             { value: scheduleData.summary.totalStudents, label: 'Total Students' },
@@ -1484,20 +708,26 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
               icon="calendar"
               showAddButton={true}
               onAddClick={handleAddSchedule}
-              columnConfig={{
-                courseCode: { displayName: "Course", sortable: true },
-                day: { displayName: "Day", sortable: true },
-                time: { displayName: "Time", sortable: true },
-                room: { displayName: "Room", sortable: true },
-                students: { displayName: "Students", sortable: true, type: "number" }
-              }}
-              hiddenColumns={["id"]}
+              columnConfig={getColumnConfigs('schedules')}
+              hiddenColumns={getHiddenColumns('schedules')}
               actionButtons={[
                 (row) => (
                   <button 
                     onClick={() => handleEditSchedule(row)} 
                     className="action-btn edit-btn"
                     title="Edit Schedule"
+                    style={{
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'pointer',
+                      fontSize: '12px'
+                    }}
                   >
                     <Edit size={14} />
                     Edit
@@ -1513,69 +743,14 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       case "resources":
         if (entityType === 'lecturer') {
           const profileCards = generateProfileCards();
-          const lecturerResources = [
-            {
-              id: 1,
-              type: 'cv',
-              title: 'Academic CV',
-              description: 'Complete academic curriculum vitae with research experience and publications',
-              date: '2024-01-15',
-              institution: 'University',
-              fileName: 'Academic_CV_2024.pdf',
-              fileSize: '2.3 MB',
-              tags: 'cv, academic, professional',
-              uploadDate: '2024-01-15',
-              downloads: 45,
-              rating: 4.8,
-              size: '2.3 MB',
-              extension: 'pdf',
-              category: 'pdf'
-            },
-            {
-              id: 2,
-              type: 'research',
-              title: 'Machine Learning Research',
-              description: 'Current research on deep learning applications in computer vision and natural language processing',
-              date: '2024-02-01',
-              institution: 'Research Lab',
-              fileName: 'ML_Research_Paper_2024.pdf',
-              fileSize: '5.1 MB',
-              tags: 'research, machine learning, AI',
-              uploadDate: '2024-02-01',
-              downloads: 78,
-              rating: 4.9,
-              size: '5.1 MB',
-              extension: 'pdf',
-              category: 'pdf'
-            },
-            {
-              id: 3,
-              type: 'publication',
-              title: 'Neural Networks Optimization Paper',
-              description: 'Published paper on neural network optimization techniques for improved training efficiency',
-              date: '2023-12-15',
-              institution: 'IEEE Conference',
-              fileName: 'Neural_Networks_IEEE_2023.pdf',
-              fileSize: '3.8 MB',
-              tags: 'publication, neural networks, optimization',
-              uploadDate: '2023-12-15',
-              downloads: 156,
-              rating: 4.7,
-              size: '3.8 MB',
-              extension: 'pdf',
-              category: 'pdf'
-            }
-          ];
           
           return (
             <div className="lecturer-profile-section">
-              <div className="section-header">
-                <h3>
-                  <User className="section-icon" />
-                  Professional Profile
-                </h3>
-                <p>Manage your academic profile, CV, research, and career milestones</p>
-              </div>
+              <SectionHeader
+                icon={<User />}
+                title="Professional Profile"
+                description="Manage your academic profile, CV, research, and career milestones"
+              />
 
               <StatCardsContainer
                 cards={profileCards}
@@ -1587,27 +762,32 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
               <TableSection 
                 title="Professional Documents" 
                 description="Manage CV, research papers, and academic documents"
-                data={lecturerResources}
+                data={profileData.resources || []}
                 entityType="documents"
                 icon="documents"
                 showAddButton={true}
                 onAddClick={handleAddResource}
-                columnConfig={{
-                  title: { displayName: "Document Title", sortable: true },
-                  type: { displayName: "Type", sortable: true, type: "status" },
-                  institution: { displayName: "Institution", sortable: true },
-                  date: { displayName: "Date", sortable: true, type: "date" },
-                  downloads: { displayName: "Downloads", sortable: true, type: "number" },
-                  rating: { displayName: "Rating", sortable: true, type: "number" },
-                  size: { displayName: "Size", sortable: true }
-                }}
-                hiddenColumns={["id", "description", "url", "tags", "uploadDate"]}
+                columnConfig={getColumnConfigs('documents')}
+                hiddenColumns={getHiddenColumns('documents')}
                 actionButtons={[
                   (row) => (
                     <button 
                       onClick={() => handleDownloadResource(row)} 
                       className="action-btn download-btn"
                       title="Download"
+                      style={{
+                        background: '#8b5cf6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        marginRight: '4px'
+                      }}
                     >
                       <Download size={14} />
                       Download
@@ -1618,6 +798,19 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                       onClick={() => handlePreviewResource(row)} 
                       className="action-btn view-btn"
                       title="Preview"
+                      style={{
+                        background: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        marginRight: '4px'
+                      }}
                     >
                       <Eye size={14} />
                       Preview
@@ -1628,6 +821,18 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                       onClick={() => handleEditResource(row)} 
                       className="action-btn edit-btn"
                       title="Edit"
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
                     >
                       <Edit size={14} />
                       Edit
@@ -1638,47 +843,16 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
             </div>
           );
         } else {
-          const resourcesData = generateResourcesData();
+          const resourcesData = processResourcesData(profileData.enrollments);
           return (
             <div className="resources-section">
-              <div className="section-header">
-                <h3>
-                  <Book className="section-icon" />
-                  Resources & Course Materials
-                </h3>
-                <p>Digital library, course materials, and educational resources</p>
-              </div>
+              <SectionHeader
+                icon={<Book />}
+                title="Resources & Course Materials"
+                description="Digital library, course materials, and educational resources"
+              />
 
-              <div className="resources-stats">
-                <div className="stat-card">
-                  <FileText className="stat-icon" />
-                  <div className="stat-content">
-                    <span className="stat-number">{resourcesData.courseMaterials?.length || 0}</span>
-                    <span className="stat-label">Total Resources</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <Download className="stat-icon" />
-                  <div className="stat-content">
-                    <span className="stat-number">127</span>
-                    <span className="stat-label">Downloads</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <Users className="stat-icon" />
-                  <div className="stat-content">
-                    <span className="stat-number">89</span>
-                    <span className="stat-label">Active Users</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <TrendingUp className="stat-icon" />
-                  <div className="stat-content">
-                    <span className="stat-number">4.8</span>
-                    <span className="stat-label">Avg Rating</span>
-                  </div>
-                </div>
-              </div>
+              <ResourcesStats data={resourcesData.courseMaterials} />
 
               <TableSection 
                 title="Course Materials" 
@@ -1688,22 +862,27 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 icon="documents"
                 showAddButton={true}
                 onAddClick={handleAddResource}
-                columnConfig={{
-                  title: { displayName: "Resource Title", sortable: true },
-                  type: { displayName: "Type", sortable: true },
-                  course: { displayName: "Course", sortable: true },
-                  uploadDate: { displayName: "Upload Date", sortable: true, type: "date" },
-                  size: { displayName: "Size", sortable: true },
-                  downloads: { displayName: "Downloads", sortable: true, type: "number" },
-                  rating: { displayName: "Rating", sortable: true, type: "number" }
-                }}
-                hiddenColumns={["id", "url", "description"]}
+                columnConfig={getColumnConfigs('files')}
+                hiddenColumns={getHiddenColumns('files')}
                 actionButtons={[
                   (row) => (
                     <button 
                       onClick={() => handleDownloadResource(row)} 
                       className="action-btn download-btn"
                       title="Download"
+                      style={{
+                        background: '#8b5cf6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        marginRight: '4px'
+                      }}
                     >
                       <Download size={14} />
                       Download
@@ -1714,6 +893,19 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                       onClick={() => handlePreviewResource(row)} 
                       className="action-btn view-btn"
                       title="Preview"
+                      style={{
+                        background: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        marginRight: '4px'
+                      }}
                     >
                       <Eye size={14} />
                       Preview
@@ -1724,6 +916,18 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                       onClick={() => handleEditResource(row)} 
                       className="action-btn edit-btn"
                       title="Edit"
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px'
+                      }}
                     >
                       <Edit size={14} />
                       Edit
@@ -1748,28 +952,76 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading {entityType} profile...</p>
+      <div className="loading-container" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '200px',
+        gap: '16px'
+      }}>
+        <div className="loading-spinner" style={{
+          width: '40px',
+          height: '40px',
+          border: '4px solid #e5e7eb',
+          borderTop: '4px solid #3b82f6',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <p style={{ color: '#6b7280', margin: 0 }}>Loading {entityType} profile...</p>
       </div>
     );
   }
 
   if (!profileData || error) {
     return (
-      <div className="error-container">
-        <h2>Profile Not Found</h2>
-        <p>{error}</p>
-        <p>Redirecting to dashboard in 5 seconds...</p>
+      <div className="error-container" style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '200px',
+        gap: '16px',
+        padding: '20px',
+        background: '#fef2f2',
+        border: '1px solid #fecaca',
+        borderRadius: '8px',
+        margin: '20px'
+      }}>
+        <h2 style={{ color: '#dc2626', margin: 0 }}>Profile Not Found</h2>
+        <p style={{ color: '#7f1d1d', margin: 0, textAlign: 'center' }}>{error}</p>
+        <p style={{ color: '#7f1d1d', margin: 0 }}>Redirecting to dashboard in 5 seconds...</p>
       </div>
     );
   }
 
-  const mainEntity = entityType === "student" ? profileData.student : profileData.lecturer;
   const config = profileConfigs[entityType];
 
   return (
     <div className="student-profile-container">
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          }
+          
+          .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          }
+          
+          .summary-card:hover {
+            transform: translateY(-2px);
+          }
+        `}
+      </style>
+      
       <ProfileHeader 
         entity={mainEntity}
         entityType={entityType}
@@ -1817,7 +1069,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Edit Grade"
-          fields={editGradeFormFields}
+          fields={getEditGradeFormFields()}
           onSubmit={handleGradeSubmit}
           onCancel={() => setEditGradeModalOpen(false)}
           submitText="Save Changes"
@@ -1834,7 +1086,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Add New Grade"
-          fields={gradeFormFields}
+          fields={getGradeFormFields(getStudentEnrolledCourses())}
           onSubmit={handleGradeSubmit}
           onCancel={() => setAddGradeModalOpen(false)}
           submitText="Add Grade"
@@ -1851,7 +1103,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title={entityType === 'lecturer' ? "Edit Course Assignment" : "Edit Course"}
-          fields={entityType === 'lecturer' ? lecturerCourseFormFields : courseFormFields}
+          fields={entityType === 'lecturer' ? getLecturerCourseFormFields() : getCourseFormFields()}
           onSubmit={handleCourseSubmit}
           onCancel={() => setEditCourseModalOpen(false)}
           submitText="Save Changes"
@@ -1868,7 +1120,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title={entityType === 'lecturer' ? "Assign Course" : "Add Course"}
-          fields={entityType === 'lecturer' ? lecturerCourseFormFields : courseFormFields}
+          fields={entityType === 'lecturer' ? getLecturerCourseFormFields() : getCourseFormFields()}
           onSubmit={handleCourseSubmit}
           onCancel={() => setAddCourseModalOpen(false)}
           submitText={entityType === 'lecturer' ? "Assign Course" : "Add Course"}
@@ -1885,7 +1137,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Edit Enrollment"
-          fields={enrollmentFormFields}
+          fields={getEnrollmentFormFields()}
           onSubmit={handleEnrollmentSubmit}
           onCancel={() => setEditEnrollmentModalOpen(false)}
           submitText="Save Changes"
@@ -1902,7 +1154,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Add Enrollment"
-          fields={enrollmentFormFields}
+          fields={getEnrollmentFormFields()}
           onSubmit={handleEnrollmentSubmit}
           onCancel={() => setAddEnrollmentModalOpen(false)}
           submitText="Add Enrollment"
@@ -1919,7 +1171,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Edit Schedule"
-          fields={scheduleFormFields}
+          fields={getScheduleFormFields()}
           onSubmit={handleScheduleSubmit}
           onCancel={() => setEditScheduleModalOpen(false)}
           submitText="Save Changes"
@@ -1936,7 +1188,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Add Schedule Entry"
-          fields={scheduleFormFields}
+          fields={getScheduleFormFields()}
           onSubmit={handleScheduleSubmit}
           onCancel={() => setAddScheduleModalOpen(false)}
           submitText="Add Schedule"
@@ -1953,7 +1205,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Edit Resource"
-          fields={resourceFormFields}
+          fields={getResourceFormFields(true)}
           onSubmit={handleResourceSubmit}
           onCancel={() => setEditResourceModalOpen(false)}
           submitText="Save Changes"
@@ -1970,7 +1222,7 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
       >
         <DynamicForm
           title="Add Resource"
-          fields={resourceFormFields}
+          fields={getResourceFormFields(false)}
           onSubmit={handleResourceSubmit}
           onCancel={() => setAddResourceModalOpen(false)}
           submitText="Add Resource"
@@ -1988,7 +1240,11 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         {selectedRecord && (
           <div className="request-details">
             <h3>Request Details</h3>
-            <div className="request-info">
+            <div className="request-info" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
               <div className="info-row">
                 <strong>From:</strong> {selectedRecord.sender || selectedRecord.student}
               </div>
@@ -2014,13 +1270,31 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
               </div>
               <div className="info-row">
                 <strong>Message:</strong>
-                <p className="message-content">{selectedRecord.message || selectedRecord.description}</p>
+                <p className="message-content" style={{
+                  background: '#f9fafb',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  margin: '8px 0 0 0',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  {selectedRecord.message || selectedRecord.description}
+                </p>
               </div>
               {selectedRecord.response && (
                 <div className="info-row">
                   <strong>Response:</strong>
-                  <p className="response-content">{selectedRecord.response}</p>
-                  <small>Responded on: {selectedRecord.responseDate}</small>
+                  <p className="response-content" style={{
+                    background: '#f0f9ff',
+                    padding: '12px',
+                    borderRadius: '6px',
+                    margin: '8px 0 0 0',
+                    border: '1px solid #bae6fd'
+                  }}>
+                    {selectedRecord.response}
+                  </p>
+                  <small style={{ color: '#6b7280' }}>
+                    Responded on: {selectedRecord.responseDate}
+                  </small>
                 </div>
               )}
             </div>
@@ -2038,20 +1312,41 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
         {selectedRecord && (
           <div className="response-request">
             <h3>Respond to Request</h3>
-            <div className="request-summary">
-              <div className="summary-row">
+            <div className="request-summary" style={{
+              background: '#f9fafb',
+              padding: '16px',
+              borderRadius: '8px',
+              marginBottom: '20px',
+              border: '1px solid #e5e7eb'
+            }}>
+              <div className="summary-row" style={{ marginBottom: '8px' }}>
                 <strong>From:</strong> {selectedRecord.sender || selectedRecord.student}
               </div>
-              <div className="summary-row">
+              <div className="summary-row" style={{ marginBottom: '8px' }}>
                 <strong>Subject:</strong> {selectedRecord.subject}
               </div>
               <div className="summary-row">
                 <strong>Original Message:</strong>
-                <p className="original-message">{selectedRecord.message || selectedRecord.description}</p>
+                <p className="original-message" style={{
+                  margin: '8px 0 0 0',
+                  padding: '8px',
+                  background: 'white',
+                  borderRadius: '4px',
+                  border: '1px solid #d1d5db'
+                }}>
+                  {selectedRecord.message || selectedRecord.description}
+                </p>
               </div>
             </div>
             <div className="response-form">
-              <label htmlFor="response-textarea">Your Response:</label>
+              <label htmlFor="response-textarea" style={{
+                display: 'block',
+                fontWeight: '500',
+                marginBottom: '8px',
+                color: '#374151'
+              }}>
+                Your Response:
+              </label>
               <textarea
                 id="response-textarea"
                 value={requestResponse}
@@ -2059,11 +1354,34 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                 placeholder="Type your response here..."
                 rows={6}
                 className="response-textarea"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  resize: 'vertical',
+                  fontFamily: 'inherit'
+                }}
               />
-              <div className="response-actions">
+              <div className="response-actions" style={{
+                display: 'flex',
+                gap: '12px',
+                justifyContent: 'flex-end',
+                marginTop: '16px'
+              }}>
                 <button 
                   onClick={() => setResponseRequestModalOpen(false)}
                   className="btn btn-secondary"
+                  style={{
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
                 >
                   Cancel
                 </button>
@@ -2071,6 +1389,15 @@ const GenericProfile = ({ cardSize = "default", initialSection = "overview" }) =
                   onClick={handleSubmitResponse}
                   className="btn btn-primary"
                   disabled={!requestResponse.trim()}
+                  style={{
+                    background: requestResponse.trim() ? '#3b82f6' : '#d1d5db',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '8px 16px',
+                    cursor: requestResponse.trim() ? 'pointer' : 'not-allowed',
+                    fontSize: '14px'
+                  }}
                 >
                   Send Response
                 </button>

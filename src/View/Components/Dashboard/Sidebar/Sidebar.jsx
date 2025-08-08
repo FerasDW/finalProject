@@ -49,7 +49,9 @@ const Sidebar = ({ menuItems, position = "left" }) => {
         case "Community":
           navigate("/community/home");
           break;
-
+        case "Generate Semester":
+          navigate("/generateSemester");
+          break;
         case "Statistics":
           navigate("/statistics");
           break;

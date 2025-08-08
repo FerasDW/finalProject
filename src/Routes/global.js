@@ -12,6 +12,7 @@ import Portfolio from "../View/Pages/UserProfile/Portfolio.jsx";
 import GenericDashboard from "../View/Pages/GenericDashboard.jsx";
 import GenericProfile from "../View/Pages/GenericProfile.jsx";
 import { Navigate } from "react-router-dom";
+import GenerateSemester from "../View/Pages/Admin/GenerateSemester.jsx";
 
 // Importing Community Layout and its pages
 import CommunityLayout from "../View/Components/CommunityLayout.jsx";
@@ -64,6 +65,7 @@ function GlobalRoutes() {
         <Route path="/course/:id" element={<CoursePage />} />
         <Route path="/profileA" element={<ProfileA />} />
         <Route path="/Messages" element={<Messages />} />
+        <Route path="/generateSemester" element={<GenerateSemester />} />
        {/* Secure Profile Routes with Path Parameters */}
           <Route path="/profile/:entityType/:id" element={<GenericProfile />} />
           

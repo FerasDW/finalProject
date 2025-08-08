@@ -1,40 +1,16 @@
 // hooks/useCourses.js
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { filterCourses, getFilterOptions, calculateCourseStats, validateCourseData, isCourseCodeExists, COURSES_PER_PAGE, DEFAULT_FILTERS } from '../Utils/courseUtils.js';
+import { coursesList } from '../Static/FIxed/coursesData.js';
 import { transformCourseForForm, transformFormToCourse, handleFieldDependencies, getUpdatedCourseFields } from '../Utils/courseUtils.js';
 import { getYearOptionsForGroup } from '../Static/FIxed/coursesData.js';
-import {
-  getAllCourses,
-  createCourse,
-  updateCourse,
-  deleteCourse,
-  getAllDepartments,
-} from '../Api/coursePageApi.js';
-
-// Default state for new course form
-const DEFAULT_COURSE_FORM_DATA = {
-  courseTitle: '',
-  courseCode: '',
-  description: '',
-  department: 'Certificate IT',
-  academicYear: '',
-  semester: '1',
-  year: new Date().getFullYear(),
-  credits: 3,
-  selectable: false,
-  img: '',
-};
 
 const useCourses = () => {
-  // API-related state
-  const [courses, setCourses] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  
-  // Original state variables preserved
-  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [courses, setCourses] = useState(coursesList);
+  const [filteredCourses, setFilteredCourses] = useState(coursesList);
   const [displayedCourses, setDisplayedCourses] = useState([]);
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true); // Changed initial state to true for API loading
+  const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isCoursePopupOpen, setCoursePopupOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null); // Store original course object
@@ -43,29 +19,7 @@ const useCourses = () => {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [filterFields, setFilterFields] = useState([]);
   const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState(DEFAULT_COURSE_FORM_DATA);
-
-  // API fetch function
-  const fetchInitialData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [backendCourses, backendDepartments] = await Promise.all([
-        getAllCourses(),
-        getAllDepartments()
-      ]);
-      setCourses(backendCourses);
-      setDepartments(backendDepartments);
-    } catch (error) {
-      console.error("Failed to fetch initial data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Load initial data on mount
-  useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
+  const [formData, setFormData] = useState({});
 
   // Filter courses and reset pagination when filters or search change
   useEffect(() => {
@@ -90,39 +44,17 @@ const useCourses = () => {
     }
   }, [page, filteredCourses]);
 
-  // Set up filter fields with API data
+  // Set up filter fields
   useEffect(() => {
-    if (courses.length > 0) {
-      const options = getFilterOptions(courses);
-      
-      // Use departments from API if available, otherwise fall back to options.groups
-      const groupOptions = departments.length > 0 
-        ? departments.map(d => d.name)
-        : (options.groups || []);
-      
-      // Handle academic year options based on selected department
-      let academicYearOptions = [];
-      if (filters.department && departments.length > 0) {
-        const selectedDept = departments.find(d => d.name === filters.department);
-        if (selectedDept && selectedDept.totalAcademicYears) {
-          academicYearOptions = Array.from(
-            { length: selectedDept.totalAcademicYears }, 
-            (_, i) => String(i + 1)
-          );
-        }
-      } else {
-        academicYearOptions = options.academicYears || [];
-      }
-
-      setFilterFields([
-        { name: "department", label: "Department", type: "select", options: departmentOptions },
-        { name: "academicYear", label: "Academic Year", type: "select", options: academicYearOptions },
-        { name: "semester", label: "Semester", type: "select", options: options.semesters || [] },
-        { name: "year", label: "Year", type: "select", options: options.years || [] },
-        { name: "selectable", label: "Elective", type: "select", options: ["yes", "no"] },
-      ]);
-    }
-  }, [courses, departments, filters.department]);
+    const options = getFilterOptions(courses);
+    setFilterFields([
+      { name: "group", label: "Program Group", type: "select", options: [ ...options.groups] },
+      { name: "academicYear", label: "Academic Year", type: "select", options: [ ...options.academicYears] },
+      { name: "semester", label: "Semester", type: "select", options: [ ...options.semesters] },
+      { name: "year", label: "Year", type: "select", options: [ ...options.years] },
+      { name: "selectable", label: "Elective", type: "select", options: [ "yes", "no"] },
+    ]);
+  }, [courses]);
 
   const loadMoreCourses = useCallback(() => {
     if (loading || !hasMore) {
@@ -145,12 +77,7 @@ const useCourses = () => {
   }, [loading, hasMore, page, filteredCourses.length]);
 
   const handleFilterChange = (name, value) => {
-    if (name === 'department') {
-      // When department changes, clear academic year since it depends on department
-      setFilters(prev => ({ ...prev, [name]: value, academicYear: '' }));
-    } else {
-      setFilters(prev => ({ ...prev, [name]: value }));
-    }
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSearch = () => {
@@ -167,7 +94,7 @@ const useCourses = () => {
     console.log("Adding new course");
     setEditingCourse(null);
     setEditingCourseId(null);
-    setFormData(DEFAULT_COURSE_FORM_DATA);
+    setFormData({});
     setErrors({});
     setCoursePopupOpen(true);
   };
@@ -184,20 +111,12 @@ const useCourses = () => {
     setCoursePopupOpen(true);
   };
 
-  const handleDeleteCourse = async (id) => {
-    if (window.confirm("Are you sure you want to delete this course?")) {
-      try {
-        await deleteCourse(id);
-        // Refresh data after successful deletion
-        await fetchInitialData();
-      } catch (error) {
-        console.error("Failed to delete course:", error);
-        // You might want to show an error message to the user here
-      }
-    }
+  const handleDeleteCourse = (id) => {
+    setCourses(prev => prev.filter(c => c.id !== id));
   };
 
-  const handleSubmit = async (submittedFormData) => {
+  const handleSubmit = (submittedFormData) => {
+    
     // Validate the form data
     const newErrors = validateCourseData(submittedFormData);
     if (Object.keys(newErrors).length > 0) {
@@ -212,38 +131,40 @@ const useCourses = () => {
       return;
     }
 
-    try {
+    // Create the course object
+    const courseToSave = transformFormToCourse(submittedFormData, editingCourse);
+
+    setCourses(prev => {
+      let updated;
       if (editingCourseId) {
         // Update existing course
-        const courseToUpdate = transformFormToCourse(submittedFormData, editingCourse);
-        await updateCourse(editingCourseId, courseToUpdate);
+        updated = prev.map(c => c.id === editingCourseId ? courseToSave : c);
         console.log("Updated existing course");
       } else {
         // Add new course
-        const courseToCreate = transformFormToCourse(submittedFormData, null);
-        await createCourse(courseToCreate);
+        updated = [...prev, courseToSave];
         console.log("Added new course");
       }
+      return updated;
+    });
 
-      // Refresh data after successful operation
-      await fetchInitialData();
-      
-      // Close popup and reset state
-      handlePopupClose();
-    } catch (error) {
-      console.error("Failed to save course:", error);
-      // You might want to show an error message to the user here
-    }
+    // Close popup and reset state
+    setCoursePopupOpen(false);
+    setEditingCourse(null);
+    setEditingCourseId(null);
+    setFormData({});
+    setErrors({});
   };
 
   const handleFieldChange = (fieldName, value, newFormData) => {
+    
     // Update our local form data state
     setFormData(prev => {
       const updatedData = { ...prev, [fieldName]: value };
       
       // Handle field dependencies
-      if (fieldName === 'department') {
-        // When department changes, clear academic year since it depends on department
+      if (fieldName === 'group') {
+        // When group changes, clear academic year since it depends on group
         updatedData.academicYear = '';
       }
       
@@ -262,7 +183,7 @@ const useCourses = () => {
 
   const handleGroupChange = (fieldName, value, allValues) => {
     const updatedValues = handleFieldDependencies(fieldName, value, allValues);
-    if (fieldName === 'department') {
+    if (fieldName === 'group') {
       updatedValues.academicYear = '';
     }
     return updatedValues;
@@ -273,26 +194,13 @@ const useCourses = () => {
     setCoursePopupOpen(false);
     setEditingCourse(null);
     setEditingCourseId(null);
-    setFormData(DEFAULT_COURSE_FORM_DATA);
+    setFormData({});
     setErrors({});
   };
 
-  const getAcademicYearOptions = (department) => {
-    const selectedDepartment = department || formData.department || "Certificate IT";
-    
-    // Try to get options from departments API first
-    if (departments.length > 0) {
-      const selectedDept = departments.find(d => d.name === selectedDepartment);
-      if (selectedDept && selectedDept.totalAcademicYears) {
-        return Array.from(
-          { length: selectedDept.totalAcademicYears }, 
-          (_, i) => String(i + 1)
-        );
-      }
-    }
-    
-    // Fall back to original function
-    return getYearOptionsForGroup(selectedDepartment);
+  const getAcademicYearOptions = (group) => {
+    const selectedGroup = group || formData.group || "Certificate IT";
+    return getYearOptionsForGroup(selectedGroup);
   };
 
   return {
@@ -321,10 +229,6 @@ const useCourses = () => {
     errors,
     getAcademicYearOptions,
     courseStats: calculateCourseStats(courses),
-    
-    // Additional API-related returns
-    departments, // In case you need access to departments elsewhere
-    fetchInitialData, // In case you need to manually refresh data
   };
 };
 
