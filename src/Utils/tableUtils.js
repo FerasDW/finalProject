@@ -55,7 +55,7 @@ export const getIconComponent = (icon, entityType) => {
 
   // Handle string icons
   if (typeof icon === "string") {
-    return iconMap[icon] || iconMap[entityType] || iconMap.default;
+    return iconMap[entityType] || iconMap.default;
   }
   
   // Return icon component or fallback to entity type or default

@@ -200,3 +200,15 @@ export const getFilesByCategory = async (categoryId) => {
     if (!response.ok) throw new Error("Failed to fetch files for category.");
     return response.json();
 };
+
+export const getAssignmentTimeline = async (courseId, year) => {
+    try {
+        const response = await axios.get(`${ANALYTICS_URL}/assignment-timeline/${courseId}`, {
+            params: { year }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching assignment timeline:", error);
+        throw error;
+    }
+};

@@ -1,68 +1,126 @@
-import { upcomingAssignments } from "./calendarPageData.js";
+import axios from 'axios';
 
-// Fetch all assignments
-export const fetchAllAssignments = async () => {
-  try {
-    return upcomingAssignments;
-  } catch (error) {
-    throw new Error("Failed to fetch assignments");
-  }
-};
+// Define the base URLs for our different calendar-related endpoints
+const USERS_API_URL = 'http://localhost:8080/api/users';
+const CALENDAR_API_URL = 'http://localhost:8080/api/calendar';
+const ASSIGNMENT_API_URL = 'http://localhost:8080/api/dashboard/assignments';
+const COURSES_API_URL = 'http://localhost:8080/api/courses';
 
-// Fetch assignment by ID
-export const fetchAssignmentById = async (assignmentId) => {
-  try {
-    const assignment = upcomingAssignments.find(
-      (assignment) => assignment.id === parseInt(assignmentId)
-    );
-    if (!assignment) {
-      throw new Error(`Assignment with ID ${assignmentId} not found`);
+// Ensure cookies (like the JWT auth) are sent with every request
+axios.defaults.withCredentials = true;
+
+/**
+ * ✅ UPDATED
+ * Fetches calendar items, now with optional filtering.
+ * @param {Date} weekStartDate - The start date of the week.
+ * @param {Object} filters - An object containing filter criteria (e.g., { courseId, instructorId }).
+ * @returns {Promise<Array>}
+ */
+export const getCalendarEvents = async (weekStartDate, filters = {}) => {
+    const dateString = weekStartDate.toISOString().split('T')[0];
+    try {
+        const response = await axios.get(`${CALENDAR_API_URL}/events`, {
+            params: { 
+                weekStartDate: dateString,
+                ...filters // Pass the filter object to the backend
+            }
+        });
+        return response.data || [];
+    } catch (error) {
+        console.error("Error fetching calendar events:", error);
+        return [];
     }
-    return assignment;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
-// Add a new assignment
+/**
+ * ✅ NEW
+ * Fetches all courses to populate the filter dropdown.
+ * @returns {Promise<Array>} A promise that resolves to an array of course objects.
+ */
+export const getAllCourses = async () => {
+    try {
+        const response = await axios.get(COURSES_API_URL);
+        return response.data || [];
+    } catch (error) {
+        console.error("Error fetching courses:", error);
+        return [];
+    }
+};
+
+export const getAllLecturers = async () => {
+    try {
+        const response = await axios.get(`${USERS_API_URL}/role/1200`);
+        return response.data || [];
+    } catch (error) {
+        console.error("Error fetching lecturers:", error);
+        return [];
+    }
+};
+
+export const addEvent = async (eventData) => {
+    try {
+        const response = await axios.post(`${CALENDAR_API_URL}/events`, eventData);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding event:", error);
+        throw error;
+    }
+};
+
+export const deleteEvent = async (eventId) => {
+    try {
+        await axios.delete(`${CALENDAR_API_URL}/events/${eventId}`);
+    } catch (error) {
+        console.error("Error deleting scheduled event:", error);
+        throw error;
+    }
+};
+
+export const getEventRuleById = async (eventId) => {
+    try {
+        const response = await axios.get(`${CALENDAR_API_URL}/events/${eventId}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching event rule:", error);
+        throw error;
+    }
+};
+
+export const updateEvent = async (eventId, eventData) => {
+    try {
+        const response = await axios.put(`${CALENDAR_API_URL}/events/${eventId}`, eventData);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating event:", error);
+        throw error;
+    }
+};
+
 export const addAssignment = async (assignmentData) => {
-  try {
-    const newAssignment = {
-      ...assignmentData,
-      id: Date.now(),
-    };
-    return newAssignment;
-  } catch (error) {
-    throw new Error("Failed to add assignment");
-  }
+    try {
+        const response = await axios.post(ASSIGNMENT_API_URL, assignmentData);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding assignment:", error);
+        throw error;
+    }
 };
 
-// Update an existing assignment
 export const updateAssignment = async (assignmentId, assignmentData) => {
-  try {
-    const assignment = upcomingAssignments.find(
-      (assignment) => assignment.id === parseInt(assignmentId)
-    );
-    if (!assignment) {
-      throw new Error(`Assignment with ID ${assignmentId} not found`);
+    try {
+        const response = await axios.put(`${ASSIGNMENT_API_URL}/${assignmentId}`, assignmentData);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating assignment:", error);
+        throw error;
     }
-    return { ...assignment, ...assignmentData };
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
-// Delete an assignment
 export const deleteAssignment = async (assignmentId) => {
-  try {
-    const assignment = upcomingAssignments.find(
-      (assignment) => assignment.id === parseInt(assignmentId)
-    );
-    if (!assignment) {
-      throw new Error(`Assignment with ID ${assignmentId} not found`);
+    try {
+        await axios.delete(`${ASSIGNMENT_API_URL}/${assignmentId}`);
+    } catch (error) {
+        console.error("Error deleting assignment:", error);
+        throw error;
     }
-    return assignmentId;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };

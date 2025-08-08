@@ -1,3 +1,4 @@
+// Components/Forms/dynamicForm.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
@@ -648,8 +649,8 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
               <option value="">{field.placeholder || 'Select an option'}</option>
               {safeOptions.map((option, index) => {
                 // Handle both string options and object options
-                const optionValue = typeof option === 'object' ? option.value : option;
-                const optionLabel = typeof option === 'object' ? option.label : option;
+                const optionValue = typeof option === 'object' ? option.value || option.name : option;
+                const optionLabel = typeof option === 'object' ? option.label || option.name : option;
                 
                 return (
                   <option key={index} value={optionValue}>
@@ -1007,15 +1008,13 @@ const DynamicForm = ({
 
   // Initialize form data when initialData changes or component mounts
   useEffect(() => {
-    console.log("DynamicForm: initialData changed:", initialData);
-    
     if (initialData && Object.keys(initialData).length > 0) {
       // EDIT mode - use provided data
       setFormData(initialData);
       
-      // Set dynamic options for academicYear if group is present
-      if (initialData.group && getAcademicYearOptions) {
-        const academicYearOptions = getAcademicYearOptions(initialData.group);
+      // Set dynamic options for academicYear if department is present
+      if (initialData.department && getAcademicYearOptions) {
+        const academicYearOptions = getAcademicYearOptions(initialData.department);
         setDynamicFieldOptions(prev => ({
           ...prev,
           academicYear: academicYearOptions
@@ -1040,16 +1039,22 @@ const DynamicForm = ({
     setErrors({});
   }, [initialData, fields, getAcademicYearOptions]);
 
-  // Update academic year options when group changes
+  // Update academic year options when department changes
   useEffect(() => {
-    if (getAcademicYearOptions && formData.group) {
-      const academicYearOptions = getAcademicYearOptions(formData.group);
+    if (getAcademicYearOptions && formData.department) {
+      const academicYearOptions = getAcademicYearOptions(formData.department);
+      
       setDynamicFieldOptions(prev => ({
         ...prev,
         academicYear: academicYearOptions
       }));
+    } else {
+      setDynamicFieldOptions(prev => ({
+        ...prev,
+        academicYear: []
+      }));
     }
-  }, [formData.group, getAcademicYearOptions]);
+  }, [formData.department, getAcademicYearOptions]);
 
   // Update errors from external source
   useEffect(() => {
@@ -1060,12 +1065,10 @@ const DynamicForm = ({
 
   const handleInputChange = (e) => {
     const { name, type, value, checked, files } = e.target;
-    console.log("DynamicForm: Input changed:", name, "Value:", type === 'checkbox' ? checked : value);
 
     // Don't allow changes to disabled fields
     const field = fields.find(f => f.name === name);
     if (field && field.disabled) {
-      console.log("Field is disabled, ignoring change");
       return;
     }
 
@@ -1085,10 +1088,9 @@ const DynamicForm = ({
       [name]: finalValue,
     };
 
-    // If group changed, reset academic year
-    if (name === 'group' && formData.academicYear) {
+    // If department changed, reset academic year
+    if (name === 'department' && formData.academicYear) {
       newFormData.academicYear = '';
-      console.log("Group changed, clearing academicYear");
     }
 
     // Ensure year field always stays as current year for disabled fields
@@ -1096,7 +1098,6 @@ const DynamicForm = ({
       return; // Prevent year field changes if disabled
     }
     
-    console.log("DynamicForm: Setting new form data:", newFormData);
     setFormData(newFormData);
 
     // Clear error when user starts typing
@@ -1109,7 +1110,6 @@ const DynamicForm = ({
 
     // Call external field change handler
     if (onFieldChange) {
-      console.log("DynamicForm: Calling onFieldChange");
       onFieldChange(name, finalValue, newFormData);
     }
   };
@@ -1176,7 +1176,6 @@ const DynamicForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("DynamicForm: Form submitted with data:", formData);
     
     if (validateForm()) {
       // Ensure current year is always set for year field
@@ -1185,15 +1184,11 @@ const DynamicForm = ({
         ...formData,
         year: formData.year || currentYear.toString()
       };
-      console.log("DynamicForm: Calling onSubmit with:", finalFormData);
       onSubmit?.(finalFormData);
-    } else {
-      console.log("DynamicForm: Validation failed");
     }
   };
 
   const handleCancel = () => {
-    console.log("DynamicForm: Cancel clicked");
     setFormData({});
     setErrors({});
     setDynamicFieldOptions({});
