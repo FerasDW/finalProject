@@ -168,25 +168,26 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
     }
   };
 
-  const handleDeleteFile = async (categoryId, fileId) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) {
-      return;
-    }
+const handleDeleteFile = async (categoryId, fileId) => {
+  if (!window.confirm("Are you sure you want to delete this file?")) {
+    return;
+  }
 
-    try {
-      await contentApi.deleteFile(fileId);
-      setCategories(
-        categories.map((cat) =>
-          cat.id === categoryId
-            ? { ...cat, files: cat.files.filter((file) => file.id !== fileId) }
-            : cat
-        )
-      );
-    } catch (error) {
-      console.error("Error deleting file:", error);
-      alert("Error deleting file. Please try again.");
-    }
-  };
+  try {
+    // This will now use the updated API endpoint /course/{fileId}
+    await contentApi.deleteFile(fileId);
+    setCategories(
+      categories.map((cat) =>
+        cat.id === categoryId
+          ? { ...cat, files: cat.files.filter((file) => file.id !== fileId) }
+          : cat
+      )
+    );
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    alert("Error deleting file. Please try again.");
+  }
+};
 
   const handleFileUpload = async (data) => {
     if (!data.categoryId || !data.file) {

@@ -6,9 +6,9 @@ const COURSES_URL = `${API_BASE_URL}/courses`;
 const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
 
-// FIXED: Updated to match your new backend endpoints
+// FIXED: Updated to match your actual backend endpoints
 const CATEGORIES_URL = `${API_BASE_URL}/course-content/categories`;
-const FILES_URL = `${API_BASE_URL}/course-content/files`;
+const FILES_URL = `${API_BASE_URL}/files`; // FIXED: This was the main issue!
 
 axios.defaults.withCredentials = true;
 
@@ -270,6 +270,8 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
         }
         
         console.log(`Uploading file to category: ${categoryId}`);
+        console.log(`Upload URL: ${FILES_URL}/upload/${categoryId}`);
+        
         const response = await axios.post(`${FILES_URL}/upload/${categoryId}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
@@ -298,12 +300,20 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
 
 export const deleteFile = async (fileId) => {
     try {
-        await axios.delete(`${FILES_URL}/${fileId}`, {
+        console.log(`🗑️ Attempting to delete file: ${fileId}`);
+        console.log(`🔗 DELETE URL: ${FILES_URL}/course/${fileId}`);
+        
+        // FIXED: Updated endpoint to match your backend change: /course/{fileId}
+        await axios.delete(`${FILES_URL}/course/${fileId}`, {
             withCredentials: true
         });
+        
+        console.log("✅ Delete successful");
         return true;
     } catch (error) {
-        console.error("Error deleting file:", error);
+        console.error("❌ Delete failed:", error);
+        console.error("❌ Response data:", error.response?.data);
+        console.error("❌ Response status:", error.response?.status);
         
         if (error.response) {
             const status = error.response.status;
@@ -311,6 +321,8 @@ export const deleteFile = async (fileId) => {
             
             if (status === 403) {
                 throw new Error(`Access denied: ${errorMessage}`);
+            } else if (status === 404) {
+                throw new Error("File not found.");
             } else {
                 throw new Error(`Server error (${status}): ${errorMessage}`);
             }
@@ -376,9 +388,12 @@ export const getFilesByCategoryPaginated = async (categoryId, page = 0, size = 2
     }
 };
 
-// ADDITIONAL: Download file
+// FIXED: Download file with proper error handling
 export const downloadFile = async (fileId, fileName) => {
     try {
+        console.log(`⬇️ Downloading file: ${fileId} - ${fileName}`);
+        console.log(`🔗 Download URL: ${FILES_URL}/${fileId}/download`);
+        
         const response = await axios.get(`${FILES_URL}/${fileId}/download`, {
             responseType: 'blob',
             withCredentials: true
@@ -394,9 +409,10 @@ export const downloadFile = async (fileId, fileName) => {
         link.remove();
         window.URL.revokeObjectURL(url);
         
+        console.log("✅ Download successful");
         return true;
     } catch (error) {
-        console.error("Error downloading file:", error);
+        console.error("❌ Download failed:", error);
         
         if (error.response) {
             const status = error.response.status;
