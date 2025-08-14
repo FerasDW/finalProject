@@ -326,11 +326,11 @@ const SemesterGenerationPage = () => {
             </div>
           </div>
 
-          {/* Start Date */}
+          {/* Start Date - Enhanced with better spacing */}
           <div>
             <label style={{ 
               display: 'block', 
-              marginBottom: '8px', 
+              marginBottom: '12px', 
               fontSize: '14px', 
               fontWeight: '600', 
               color: '#374151' 
@@ -343,7 +343,8 @@ const SemesterGenerationPage = () => {
                 left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#9ca3af'
+                color: '#9ca3af',
+                zIndex: 1
               }} />
               <input
                 type="date"
@@ -351,24 +352,31 @@ const SemesterGenerationPage = () => {
                 onChange={(e) => setStartDate(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 16px 12px 48px',
+                  padding: '14px 20px 14px 48px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '12px',
                   fontSize: '14px',
                   backgroundColor: 'white',
-                  transition: 'border-color 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3b82f6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
 
-          {/* End Date */}
+          {/* End Date - Enhanced with better spacing */}
           <div>
             <label style={{ 
               display: 'block', 
-              marginBottom: '8px', 
+              marginBottom: '12px', 
               fontSize: '14px', 
               fontWeight: '600', 
               color: '#374151' 
@@ -381,7 +389,8 @@ const SemesterGenerationPage = () => {
                 left: '16px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                color: '#9ca3af'
+                color: '#9ca3af',
+                zIndex: 1
               }} />
               <input
                 type="date"
@@ -389,15 +398,22 @@ const SemesterGenerationPage = () => {
                 onChange={(e) => setEndDate(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 16px 12px 48px',
+                  padding: '14px 20px 14px 48px',
                   border: '2px solid #e5e7eb',
                   borderRadius: '12px',
                   fontSize: '14px',
                   backgroundColor: 'white',
-                  transition: 'border-color 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  boxSizing: 'border-box'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3b82f6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>

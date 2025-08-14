@@ -1,7 +1,15 @@
 import "../../../../CSS/Pages/Dashboard/Content.css";
 import CourseCard from "../CourseCard/CourseCard";
 
-const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
+const CoursesContent = ({ 
+  courses, 
+  onDeleteCourse, 
+  onEditCourse, 
+  userRole 
+}) => {
+  // Simple check: only admin (role 1100) can edit/delete
+  const isAdmin = userRole === "1100";
+  
   return (
     <div className="courses-grid">
       {courses && courses.length > 0 ? (
@@ -11,7 +19,10 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
             cardInfo={{
               id: course.id,
               title: course.name,
-              students: course.enrollments?.reduce((total, enrollment) => total + (enrollment.studentIds?.length || 0), 0) || 0,
+              students: course.enrollments?.reduce(
+                (total, enrollment) => total + (enrollment.studentIds?.length || 0), 
+                0
+              ) || 0,
               img: course.imageUrl,
               credits: course.credits || 0,
               lessons: course.lessons || 12,
@@ -22,6 +33,8 @@ const CoursesContent = ({ courses, onDeleteCourse, onEditCourse }) => {
             }}
             onDelete={onDeleteCourse}
             onEdit={onEditCourse}
+            userRole={userRole}
+            isAdmin={isAdmin}
           />
         ))
       ) : (

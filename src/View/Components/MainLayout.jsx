@@ -154,7 +154,7 @@ export default function MainLayout() {
     <div className="body" > 
       <div className="main-layout">
         <div className="left-sidebar">
-          <Sidebar menuItems={leftMenuItems[1100]} position="left" />
+          <Sidebar menuItems={leftMenuItems[authData.role]} position="left" />
         </div>
 
         <div className="main" >
