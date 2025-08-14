@@ -7,7 +7,7 @@ const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
 
 // FIXED: Updated to match your actual backend endpoints
-const CATEGORIES_URL = `${API_BASE_URL}/course-content/categories`;
+const CATEGORIES_URL = `${API_BASE_URL}/categories`;
 const FILES_URL = `${API_BASE_URL}/files`; // FIXED: This was the main issue!
 
 axios.defaults.withCredentials = true;
@@ -334,8 +334,7 @@ export const deleteFile = async (fileId) => {
 // FIXED: Changed from fetch to axios and updated endpoint
 export const getFilesByCategory = async (categoryId) => {
     try {
-        console.log(`Making GET request to: ${FILES_URL}/by-category/${categoryId}/simple`);
-        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}/simple`, {
+        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}`, {
             withCredentials: true
         });
         return response.data;
