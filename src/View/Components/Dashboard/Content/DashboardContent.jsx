@@ -148,6 +148,9 @@ const DashboardContent = ({ userRole }) => {
                   key={index}
                   assignments={
                     <ScrollList
+                    showSearch = {false}
+                      showFilters = {false}
+                        showStats = {false}
                       layout="list"
                       title="Assignments"
                       items={dashboardApiData.assignments}

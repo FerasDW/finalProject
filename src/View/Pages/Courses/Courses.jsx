@@ -5,10 +5,14 @@ import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
 import DynamicFilter from "../../Components/DynamicFilter.jsx";
 import Popup from "../../Components/Cards/PopUp.jsx";
 import useCourses from "../../../Hooks/useCourses.js";
+import { useAuth } from "../../../Context/AuthContext.jsx";
 import styles from "../../../CSS/Pages/Courses/courses.module.css";
 
 export default function Courses() {
   console.log("🔧 Courses component initialized");
+  
+  // Get authentication data
+  const { authData } = useAuth();
   
   const {
     displayedCourses,
@@ -38,6 +42,28 @@ export default function Courses() {
   } = useCourses();
 
   const loadMoreRef = useRef();
+
+  // Role-based access control
+  const isLecturer = authData?.role === 'lecturer' || authData?.userType === 'lecturer' || authData?.role == 1200;
+  const isAdmin = authData?.role === 'admin' || authData?.userType === 'admin' || authData?.role == 1100;
+  const isStudent = authData?.role === 'student' || authData?.userType === 'student' || authData?.role == 1300;
+  
+  // Permissions
+  const canAddCourse = isAdmin; // Only admins can add courses
+  const canEditCourse = isAdmin; // Only admins can edit courses
+  const canDeleteCourse = isAdmin; // Only admins can delete courses
+  const canViewCourses = isAdmin || isLecturer || isStudent; // All authenticated users can view courses
+
+  console.log("🔐 Role-based permissions:", {
+    userRole: authData?.role || authData?.userType,
+    isLecturer,
+    isAdmin,
+    isStudent,
+    canAddCourse,
+    canEditCourse,
+    canDeleteCourse,
+    canViewCourses
+  });
 
   console.log("📊 Courses component state:", {
     coursesCount: displayedCourses.length,
@@ -98,15 +124,81 @@ export default function Courses() {
     );
   };
 
+  // Protected handler for adding course
+  const handleProtectedAddCourse = () => {
+    if (canAddCourse) {
+      handleAddCourse();
+    } else {
+      console.warn("🚫 Access denied: User doesn't have permission to add courses");
+      alert("You don't have permission to add courses. Contact an administrator.");
+    }
+  };
+
+  // Protected handler for editing course
+  const handleProtectedEditCourse = (course) => {
+    if (canEditCourse) {
+      handleEditCourse(course);
+    } else {
+      console.warn("🚫 Access denied: User doesn't have permission to edit courses");
+      alert("You don't have permission to edit courses. Contact an administrator.");
+    }
+  };
+
+  // Protected handler for deleting course
+  const handleProtectedDeleteCourse = (courseId) => {
+    if (canDeleteCourse) {
+      handleDeleteCourse(courseId);
+    } else {
+      console.warn("🚫 Access denied: User doesn't have permission to delete courses");
+      alert("You don't have permission to delete courses. Contact an administrator.");
+    }
+  };
+
+  // If user doesn't have permission to view courses, show access denied
+  if (!canViewCourses) {
+    return (
+      <div className={styles.coursesWrapper}>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          color: '#666'
+        }}>
+          <h2>Access Denied</h2>
+          <p>You don't have permission to view courses. Please contact an administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.coursesWrapper}>
       <div className={styles.coursesHeader}>
         <div className={styles.headerContent}>
           <div className={styles.headerSection}>
             <h2>Course Management</h2>
-            <button className={styles.addCourseBtn} onClick={handleAddCourse}>
-              Add Course
-            </button>
+            {/* Conditionally render Add Course button based on permissions */}
+            {canAddCourse && (
+              <button 
+                className={styles.addCourseBtn} 
+                onClick={handleProtectedAddCourse}
+                title="Add a new course"
+              >
+                Add Course
+              </button>
+            )}
+            {/* Show role indicator for debugging/info */}
+            {process.env.NODE_ENV === 'development' && (
+              <span style={{ 
+                marginLeft: '10px', 
+                fontSize: '12px', 
+                color: '#666',
+                padding: '4px 8px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '4px'
+              }}>
+                Role: {authData?.role || authData?.userType || 'Unknown'}
+              </span>
+            )}
           </div>
           <div className={styles.filterContainer}>
             {Array.isArray(filterFields) && filterFields.length > 0 && (
@@ -136,8 +228,12 @@ export default function Courses() {
         <div className={styles.cardsContainer}>
           <CoursesContent
             courses={displayedCourses}
-            onDeleteCourse={handleDeleteCourse}
-            onEditCourse={handleEditCourse}
+            onDeleteCourse={handleProtectedDeleteCourse}
+            onEditCourse={handleProtectedEditCourse}
+            // Pass permissions to the component
+            canEdit={canEditCourse}
+            canDelete={canDeleteCourse}
+            userRole={authData?.role || authData?.userType}
           />
           
           {loading && (
@@ -185,7 +281,8 @@ export default function Courses() {
         </div>
       </div>
       
-      {isCoursePopupOpen && (
+      {/* Only show popup if user has permission to add/edit courses */}
+      {isCoursePopupOpen && (canAddCourse || canEditCourse) && (
         <Popup isOpen={isCoursePopupOpen} onClose={handlePopupClose}>
           {renderDynamicForm()}
         </Popup>
@@ -199,6 +296,22 @@ export default function Courses() {
         .${styles.loadMoreTrigger} { 
           height: 20px; 
           width: 100%; 
+        }
+        
+        /* Style for disabled buttons if needed */
+        .${styles.addCourseBtn}:disabled {
+          background-color: #ccc;
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+        
+        /* Role-based styling */
+        .role-lecturer .course-actions {
+          display: none;
+        }
+        
+        .role-admin .course-actions {
+          display: flex;
         }
       `}</style>
     </div>
