@@ -42,8 +42,18 @@ const Sidebar = ({ menuItems, position = "left" }) => {
           navigate("/calendar");
           break;
 
+          case "Video Meeting":
+          navigate("/VideoMeetingDashboard");
+          break;
+
         case "Messages":
           navigate("/messages");
+          break;
+          case "Text Editor":
+          navigate("/TextEditor");
+          break;
+          case "Assignments And Tests":
+          navigate("/AssignmentDashboard");
           break;
 
         case "Community":

@@ -11,7 +11,11 @@ import {
   LogOut,
   Layers,
   Zap, 
-  Sparkles
+  Sparkles,
+  Video,  
+  Edit3,  
+  ClipboardCheck,
+  
 
 
 } from "lucide-react";
@@ -37,20 +41,22 @@ export const leftMenuItems = {
     { title: "Logout", icon: <LogOut /> },
     ],
   
-    // Student left sidebar menu
+    // Lecturer Student left sidebar menu
     1200: [
-      { title: "Home", icon: <Home /> },
-      { title: "My Courses", icon: <BookOpen /> },
-      { title: "Calendar", icon: <Calendar /> },
-      { title: "Messages", icon: <Mail /> },
-      { title: "Community", icon: <Users /> },
-      { title: "Games", icon: <BarChart2 /> },
-      { title: "Library", icon: <BarChart2 /> },
-      { title: "Settings", icon: <Settings /> },
-      { title: "Logout", icon: <LogOut /> },
-    ],
+  { title: "Home", icon: <Home /> },
+  { title: "Courses", icon: <BookOpen /> },
+  { title: "Calendar", icon: <Calendar /> },
+  { title: "Messages", icon: <Mail /> },
+  { title: "Community", icon: <Users /> },
+  { title: "Video Meeting", icon: <Video /> },
+  { title: "Text Editor", icon: <Edit3 /> },
+  { title: "Assignments And Tests", icon: <ClipboardCheck /> },
+  { title: "Library", icon: <BarChart2 /> },
+  { title: "Settings", icon: <Settings /> },
+  { title: "Logout", icon: <LogOut /> },
+],
   
-    // Lecturer left sidebar menu
+    // Student left sidebar menu
     1300: [
       { title: "Home", icon: <Home /> },
       { title: "Courses", icon: <BookOpen /> },
@@ -58,6 +64,8 @@ export const leftMenuItems = {
       { title: "Messages", icon: <Mail /> },
       { title: "Community", icon: <Users /> },
       { title: "Statistics", icon: <BarChart2 /> },
+        { title: "Video Meeting", icon: <Video /> },
+
       { title: "Settings", icon: <Settings /> },
       { title: "Logout", icon: <LogOut /> },
     ],

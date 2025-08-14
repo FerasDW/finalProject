@@ -3,7 +3,13 @@ import DeleteButton from "../../Buttons/DeleteButton";
 import EditButton from "../../Buttons/EditButton";
 import { useNavigate } from "react-router-dom";
 
-const CourseCard = ({ cardInfo, onDelete, onEdit }) => {
+const CourseCard = ({ 
+  cardInfo, 
+  onDelete, 
+  onEdit, 
+  userRole,
+  isAdmin 
+}) => {
   const navigate = useNavigate();
 
   const handleCourseClick = () => {
@@ -11,18 +17,26 @@ const CourseCard = ({ cardInfo, onDelete, onEdit }) => {
   };
 
   const handleEdit = () => {
-  onEdit(cardInfo);
-};
+    if (isAdmin && onEdit) {
+      onEdit(cardInfo);
+    }
+  };
 
   const handleDelete = () => {
-    // TODO: Replace this with API call in the future to delete from backend
-    // fetch(`/api/courses/${cardInfo.id}`, { method: 'DELETE' }).then(...)
-    onDelete(cardInfo.id);
+    if (isAdmin && onDelete) {
+      if (window.confirm(`Are you sure you want to delete "${cardInfo.title}"? This action cannot be undone.`)) {
+        onDelete(cardInfo.id);
+      }
+    }
   };
 
   return (
     <div className="card">
-      <div className="top-section" style={{ backgroundImage: `url(${cardInfo.img})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="top-section" style={{ 
+        backgroundImage: `url(${cardInfo.img})`, 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center' 
+      }}>
         <div className="border"></div>
         {cardInfo.image && (
           <img
@@ -31,12 +45,16 @@ const CourseCard = ({ cardInfo, onDelete, onEdit }) => {
             className="course-image"
           />
         )}
-        <div className="icons">
-          <div className="social-media">
-            <EditButton onClick={handleEdit} />
-            <DeleteButton onClick={handleDelete} />
+        
+        {/* ONLY show edit/delete buttons for admin users (role 1100) - using original structure */}
+        {isAdmin && (
+          <div className="icons">
+            <div className="social-media">
+              <EditButton onClick={handleEdit} />
+              <DeleteButton onClick={handleDelete} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="bottom-section">
