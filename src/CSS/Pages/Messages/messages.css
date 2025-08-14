@@ -11,7 +11,7 @@
 }
 
 /* Action buttons */
-.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn, .msg-use-btn {
+.msg-view-btn, .msg-reply-btn, .msg-edit-btn, .msg-duplicate-btn, .msg-use-btn, .msg-delete-btn {
   padding: 6px 12px;
   margin-right: 8px;
   border-radius: 5px;
@@ -69,6 +69,16 @@
 
 .msg-use-btn:hover {
   background-color: #0891b2;
+  transform: translateY(-1px);
+}
+
+.msg-delete-btn {
+  background-color: #ef4444;
+  color: white;
+}
+
+.msg-delete-btn:hover {
+  background-color: #dc2626;
   transform: translateY(-1px);
 }
 

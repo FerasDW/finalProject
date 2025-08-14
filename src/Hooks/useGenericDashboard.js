@@ -1,20 +1,29 @@
-// hooks/useGenericDashboard.js (CORRECTED)
-import { useState, useEffect, useMemo, useCallback } from "react";
+// hooks/useGenericDashboard.js (UPDATED with departments support)
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import * as genericDashboardAPI from "../Api/GenericDashboard";
+import * as genericDashboardAPI from "../Api/GenericDashboardApi";
 import { getGenericDashboardConfig, getPrimaryOptions, getFilterOptions } from "../Utils/genericDashboardUtils";
 
 const useGenericDashboard = (entityType) => {
-  const config = getGenericDashboardConfig(entityType);
   const navigate = useNavigate();
+  
+  // Get config once and memoize it
+  const config = useMemo(() => getGenericDashboardConfig(entityType), [entityType]);
   
   // State management
   const [data, setData] = useState([]);
+  const [departments, setDepartments] = useState([]); // 🆕 Add departments state
   const [primaryFilter, setPrimaryFilter] = useState("All");
   const [filterValues, setFilterValues] = useState({});
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Use ref to prevent infinite loops in navigation function
+  const dataRef = useRef([]);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   // Memoized fetch function to prevent infinite re-renders
   const fetchData = useCallback(async () => {
@@ -27,11 +36,21 @@ const useGenericDashboard = (entityType) => {
       setIsLoading(true);
       setError(null);
       
-      const result = await genericDashboardAPI.getData(entityType);
+      // Fetch both main data and departments
+      const [result, departmentsResult] = await Promise.all([
+        genericDashboardAPI.getData(entityType),
+        genericDashboardAPI.getAllDepartments().catch(err => {
+          console.warn("Failed to fetch departments:", err);
+          return [];
+        })
+      ]);
       
       // Ensure we always have an array
       const validData = Array.isArray(result) ? result : [];
+      const validDepartments = Array.isArray(departmentsResult) ? departmentsResult : [];
+      
       setData(validData);
+      setDepartments(validDepartments); // 🆕 Set departments
       
       if (validData.length === 0) {
         console.warn(`⚠️ No data available for ${entityType}`);
@@ -40,6 +59,7 @@ const useGenericDashboard = (entityType) => {
       console.error(`Failed to load ${entityType}:`, err);
       setError(err.message || `Failed to load ${entityType} data`);
       setData([]);
+      setDepartments([]);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +132,7 @@ const useGenericDashboard = (entityType) => {
     }));
   }, []);
 
-  // Calculate stats with better error handling
+  // Calculate stats with better error handling and departments support
   const stats = useMemo(() => {
     if (!config?.stats || !filteredData.length) return {};
 
@@ -120,7 +140,8 @@ const useGenericDashboard = (entityType) => {
       return Object.entries(config.stats).reduce((acc, [key, calculator]) => {
         try {
           if (typeof calculator === 'function') {
-            acc[key] = calculator(filteredData);
+            // 🆕 Pass departments as second parameter for lecturer stats
+            acc[key] = calculator(filteredData, departments);
           } else {
             acc[key] = 0;
           }
@@ -134,7 +155,7 @@ const useGenericDashboard = (entityType) => {
       console.error('Stats calculation error:', error);
       return {};
     }
-  }, [filteredData, config?.stats]);
+  }, [filteredData, departments, config?.stats]); // 🆕 Add departments dependency
 
   // Generate dashboard cards
   const dashboardCards = useMemo(() => {
@@ -146,7 +167,7 @@ const useGenericDashboard = (entityType) => {
     }));
   }, [config?.cards, stats]);
 
-  // Navigation function with better error handling
+  // Navigation function with better error handling - use ref to prevent infinite loops
   const goToProfile = useCallback((item) => {
     try {
       if (!item?.id || !config?.entityName) {
@@ -160,8 +181,8 @@ const useGenericDashboard = (entityType) => {
         return;
       }
 
-      // Check if entity exists
-      const entityExists = data.some((entity) => entity?.id === sanitizedId);
+      // Check if entity exists using ref to avoid dependency issues
+      const entityExists = dataRef.current.some((entity) => entity?.id === sanitizedId);
       if (!entityExists) {
         console.warn('Entity not found in data:', sanitizedId);
         return;
@@ -180,7 +201,7 @@ const useGenericDashboard = (entityType) => {
       console.error('Navigation error:', error);
       alert("Unable to navigate to profile. Please try again.");
     }
-  }, [data, config?.entityName, navigate]);
+  }, [config?.entityName, navigate]); // Remove data dependency
 
   // Handle card clicks
   const handleCardClick = useCallback((card) => {
@@ -189,19 +210,19 @@ const useGenericDashboard = (entityType) => {
     try {
       switch (card.id) {
         case "total-students":
-        case "active-lecturers":
+        case "total-lecturers":
           setPrimaryFilter("All");
           setFilterValues({});
           break;
         case "active-students":
           setFilterValues((prev) => ({ ...prev, status: "Active" }));
           break;
-        case "graduated":
+        case "graduated-students":
           setFilterValues((prev) => ({ ...prev, status: "Graduated" }));
           break;
         case "top-performers":
           console.log("🏆 Show top performers filter");
-          // Add specific filter logic here
+          // Add specific filter logic here if needed
           break;
         default:
           console.log(`📊 Card action not defined for: ${card.id}`);
@@ -238,19 +259,27 @@ const useGenericDashboard = (entityType) => {
     fetchData();
   }, [fetchData]);
 
+  // Memoize the config object with functions to prevent recreation
+  const configWithFunctions = useMemo(() => {
+    if (!config) return null;
+    
+    return {
+      ...config,
+      getPrimaryOptions: () => getPrimaryOptions(data, config.primaryFilter),
+      getFilterOptions: (fieldName) => getFilterOptions(fieldName, data),
+    };
+  }, [config, data]);
+
   return {
     // Data
     data,
     filteredData,
+    departments, // 🆕 Return departments
     isLoading,
     error,
     
     // Config
-    config: config ? {
-      ...config,
-      getPrimaryOptions: () => getPrimaryOptions(data, config.primaryFilter),
-      getFilterOptions: (fieldName) => getFilterOptions(fieldName, data),
-    } : null,
+    config: configWithFunctions,
     
     // State
     primaryFilter,

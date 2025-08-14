@@ -7,9 +7,7 @@ import Popup from "../../Components/Cards/PopUp.jsx";
 import useCourses from "../../../Hooks/useCourses.js";
 import styles from "../../../CSS/Pages/Courses/courses.module.css";
 
-export default function Courses() {
-  console.log("🔧 Courses component initialized");
-  
+export default function Courses() {  
   const {
     displayedCourses,
     loading,
@@ -39,19 +37,10 @@ export default function Courses() {
 
   const loadMoreRef = useRef();
 
-  console.log("📊 Courses component state:", {
-    coursesCount: displayedCourses.length,
-    fieldsCount: updatedCourseFields.length,
-    isLoading: loading,
-    isPopupOpen: isCoursePopupOpen,
-    isEditing: editingCourse
-  });
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !loading) {
-          console.log("Intersection detected, loading more courses...");
           loadMoreCourses();
         }
       },
@@ -71,11 +60,8 @@ export default function Courses() {
   }, [loadMoreCourses, hasMore, loading]);
 
   // Safe render of form fields
-  const renderDynamicForm = () => {
-    console.log("🔧 Rendering DynamicForm with fields:", updatedCourseFields.length);
-    
+  const renderDynamicForm = () => {    
     if (!Array.isArray(updatedCourseFields) || updatedCourseFields.length === 0) {
-      console.log("⏳ Waiting for course fields to load...");
       return (
         <div style={{ padding: '20px', textAlign: 'center' }}>
           Loading form fields...

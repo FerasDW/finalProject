@@ -1,156 +1,154 @@
-import {
-  messagesData,
-  announcementsData,
-  fullAnnouncementsData,
-  templatesData,
-  fullTemplatesData,
-} from "../Static/messagesPageData.js";
+// src/Api/messagesPageApi.js
+import axios from 'axios';
 
-// Fetch all messages
-export const fetchMessages = async () => {
-  try {
-    return messagesData;
-  } catch (error) {
-    throw new Error("Failed to fetch messages");
-  }
+const API_BASE_URL = 'http://localhost:8080/api';
+
+// Use axios instance with credentials for cookie-based authentication
+const api = axios.create({
+  withCredentials: true,
+  baseURL: API_BASE_URL,
+});
+
+// --- User Endpoints ---
+export const fetchAdmins = async () => {
+  const response = await api.get('/users/role/1100');
+  return response.data;
 };
 
-// Fetch message by ID
+export const fetchLecturers = async () => {
+  const response = await api.get('/users/role/1200');
+  return response.data;
+};
+
+// 🆕 NEW: API function to fetch users by role
+export const fetchUsersByRole = async (roleCode) => {
+    const response = await api.get(`/users/role/${roleCode}`);
+    return response.data;
+};
+
+// --- Messages Endpoints ---
+
+export const fetchReceivedMessages = async () => {
+  const response = await api.get('/messages/received');
+  return response.data;
+};
+
+export const fetchSentMessages = async () => {
+  const response = await api.get('/messages/sent');
+  return response.data;
+};
+
 export const fetchMessageById = async (messageId) => {
-  try {
-    const message = messagesData.find((msg) => msg.id === parseInt(messageId));
-    if (!message) {
-      throw new Error(`Message with ID ${messageId} not found`);
-    }
-    return message;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const response = await api.get(`/messages/${messageId}`);
+  return response.data;
 };
 
-// Send reply to a message
+export const createMessage = async (messageData) => {
+  const response = await api.post('/messages', messageData);
+  return response.data;
+};
+
 export const sendMessageReply = async (messageId, replyData) => {
-  try {
-    return { messageId, ...replyData };
-  } catch (error) {
-    throw new Error("Failed to send reply");
-  }
+  const response = await api.post(`/messages/${messageId}/reply`, replyData);
+  return response.data;
 };
 
-// Fetch all announcements
+// --- Announcements Endpoints ---
+
 export const fetchAnnouncements = async () => {
-  try {
-    return announcementsData;
-  } catch (error) {
-    throw new Error("Failed to fetch announcements");
-  }
+  const response = await api.get('/announcements');
+  return response.data;
 };
 
-// Fetch full announcement by ID
-export const fetchFullAnnouncementById = async (announcementId) => {
-  try {
-    const announcement = fullAnnouncementsData.find((ann) => ann.id === parseInt(announcementId));
-    if (!announcement) {
-      throw new Error(`Announcement with ID ${announcementId} not found`);
-    }
-    return announcement;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+export const fetchAnnouncementById = async (announcementId) => {
+  const response = await api.get(`/announcements/${announcementId}`);
+  return response.data;
 };
 
-// Create a new announcement
 export const createAnnouncement = async (announcementData) => {
-  try {
-    const newId = Math.max(...announcementsData.map((a) => a.id), 0) + 1;
-    const currentDate = new Date().toISOString().split("T")[0];
-    const currentTime = new Date().toTimeString().split(" ")[0].substring(0, 5);
-    const newAnnouncement = {
-      id: newId,
-      ...announcementData,
-      createdDate: currentDate,
-      createdTime: currentTime,
-    };
-    return newAnnouncement;
-  } catch (error) {
-    throw new Error("Failed to create announcement");
-  }
+  const response = await api.post('/announcements', announcementData);
+  return response.data;
 };
 
-// Update an existing announcement
 export const updateAnnouncement = async (announcementId, announcementData) => {
-  try {
-    const announcement = fullAnnouncementsData.find((ann) => ann.id === parseInt(announcementId));
-    if (!announcement) {
-      throw new Error(`Announcement with ID ${announcementId} not found`);
-    }
-    return { ...announcement, ...announcementData };
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const response = await api.put(`/announcements/${announcementId}`, announcementData);
+  return response.data;
 };
 
-// Fetch all templates
+export const duplicateAnnouncement = async (announcementId, announcementData) => {
+  const response = await api.post(`/announcements/${announcementId}/duplicate`, announcementData);
+  return response.data;
+};
+
+export const deleteAnnouncement = async (announcementId) => {
+  const response = await api.delete(`/announcements/${announcementId}`);
+  return response.data;
+};
+
+// --- Templates Endpoints ---
+
 export const fetchTemplates = async () => {
-  try {
-    return templatesData;
-  } catch (error) {
-    throw new Error("Failed to fetch templates");
-  }
+  const response = await api.get('/templates');
+  return response.data;
 };
 
-// Fetch full template by ID
-export const fetchFullTemplateById = async (templateId) => {
-  try {
-    const template = fullTemplatesData.find((tpl) => tpl.id === parseInt(templateId));
-    if (!template) {
-      throw new Error(`Template with ID ${templateId} not found`);
-    }
-    return template;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+export const fetchTemplateById = async (templateId) => {
+  const response = await api.get(`/templates/${templateId}`);
+  return response.data;
 };
 
-// Create a new template
 export const createTemplate = async (templateData) => {
-  try {
-    const newId = Math.max(...templatesData.map((t) => t.id), 0) + 1;
-    const currentDate = new Date().toISOString().split("T")[0];
-    const newTemplate = {
-      id: newId,
-      ...templateData,
-      createdDate: currentDate,
-      lastModified: currentDate,
-    };
-    return newTemplate;
-  } catch (error) {
-    throw new Error("Failed to create template");
-  }
+  const response = await api.post('/templates', templateData);
+  return response.data;
 };
 
-// Update an existing template
 export const updateTemplate = async (templateId, templateData) => {
-  try {
-    const template = fullTemplatesData.find((tpl) => tpl.id === parseInt(templateId));
-    if (!template) {
-      throw new Error(`Template with ID ${templateId} not found`);
-    }
-    return { ...template, ...templateData, lastModified: new Date().toISOString().split("T")[0] };
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  const response = await api.put(`/templates/${templateId}`, templateData);
+  return response.data;
 };
 
-// Use a template
 export const useTemplate = async (templateId, templateData) => {
-  try {
-    const template = fullTemplatesData.find((tpl) => tpl.id === parseInt(templateId));
-    if (!template) {
-      throw new Error(`Template with ID ${templateId} not found`);
+  const response = await api.post(`/templates/${templateId}/use`, templateData);
+  return response.data;
+};
+
+export const deleteTemplate = async (templateId) => {
+  const response = await api.delete(`/templates/${templateId}`);
+  return response.data;
+};
+
+// --- Files Endpoints ---
+
+export const fetchFiles = async () => {
+  const response = await api.get('/files');
+  return response.data;
+};
+
+export const fetchFileById = async (fileId) => {
+  const response = await api.get(`/files/${fileId}`);
+  return response.data;
+};
+
+export const uploadFile = async (file, fileMetadata) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  // Append other metadata fields from your form
+  for (const key in fileMetadata) {
+    if (Object.prototype.hasOwnProperty.call(fileMetadata, key)) {
+      formData.append(key, fileMetadata[key]);
     }
-    return { templateId, ...templateData };
-  } catch (error) {
-    throw new Error("Failed to use template");
   }
+
+  const response = await api.post('/files/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const deleteFile = async (fileId) => {
+  const response = await api.delete(`/files/${fileId}`);
+  return response.data;
 };

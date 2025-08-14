@@ -1,28 +1,15 @@
 import { ResponsiveLine } from "@nivo/line";
 
 const LineChart = ({ data }) => {
-  // --- FIX ---
-  // Add a defensive check. If there's no data or the array is empty, don't render the chart.
-  if (!data || data.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '20px' }}>No data available for this chart.</div>;
+  // We still check if the data is valid before rendering.
+  if (!data || data.length === 0 || !data[0].data || data[0].data.length === 0) {
+    return <div style={{ textAlign: 'center', padding: '20px' }}>No data available to display.</div>;
   }
-
-  // --- FIX ---
-  // Nivo Line charts expect data in a specific "series" format.
-  // We transform our simple array [{ name: '2024', value: 4 }] into the format Nivo needs.
-  const formattedData = [
-    {
-      id: "enrollment", // A unique ID for the data series
-      data: data.map(item => ({
-        x: item.name,   // 'name' from our API becomes the 'x' axis point
-        y: item.value,  // 'value' from our API becomes the 'y' axis point
-      })),
-    },
-  ];
 
   return (
     <ResponsiveLine
-      data={formattedData} // Use the correctly formatted data
+      // --- FIX: Pass the data prop directly, assuming it's already formatted ---
+      data={data}
       margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
       xScale={{ type: "point" }}
       yScale={{
@@ -39,7 +26,7 @@ const LineChart = ({ data }) => {
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: "Year",
+        legend: "Assignment / Activity",
         legendOffset: 36,
         legendPosition: "middle",
       }}
@@ -47,7 +34,7 @@ const LineChart = ({ data }) => {
         tickSize: 5,
         tickPadding: 5,
         tickRotation: 0,
-        legend: "New Users",
+        legend: "Submissions / Progress",
         legendOffset: -40,
         legendPosition: "middle",
       }}
@@ -57,7 +44,7 @@ const LineChart = ({ data }) => {
       pointBorderColor={{ from: "serieColor" }}
       pointLabelYOffset={-12}
       useMesh={true}
-      legends={[]} // Removing legends for simplicity as we only have one line
+      legends={[]}
     />
   );
 };
