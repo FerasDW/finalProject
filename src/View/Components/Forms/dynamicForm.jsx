@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 
 // Enhanced field icon mapping with more specific icons
-const getFieldIcon = (fieldName, fieldType) => {
+export const getFieldIcon = (fieldName, fieldType) => {
   // Name-based icon mapping (more specific)
   const nameIconMap = {
     'title': FileText,
@@ -532,7 +532,7 @@ const EnhancedFileUpload = ({
 };
 
 // Individual Field Component
-const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) => {
+const FormField = ({ field, value, error, onChange, disabled, dynamicOptions, customRenderSelect }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const IconComponent = getFieldIcon(field.name, field.type);
@@ -541,10 +541,7 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
   const hasError = Boolean(error);
   const isDisabled = disabled || field.disabled;
 
-  // Use dynamic options if available, otherwise use field options
-  const fieldOptions = dynamicOptions || field.options || [];
-
-  // Ensure fieldOptions is always an array of strings or simple objects
+  const fieldOptions = (dynamicOptions || field.options || []);
   const safeOptions = Array.isArray(fieldOptions) ? fieldOptions : [];
 
   const baseInputStyles = {
@@ -574,7 +571,6 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
   };
 
   const renderField = () => {
-    
     switch (field.type) {
       case 'textarea':
         return (
@@ -613,6 +609,20 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
         );
 
       case 'select':
+        if (customRenderSelect && typeof customRenderSelect === 'function') {
+          return customRenderSelect({
+            field,
+            value,
+            onChange,
+            isDisabled,
+            isFocused,
+            setIsFocused,
+            hasError,
+            fieldId,
+            baseInputStyles,
+            safeOptions
+          });
+        }
         return (
           <div style={{ position: 'relative' }}>
             <div style={{
@@ -626,6 +636,7 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
             }}>
               <IconComponent size={20} />
             </div>
+            
             <select
               id={fieldId}
               name={field.name}
@@ -646,14 +657,13 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
                 paddingRight: '56px'
               }}
             >
-              <option value="">{field.placeholder || 'Select an option'}</option>
+              <option value="" disabled>{field.placeholder || `Select ${field.label || 'an option'}`}</option>
               {safeOptions.map((option, index) => {
-                // Handle both string options and object options
                 const optionValue = typeof option === 'object' ? option.value || option.name : option;
-                const optionLabel = typeof option === 'object' ? option.label || option.name : option;
+                const optionLabel = typeof option === 'object' ? option.label || option.name : option;          
                 
                 return (
-                  <option key={index} value={optionValue}>
+                  <option key={`${field.name}-${index}-${optionValue}`} value={optionValue}>
                     {optionLabel}
                   </option>
                 );
@@ -666,7 +676,6 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {safeOptions.map((option, index) => {
-              // Handle both string options and object options
               const optionValue = typeof option === 'object' ? option.value : option;
               const optionLabel = typeof option === 'object' ? option.label : option;
               
@@ -914,7 +923,6 @@ const FormField = ({ field, value, error, onChange, disabled, dynamicOptions }) 
     }
   };
 
-  // For file fields, the EnhancedFileUpload component handles its own label and error display
   if (field.type === 'file') {
     return renderField();
   }
@@ -1000,28 +1008,18 @@ const DynamicForm = ({
   onFieldChange,
   getAcademicYearOptions,
   errors: externalErrors = {},
+  customRenderSelect = null,
   ...props
 }) => {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  const [dynamicFields, setDynamicFields] = useState(fields);
   const [dynamicFieldOptions, setDynamicFieldOptions] = useState({});
 
-  // Initialize form data when initialData changes or component mounts
   useEffect(() => {
     if (initialData && Object.keys(initialData).length > 0) {
-      // EDIT mode - use provided data
       setFormData(initialData);
-      
-      // Set dynamic options for academicYear if department is present
-      if (initialData.department && getAcademicYearOptions) {
-        const academicYearOptions = getAcademicYearOptions(initialData.department);
-        setDynamicFieldOptions(prev => ({
-          ...prev,
-          academicYear: academicYearOptions
-        }));
-      }
     } else {
-      // ADD mode - initialize with defaults
       const defaultData = {};
       fields.forEach(field => {
         if (field.disabled && field.name === 'year') {
@@ -1035,11 +1033,20 @@ const DynamicForm = ({
       setFormData(defaultData);
     }
     
-    // Clear errors when data changes
     setErrors({});
   }, [initialData, fields, getAcademicYearOptions]);
 
-  // Update academic year options when department changes
+  useEffect(() => {
+    setDynamicFields(fields);
+    const initialOptions = {};
+    fields.forEach(field => {
+      if (field.options) {
+        initialOptions[field.name] = field.options;
+      }
+    });
+    setDynamicFieldOptions(initialOptions);
+  }, [fields]);
+
   useEffect(() => {
     if (getAcademicYearOptions && formData.department) {
       const academicYearOptions = getAcademicYearOptions(formData.department);
@@ -1056,7 +1063,6 @@ const DynamicForm = ({
     }
   }, [formData.department, getAcademicYearOptions]);
 
-  // Update errors from external source
   useEffect(() => {
     if (externalErrors && Object.keys(externalErrors).length > 0) {
       setErrors(externalErrors);
@@ -1065,9 +1071,8 @@ const DynamicForm = ({
 
   const handleInputChange = (e) => {
     const { name, type, value, checked, files } = e.target;
-
-    // Don't allow changes to disabled fields
     const field = fields.find(f => f.name === name);
+    
     if (field && field.disabled) {
       return;
     }
@@ -1087,20 +1092,13 @@ const DynamicForm = ({
       ...formData,
       [name]: finalValue,
     };
-
-    // If department changed, reset academic year
-    if (name === 'department' && formData.academicYear) {
+    
+    if (name === 'department') {
       newFormData.academicYear = '';
-    }
-
-    // Ensure year field always stays as current year for disabled fields
-    if (name === 'year' && field && field.disabled) {
-      return; // Prevent year field changes if disabled
     }
     
     setFormData(newFormData);
-
-    // Clear error when user starts typing
+    
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -1108,27 +1106,23 @@ const DynamicForm = ({
       }));
     }
 
-    // Call external field change handler
     if (onFieldChange) {
-      onFieldChange(name, finalValue, newFormData);
+      const updatedFields = onFieldChange(name, finalValue);
+      if (updatedFields) {
+        setDynamicFields(updatedFields);
+      }
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    fields.forEach((field) => {
-      // Skip validation for disabled fields
+    dynamicFields.forEach((field) => {
       if (field.disabled) {
         return;
       }
-
       const value = formData[field.name];
-
-      // Required field validation
       if (field.required) {
         let isEmpty = false;
-
         if (field.type === "file") {
           isEmpty = !value;
         } else if (field.type === "checkbox") {
@@ -1138,16 +1132,12 @@ const DynamicForm = ({
         } else if (field.type === "radio") {
           isEmpty = !value || value === "";
         } else {
-          isEmpty =
-            !value || (typeof value === "string" && value.trim() === "");
+          isEmpty = !value || (typeof value === "string" && value.trim() === "");
         }
-
         if (isEmpty) {
           newErrors[field.name] = `${field.label || field.name} is required`;
         }
       }
-
-      // Custom validation rules
       if (value && validationRules[field.name]) {
         const rule = validationRules[field.name];
         if (typeof rule === "function") {
@@ -1156,12 +1146,9 @@ const DynamicForm = ({
             newErrors[field.name] = error;
           }
         } else if (rule.pattern && !rule.pattern.test(value)) {
-          newErrors[field.name] =
-            rule.message || `Invalid ${field.label || field.name}`;
+          newErrors[field.name] = rule.message || `Invalid ${field.label || field.name}`;
         }
       }
-
-      // Built-in email validation
       if (field.type === "email" && value) {
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailPattern.test(value)) {
@@ -1176,9 +1163,7 @@ const DynamicForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
     if (validateForm()) {
-      // Ensure current year is always set for year field
       const currentYear = new Date().getFullYear();
       const finalFormData = {
         ...formData,
@@ -1191,13 +1176,12 @@ const DynamicForm = ({
   const handleCancel = () => {
     setFormData({});
     setErrors({});
-    setDynamicFieldOptions({});
+    setDynamicFields(fields);
     onCancel?.();
   };
 
   return (
     <div className={className} style={{ padding: '20px' }} {...props}>
-      {/* Header */}
       {showHeader && (
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -1240,12 +1224,11 @@ const DynamicForm = ({
         </div>
       )}
 
-      {/* Content */}
       <div style={{ 
         padding: showHeader ? '32px 0 0 0' : '0'
       }}>
         <form onSubmit={handleSubmit}>
-          {fields.map((field, index) => (
+          {dynamicFields.map((field, index) => (
             <FormField
               key={`${field.name}-${index}`}
               field={field}
@@ -1254,12 +1237,12 @@ const DynamicForm = ({
               onChange={handleInputChange}
               disabled={loading}
               dynamicOptions={dynamicFieldOptions[field.name]}
+              customRenderSelect={customRenderSelect}
             />
           ))}
         </form>
       </div>
 
-      {/* Footer */}
       {showFooter && (
         <div style={{
           padding: '32px 0 0 0',

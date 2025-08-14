@@ -1,3 +1,4 @@
+// src/Api/coursePageApi.js
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -73,6 +74,22 @@ export const enrollStudent = async (courseId, enrollmentData) => {
         throw error;
     }
 };
+
+
+export const unenrollStudents = async (courseId, studentIds) => {
+  try {
+    const response = await axios.delete(`${COURSES_URL}/${courseId}/enrollments`, {
+      data: { studentIds }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error unenrolling students:", error);
+    throw error;
+  }
+};
+
+
+
 
 /* ==================================================================
                             DEPARTMENTS

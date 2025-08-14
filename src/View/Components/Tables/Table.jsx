@@ -32,7 +32,8 @@ const DynamicTable = ({
   onRowSelect,
   onSort,
   onSearch,
-  onDelete
+  onDelete,
+  isSelectable = true,
 }) => {
   // Use the custom table hook
   const {
@@ -109,7 +110,8 @@ const DynamicTable = ({
           </div>
           
           <div className="actions">
-            {hasSelectedRows() && (
+            {/* --- FIX: Conditionally render the delete button --- */}
+            {isSelectable && hasSelectedRows() && (
               <button className="delete-button" onClick={deleteSelected}>
                 <Trash2 className="button-icon" />
                 Delete ({selectedRows.length})
@@ -131,14 +133,16 @@ const DynamicTable = ({
           <table>
             <thead>
               <tr>
-                <th className="checkbox-header">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected()}
-                    onChange={selectAllRows}
-                    className="header-checkbox"
-                  />
-                </th>
+                {isSelectable && (
+                  <th className="checkbox-header">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected()}
+                      onChange={selectAllRows}
+                      className="header-checkbox"
+                    />
+                  </th>
+                )}
                 {headers.map((header, i) => (
                   <th
                     key={i}
@@ -163,14 +167,16 @@ const DynamicTable = ({
                     key={rowKey} 
                     className={isRowSelected(row) ? "selected-row" : ""}
                   >
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={isRowSelected(row)}
-                        onChange={() => toggleRow(rowKey)}
-                        className="row-checkbox"
-                      />
-                    </td>
+                    {isSelectable && (
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={isRowSelected(row)}
+                          onChange={() => toggleRow(rowKey)}
+                          className="row-checkbox"
+                        />
+                      </td>
+                    )}
                     {headers.map((header, j) => (
                       <td key={j}>
                         {renderCellContent(row, header, columnConfig)}

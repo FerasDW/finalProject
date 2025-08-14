@@ -46,6 +46,7 @@
     "react-pdf": "^10.0.1",
     "react-router-dom": "^7.4.1",
     "react-scripts": "^5.0.1",
+    "react-select": "^5.10.2",
     "sass": "^1.86.0",
     "sockjs-client": "^1.6.1",
     "stream-browserify": "^3.0.0",

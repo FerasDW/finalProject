@@ -12,11 +12,15 @@ import DynamicForm from "../../Forms/dynamicForm.jsx";
 import Popup from "../../Cards/PopUp.jsx";
 import { Users, Calendar, CheckSquare, Award } from "lucide-react";
 
-// Import API functions
-import { getUsersByIds, fetchStudents } from "../../../../Api/userAPI.js";
-import { enrollStudent, getCourseAnalytics, getAssignmentTimeline } from "../../../../Api/coursePageApi.js";
+import { getAcademicYearOptionsForDepartment } from "../../../../Utils/courseUtils.js";
 
-const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled }) => {
+import { getUsersByIds, fetchStudents } from "../../../../Api/userAPI.js";
+import { enrollStudent, getCourseAnalytics, getAssignmentTimeline, unenrollStudents } from "../../../../Api/coursePageApi.js";
+import { parse } from "url";
+
+const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEnrolled }) => {
+  console.log("courseData:", courseData);
+  const isAdmin = userRole === "1100";
   const [activeSection, setActiveSection] = useState("charts");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -34,6 +38,26 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
 
   const emptyInitialData = useMemo(() => ({}), []);
+
+  const studentTableHiddenColumns = [
+    'id',
+    '_id',
+    'username',
+    'password',
+    'imageUrl',
+    'profilePic',
+    'coverPic',
+    'website',
+    'socialLinks',
+    'role',
+    'bio',
+    'location',
+    'linkedin',
+    'github',
+    'createdAt',
+    'updatedAt',
+    '_class'
+  ];
 
   // Fetch enrolled students based on selected year
   useEffect(() => {
@@ -86,10 +110,9 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
   }, [activeSection, courseData?.id, selectedYear]);
 
   // Fallback data for charts
-  const fallbackGradeData = [{ Group: "A", "Sample": 5 }, { Group: "B", "Sample": 10 }];
+  const fallbackGradeData = [{ name: "Sample A", value: 5 }, { name: "Sample B", value: 10 }];
   const fallbackAssignmentData = [{ id: "Sample", data: [{ x: "Sample 1", y: 10 }] }];
 
-  // ... (Your handler functions like handleEnrollStudent remain the same)
   const fetchAllStudents = async () => {
     setLoadingAllStudents(true);
     try {
@@ -109,20 +132,34 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
     fetchAllStudents();
   };
   const handleEnrollStudent = async (formData) => {
-    const { studentId, academicYear, learningGroup, graduationYear, yearGroup, status, enrollmentNotes } = formData;
-    if (!studentId || !academicYear || !learningGroup || !graduationYear || !yearGroup || !status) {
+    const { studentId, academicYear, learningGroup, status, enrollmentNotes } = formData;
+    
+    if (!studentId || !academicYear || !learningGroup || !status) {
       alert("Please fill in all required fields");
       return;
     }
+
     setEnrolling(true);
     try {
-      const enrollmentData = { studentId, academicYear: parseInt(academicYear.split('-')[0]), learningGroup, graduationYear, yearGroup, status, enrollmentNotes: enrollmentNotes || '', };
+      const enrollmentData = {
+        studentId,
+        academicYear: parseInt(academicYear), 
+        learningGroup, 
+        status, 
+        enrollmentNotes: enrollmentNotes || '', 
+        // We can optionally still send the student's year of study if your backend needs it
+        // studentYearOfStudy: parseInt(academicYear) 
+      };
+
       await enrollStudent(courseData.id, enrollmentData);
-      if (onStudentEnrolled) {
-        onStudentEnrolled();
-      }
-      setShowAddStudentForm(false);
+      
       alert(`Student enrolled successfully!`);
+      setShowAddStudentForm(false);
+      
+      if (onStudentEnrolled) {
+        onStudentEnrolled(); 
+      }
+      
     } catch (error) {
       console.error("Failed to enroll student:", error);
       alert("Failed to enroll student. Please try again.");
@@ -130,22 +167,100 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
       setEnrolling(false);
     }
   };
-  const handleCancelAddStudent = () => { setShowAddStudentForm(false); setAllStudents([]); };
-  const enrollmentFormFields = useMemo(() => {
-    const studentOptions = allStudents.map(student => ({ value: student.id, label: `${student.name} (${student.email}) - ${student.department || 'No Department'}` }));
+
+// In your CoursePageContent.jsx, update the handleDeleteStudents function:
+
+const handleDeleteStudents = async (selectedStudentObjects) => {
+  if (!selectedStudentObjects || selectedStudentObjects.length === 0) {
+    alert("Please select students to unenroll.");
+    return;
+  }
+
+  // Extract just the IDs from the selected student objects
+  const selectedStudentIds = selectedStudentObjects.map(student => {
+    // Handle both cases: if it's already an ID string, or if it's an object with an 'id' property
+    if (typeof student === 'string') {
+      return student;
+    } else if (student && student.id) {
+      return student.id;
+    } else {
+      return null;
+    }
+  }).filter(id => id !== null); // Remove any null values
+
+  if (selectedStudentIds.length === 0) {
+    alert("No valid student IDs found.");
+    return;
+  }
+
+  const confirmDelete = window.confirm(
+    `Are you sure you want to unenroll ${selectedStudentIds.length} student(s)? This cannot be undone.`
+  );
+
+  if (confirmDelete) {
+    try {
+      await unenrollStudents(courseData.id, selectedStudentIds);
+      alert("Student(s) unenrolled successfully!");
+      // Call the refetch function to update the list
+      if (onStudentEnrolled) {
+        onStudentEnrolled();
+      }
+    } catch (error) {
+      alert("Failed to unenroll students. Please try again.");
+    }
+  }
+};
+
+const handleCancelAddStudent = () => { setShowAddStudentForm(false); setAllStudents([]); };
+console.log("Academic Year Options:", getAcademicYearOptionsForDepartment(courseData?.department, departments));
+const enrollmentFormFields = useMemo(() => {
+    const studentOptions = allStudents.map(student => ({
+      value: student.id,
+      label: `${student.name} (${student.email}) - ${student.department || 'No Department'}`
+    }));
+
+    let academicYearOptions = [];
+    const currentDepartment = departments.find(d => d.name === courseData?.department);
+
+    if (currentDepartment && currentDepartment.totalAcademicYears) {
+      academicYearOptions = Array.from(
+        { length: currentDepartment.totalAcademicYears },
+        (_, i) => ({ value: `${i + 1}`, label: `Year ${i + 1}` })
+      );
+    }
+    
+    // ✅ Generate academic year options using utility
+    const yearOptions = getAcademicYearOptionsForDepartment(courseData?.department, departments).map(year => ({
+      value: year,
+      label: `Year ${year}`
+    }));
+
     return [
       { name: "studentId", label: "Select Student to Enroll", type: "select", placeholder: loadingAllStudents ? "Loading students..." : "Choose a student", required: true, options: studentOptions, disabled: loadingAllStudents },
-      { name: "academicYear", label: "Academic Year", type: "select", required: true, options: ["2023-24", "2024-25", "2025-26"], placeholder: "Select academic year" },
-      { name: "learningGroup", label: "Learning Group", type: "select", required: true, options: ["group-a", "group-b", "group-c"], placeholder: "Assign to learning group" },
-      { name: "graduationYear", label: "Graduation Year", type: "select", required: true, options: ["2024", "2025", "2026", "2027"], placeholder: "Expected graduation year" },
-      { name: "yearGroup", label: "Year Group", type: "select", required: true, options: ["First Year", "Second Year", "Third Year", "Fourth Year"], placeholder: "Select year group" },
+      {
+        name: "department",
+        label: "Department (Debug)",
+        type: "text",
+        disabled: true,
+        value: courseData?.department || "No Department"
+      },
+      {
+        name: "academicYear",
+        label: "Academic Year",
+        type: "select",
+        required: true,
+        options: getAcademicYearOptionsForDepartment(courseData?.department, departments).map(year => ({
+          value: year,
+          label: `Year ${year}`
+        })),
+        placeholder: "Select academic year"
+      },
+      { name: "learningGroup", label: "Learning Group", type: "select", required: true, options: ["Group A", "Group B", "Group C"], placeholder: "Assign to learning group" },
       { name: "status", label: "Enrollment Status", type: "select", required: true, options: ["Active", "Inactive", "Graduated", "Suspended"], placeholder: "Set enrollment status" },
       { name: "enrollmentNotes", label: "Enrollment Notes (Optional)", type: "textarea", placeholder: "Any additional notes...", required: false, rows: 3 }
     ];
-  }, [allStudents, loadingAllStudents]);
+  }, [allStudents, loadingAllStudents, courseData.department, departments]);
 
-
-  // --- FIX: This function now calculates the total student count for the main info box ---
   const getTotalStudentCount = () => {
     if (!courseData || !courseData.enrollments) return 0;
     return courseData.enrollments.reduce((total, enrollment) => total + (enrollment.studentIds?.length || 0), 0);
@@ -160,9 +275,6 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
             <CourseDetails courseData={courseData} totalStudents={getTotalStudentCount()} />
           </div>
           <div style={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "20px", boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)", overflow: "hidden", height: "100%", display: "flex", flexDirection: "column" }}>
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "32px", height: "240px" }}>
-              <PieChart data={[{ id: "attendant", value: 45 }, { id: "not attendant", value: 35 }, { id: "approved", value: 20 }]} />
-            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
               <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: "12px", padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "white" }}>
                   <Users size={24} style={{ marginBottom: "8px" }} />
@@ -198,13 +310,25 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
         if (loadingCharts) return <div style={{ padding: "20px", textAlign: "center" }}>Loading chart data for {selectedYear}...</div>;
         
         const hasRealGradeData = analyticsData && analyticsData.totalSubmissions > 0;
-        const hasRealTimelineData = timelineData && timelineData.some(d => d.value > 0);
-
         const gradeChartData = hasRealGradeData
           ? analyticsData.gradeDistribution.labels.map((label, index) => ({ name: label, value: analyticsData.gradeDistribution.data[index] }))
           : fallbackGradeData;
         
-        const timelineChartData = hasRealTimelineData ? timelineData : fallbackAssignmentData;
+        // --- FIX: The data formatting logic now lives here ---
+        const hasRealTimelineData = timelineData && timelineData.some(d => d.value > 0);
+        let timelineChartData;
+
+        if (hasRealTimelineData) {
+          // If we have real data, transform it into the format Nivo expects.
+          // Your real timelineData is simple: [{ name: '...', value: ... }]
+          timelineChartData = [{
+              id: 'timeline',
+              data: timelineData.map(item => ({ x: item.name, y: item.value }))
+          }];
+        } else {
+          // Otherwise, use the fallback data, which is already in the correct format.
+          timelineChartData = fallbackAssignmentData;
+        }
 
         return (
           <>
@@ -219,9 +343,34 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
         return (
           <>
             {loadingStudents ? (<div style={{ padding: "20px", textAlign: "center" }}>Loading enrolled students for {selectedYear}...</div>) : (
-              <StudentTable icon="students" title={`Enrolled Students for ${selectedYear}`} subtitle={`Manage students enrolled in ${courseData?.name || 'this course'}`} addButtonText="Enroll Student" data={students} showAddButton={true} onAddClick={handleShowEnrollmentForm} />
+              <StudentTable 
+                icon="students" 
+                title={`Enrolled Students for ${selectedYear}`} 
+                subtitle={`Manage students enrolled in ${courseData?.name || 'this course'}`} 
+                addButtonText="Enroll Student" 
+                data={students} 
+                showAddButton={isAdmin} 
+                onAddClick={handleShowEnrollmentForm} 
+                hiddenColumns={studentTableHiddenColumns} 
+                isSelectable={isAdmin}
+                onDelete={handleDeleteStudents}
+              />
             )}
-            <Popup isOpen={showAddStudentForm} onClose={handleCancelAddStudent}><DynamicForm title={`Enroll Student in ${courseData?.name || 'Course'}`} subtitle={`Department: ${courseData?.department || 'Unknown'}`} fields={enrollmentFormFields} onSubmit={handleEnrollStudent} onCancel={handleCancelAddStudent} submitText={enrolling ? "Enrolling..." : "Enroll Student"} loading={enrolling} initialData={emptyInitialData} /></Popup>
+            <Popup isOpen={showAddStudentForm} onClose={handleCancelAddStudent}>
+              <DynamicForm 
+                title={`Enroll Student in ${courseData?.name || 'Course'}`} 
+                subtitle={`Department: ${courseData?.department || 'Unknown'}`} 
+                fields={enrollmentFormFields} 
+                onSubmit={handleEnrollStudent} 
+                onCancel={handleCancelAddStudent} 
+                submitText={enrolling ? "Enrolling..." : "Enroll Student"} 
+                loading={enrolling} 
+                initialData={{ 
+                  department: courseData?.department,
+                  academicYear: "",
+                }} 
+              />
+            </Popup>
           </>
         );
 
@@ -239,7 +388,7 @@ const CoursePageContent = ({ courseData, userRole = "1100", onStudentEnrolled })
     <>
       {renderDynamicContent()}
       <div className="navbar" style={{ display: "flex", width: "95%", justifyContent: "center", marginTop: "30px" }}>
-        <MidPageNavbar activeSection={activeSection} setActiveSection={setActiveSection} selectedYear={selectedYear} setSelectedYear={setSelectedYear} sections={["charts", "students", "files"]} />
+        <MidPageNavbar activeSection={activeSection} setActiveSection={setActiveSection} selectedYear={selectedYear} setSelectedYear={setSelectedYear} sections={["charts", "students", "files"]} isYearSelectorDisabled={!isAdmin} />
       </div>
       <div className="dynamic-section" style={{ padding: "20px" }}>
         {renderSection()}
