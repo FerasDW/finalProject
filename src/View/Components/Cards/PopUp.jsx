@@ -85,7 +85,6 @@ const styles = {
     position: 'relative'
   },
   contentNoHeader: {
-    padding: '24px',
     width: '100%',
     position: 'relative'
   },

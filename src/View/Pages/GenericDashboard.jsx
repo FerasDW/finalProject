@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { ArrowRight, User, UserCheck, Edit } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import * as genericDashboardAPI from "../../Api/GenericDashboardApi";
 
 // Styles
@@ -22,6 +22,8 @@ import { useGenericDashboardPopup } from "../../Hooks/useGenericDashboardPopup";
 import { getGenericDashboardFormConfig } from "../../Utils/genericDashboardUtils";
 
 export default function GenericDashboard({ entityType = "students" }) {
+  const navigate = useNavigate(); // Add navigation hook
+
   const {
     data,
     filteredData,
@@ -37,7 +39,7 @@ export default function GenericDashboard({ entityType = "students" }) {
     buttonFilters,
     handleFilterChange,
     handleButtonFilterChange,
-    goToProfile,
+    goToProfile, // This might not be implemented in the hook
     handleCardClick,
     getFilterTitle,
     refreshData,
@@ -58,6 +60,21 @@ export default function GenericDashboard({ entityType = "students" }) {
   const [formData, setFormData] = useState({});
   const [departments, setDepartments] = useState([]);
   const [academicYears, setAcademicYears] = useState([]);
+
+  // Custom navigation function for profile
+  const handleGoToProfile = useCallback((item) => {
+    if (!item || !item.id) {
+      console.error('No valid item or ID provided for navigation');
+      return;
+    }
+
+    // Determine the route based on entity type
+    const entityRoute = entityType === "students" ? "student" : "lecturer";
+    const profileRoute = `/profile/${entityRoute}/${item.id}`;
+    
+    console.log(`Navigating to: ${profileRoute}`);
+    navigate(profileRoute);
+  }, [navigate, entityType]);
 
   // Define columns to hide based on entity type
   const getHiddenColumns = (entityType) => {
@@ -309,16 +326,42 @@ export default function GenericDashboard({ entityType = "students" }) {
                 data={filteredData}
                 showAddButton={true}
                 onAddClick={handleAddRecord}
-                hiddenColumns={getHiddenColumns(entityType)} // 🆕 Add hidden columns
+                hiddenColumns={getHiddenColumns(entityType)}
                 actionButtons={[
                   (item) => (
                     <button
-                      onClick={() => goToProfile(item)}
+                      onClick={() => handleGoToProfile(item)} // Use our custom navigation function
                       className={styles.profileButton}
                       title={`View ${config?.entityName} Profile`}
                       disabled={!item.id}
+                      style={{
+                        background: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: item.id ? 'pointer' : 'not-allowed',
+                        fontSize: '12px',
+                        marginRight: '4px',
+                        opacity: item.id ? 1 : 0.5,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (item.id) {
+                          e.target.style.transform = 'translateY(-1px)';
+                          e.target.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     >
                       <ArrowRight size={16} />
+                      View Profile
                     </button>
                   ),
                   (item) => (
@@ -327,8 +370,33 @@ export default function GenericDashboard({ entityType = "students" }) {
                       className={styles.profileButton}
                       title={`Edit ${config?.entityName}`}
                       disabled={!item.id}
+                      style={{
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: item.id ? 'pointer' : 'not-allowed',
+                        fontSize: '12px',
+                        opacity: item.id ? 1 : 0.5,
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (item.id) {
+                          e.target.style.transform = 'translateY(-1px)';
+                          e.target.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     >
                       <Edit size={16} />
+                      Edit
                     </button>
                   ),
                 ]}

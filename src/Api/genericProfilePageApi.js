@@ -1,5 +1,7 @@
-// profileAPI.js - API Layer for Profile Management using Real Backend
+// src/Api/genericProfilePageApi.js
 import axios from 'axios';
+import { fetchReceivedMessages, fetchSentMessages } from './messagesPageApi.js';
+
 
 const API_BASE_URL = 'http://localhost:8080/api';
 const STUDENTS_URL = `${API_BASE_URL}/students`;
@@ -10,10 +12,95 @@ const ENROLLMENTS_URL = `${API_BASE_URL}/enrollments`;
 const SCHEDULES_URL = `${API_BASE_URL}/schedules`;
 const RESOURCES_URL = `${API_BASE_URL}/resources`;
 const REQUESTS_URL = `${API_BASE_URL}/requests`;
-const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
+
+// const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
 const FILES_URL = `${API_BASE_URL}/files`;
+const ANALYTICS_URL = `${API_BASE_URL}/profile-analytics`;
 
 axios.defaults.withCredentials = true;
+
+const generateStudentStatCards = (stats) => {
+  return [
+    {
+      id: "gpa",
+      title: "Current GPA",
+      value: stats.gpa || 0,
+      subtitle: "Academic Performance",
+      icon: "award",
+      color: "#3b82f6",
+      trend: "up"
+    },
+    {
+      id: "total-credits",
+      title: "Total Credits",
+      value: stats.totalCredits || 0,
+      subtitle: "Credits Earned",
+      icon: "book-open",
+      color: "#10b981",
+      trend: "up"
+    },
+    {
+      id: "completed-courses",
+      title: "Completed Courses",
+      value: stats.completedCourses || 0,
+      subtitle: `${stats.totalCourses || 0} Total`,
+      icon: "check-circle",
+      color: "#f59e0b",
+      trend: "up"
+    },
+    {
+      id: "enrollment-status",
+      title: "Status",
+      value: stats.enrollmentStatus || "Unknown",
+      subtitle: "Current Status",
+      icon: "user-check",
+      color: stats.enrollmentStatus === "Active" ? "#10b981" : "#6b7280",
+      trend: "stable"
+    }
+  ];
+};
+
+// ✅ New: Generate lecturer stat cards from stats data
+const generateLecturerStatCards = (stats) => {
+  return [
+    {
+      id: "active-courses",
+      title: "Active Courses",
+      value: stats.activeCourses || 0,
+      subtitle: "Currently Teaching",
+      icon: "book",
+      color: "#3b82f6",
+      trend: "up"
+    },
+    {
+      id: "total-students",
+      title: "Total Students",
+      value: stats.totalStudents || 0,
+      subtitle: "Across All Courses",
+      icon: "users",
+      color: "#10b981",
+      trend: "up"
+    },
+    {
+      id: "average-rating",
+      title: "Avg Rating",
+      value: stats.averageRating || 0,
+      subtitle: "Student Feedback",
+      icon: "star",
+      color: "#f59e0b",
+      trend: "up"
+    },
+    {
+      id: "total-publications",
+      title: "Publications",
+      value: stats.totalPublications || 0,
+      subtitle: "Research Output",
+      icon: "file-text",
+      color: "#8b5cf6",
+      trend: "up"
+    }
+  ];
+};
 
 /* ==================================================================
                             PROFILE DATA
@@ -30,8 +117,30 @@ export const getProfileData = async (entityType, id) => {
   }
 };
 
+// export const getProfileStats = async (entityType, id) => {
+//   try {
+//     const response = await axios.get(`${ANALYTICS_URL}/${entityType}/${id}/stats`);
+//     return response.data;
+//   } catch (error) {
+//     console.error(`Error fetching ${entityType} stats:`, error);
+//     throw error;
+//   }
+// };
+
+export const getStudentEnrollments = async (studentId) => {
+  try {
+    // This endpoint should return all courses where the student is enrolled
+    const response = await axios.get(`${COURSES_URL}/student-enrollments/${studentId}`);
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching student enrollments:", error);
+    return [];
+  }
+};
+
 export const getProfileStats = async (entityType, id) => {
   try {
+    // ✅ Fixed: Change to GET request to match backend
     const response = await axios.get(`${ANALYTICS_URL}/${entityType}/${id}/stats`);
     return response.data;
   } catch (error) {
@@ -42,11 +151,16 @@ export const getProfileStats = async (entityType, id) => {
 
 export const getStatCards = async (entityType, stats) => {
   try {
-    const response = await axios.post(`${ANALYTICS_URL}/${entityType}/stat-cards`, { stats });
-    return response.data;
+    // Process stats into card format based on entity type
+    if (entityType === 'student') {
+      return generateStudentStatCards(stats);
+    } else if (entityType === 'lecturer') {
+      return generateLecturerStatCards(stats);
+    }
+    return [];
   } catch (error) {
-    console.error(`Error fetching ${entityType} stat cards:`, error);
-    throw error;
+    console.error(`Error generating ${entityType} stat cards:`, error);
+    return [];
   }
 };
 
@@ -84,6 +198,18 @@ export const getGrades = async (entityType, id) => {
     console.error(`Error fetching grades for ${entityType}:`, error);
     return [];
   }
+};
+
+export const updateFinalGrade = async (studentId, courseId, finalGrade) => {
+    try {
+        const response = await axios.put(`${GRADES_URL}/students/${studentId}/courses/${courseId}/final-grade`, {
+            finalGrade: finalGrade
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error updating final grade:", error);
+        throw error;
+    }
 };
 
 export const addGrade = async (entityType, id, gradeData) => {
@@ -201,7 +327,8 @@ export const deleteCourse = async (entityType, id, courseId) => {
 
 export const getEnrollments = async (entityType, id) => {
   try {
-    const response = await axios.get(`${ENROLLMENTS_URL}/by-${entityType}/${id}`);
+    // ✅ FIXED: Use correct endpoint from CourseController
+    const response = await axios.get(`${COURSES_URL}/enrollments/by-${entityType}/${id}`);
     return response.data || [];
   } catch (error) {
     console.error(`Error fetching enrollments for ${entityType}:`, error);
@@ -345,42 +472,20 @@ export const addResource = async (entityType, id, resourceData) => {
   }
 };
 
-export const updateResource = async (entityType, id, resourceId, resourceData) => {
+// Updated downloadResource function in genericProfilePageApi.js
+export const downloadResource = async (entityType, id, resourceId) => {
   try {
-    // Handle file upload update
-    if (resourceData.file) {
-      const formData = new FormData();
-      formData.append('file', resourceData.file);
-      
-      // Append other form fields
-      Object.keys(resourceData).forEach(key => {
-        if (key !== 'file' && resourceData[key] !== undefined && resourceData[key] !== null) {
-          formData.append(key, resourceData[key]);
-        }
-      });
-      
-      formData.append(`${entityType}Id`, id);
-      
-      const response = await axios.put(`${RESOURCES_URL}/${resourceId}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } else {
-      // Regular resource update without file
-      const response = await axios.put(`${RESOURCES_URL}/${resourceId}`, {
-        ...resourceData,
-        [`${entityType}Id`]: id
-      });
-      return response.data;
-    }
+    // Simplified approach - just open the download URL directly
+    // This matches the working approach from your files manager
+    window.open(`http://localhost:8080/api/resources/${resourceId}/download`, '_blank');
+    return { success: true };
   } catch (error) {
-    console.error("Error updating resource:", error);
+    console.error("Error downloading resource:", error);
     throw error;
   }
 };
 
+// Updated deleteResource function
 export const deleteResource = async (entityType, id, resourceId) => {
   try {
     await axios.delete(`${RESOURCES_URL}/${resourceId}`);
@@ -391,165 +496,7 @@ export const deleteResource = async (entityType, id, resourceId) => {
   }
 };
 
-export const downloadResource = async (entityType, id, resourceId) => {
-  try {
-    const response = await axios.get(`${RESOURCES_URL}/${resourceId}/download`, {
-      responseType: 'blob',
-    });
-    
-    // Get filename from response headers or use default
-    const contentDisposition = response.headers['content-disposition'];
-    let filename = 'download';
-    
-    if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
-      if (filenameMatch) {
-        filename = filenameMatch[1];
-      }
-    }
-    
-    // Create download link and trigger download
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.style.display = 'none';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Clean up
-    window.URL.revokeObjectURL(url);
-    
-    return { success: true, filename };
-  } catch (error) {
-    console.error("Error downloading resource:", error);
-    throw error;
-  }
-};
 
-export const previewResource = async (entityType, id, resourceId) => {
-  try {
-    const response = await axios.get(`${RESOURCES_URL}/${resourceId}/preview`, {
-      responseType: 'blob',
-    });
-    
-    const blob = response.data;
-    const previewUrl = window.URL.createObjectURL(blob);
-    
-    // Get content type from response headers
-    const contentType = response.headers['content-type'];
-    
-    if (contentType?.startsWith('image/')) {
-      // Handle image preview
-      const newWindow = window.open('', '_blank');
-      newWindow.document.write(`
-        <html>
-          <head>
-            <title>Preview</title>
-            <style>
-              body { margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
-              img { max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-            </style>
-          </head>
-          <body>
-            <img src="${previewUrl}" alt="Preview" />
-          </body>
-        </html>
-      `);
-    } else if (contentType === 'application/pdf') {
-      // Handle PDF preview
-      window.open(previewUrl, '_blank');
-    } else {
-      // Handle other file types
-      window.open(previewUrl, '_blank');
-    }
-    
-    // Clean up URL after some time
-    setTimeout(() => window.URL.revokeObjectURL(previewUrl), 10000);
-    
-    return { success: true, contentType };
-  } catch (error) {
-    console.error("Error previewing resource:", error);
-    throw error;
-  }
-};
-
-/* ==================================================================
-                            REQUESTS
-   ================================================================== */
-
-export const getRequests = async (entityType, id) => {
-  try {
-    const response = await axios.get(`${REQUESTS_URL}/by-${entityType}/${id}`);
-    return response.data || [];
-  } catch (error) {
-    console.error(`Error fetching requests for ${entityType}:`, error);
-    return [];
-  }
-};
-
-export const addRequest = async (entityType, id, requestData) => {
-  try {
-    const response = await axios.post(REQUESTS_URL, {
-      ...requestData,
-      [`${entityType}Id`]: id,
-      status: 'pending'
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error adding request:", error);
-    throw error;
-  }
-};
-
-export const updateRequest = async (entityType, id, requestId, requestData) => {
-  try {
-    const response = await axios.put(`${REQUESTS_URL}/${requestId}`, {
-      ...requestData,
-      [`${entityType}Id`]: id
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error updating request:", error);
-    throw error;
-  }
-};
-
-export const updateRequestStatus = async (entityType, id, requestId, status) => {
-  try {
-    const response = await axios.patch(`${REQUESTS_URL}/${requestId}/status`, { status });
-    return response.data;
-  } catch (error) {
-    console.error("Error updating request status:", error);
-    throw error;
-  }
-};
-
-export const submitRequestResponse = async (entityType, id, requestId, response) => {
-  try {
-    const result = await axios.post(`${REQUESTS_URL}/${requestId}/response`, {
-      response,
-      responseDate: new Date().toISOString().split('T')[0],
-      status: 'responded'
-    });
-    return result.data;
-  } catch (error) {
-    console.error("Error submitting request response:", error);
-    throw error;
-  }
-};
-
-export const deleteRequest = async (entityType, id, requestId) => {
-  try {
-    await axios.delete(`${REQUESTS_URL}/${requestId}`);
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting request:", error);
-    throw error;
-  }
-};
 
 /* ==================================================================
                             SEARCH & UTILITIES
@@ -593,6 +540,8 @@ export const getPerformanceMetrics = async (entityType, id) => {
     throw error;
   }
 };
+
+
 
 /* ==================================================================
                             NOTIFICATIONS
@@ -658,6 +607,47 @@ export const getFilesByCategory = async (categoryId) => {
   }
 };
 
+export const getMessages = async (entityType, id) => {
+  try {
+    // Get both sent and received messages for the user
+    const [receivedMessages, sentMessages] = await Promise.all([
+      fetchReceivedMessages(),
+      fetchSentMessages()
+    ]);
+    
+    // Filter messages where the user is either sender or recipient
+    const userMessages = [...receivedMessages, ...sentMessages].filter(message => 
+      message.senderId === id || message.recipientId === id
+    );
+    
+    return userMessages || [];
+  } catch (error) {
+    console.error(`Error fetching messages for ${entityType}:`, error);
+    return [];
+  }
+};
+
+export const sendMessageReply = async (messageId, replyData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/messages/${messageId}/reply`, replyData);
+    return response.data;
+  } catch (error) {
+    console.error("Error sending message reply:", error);
+    throw error;
+  }
+};
+
+export const getLecturerCourses = async (lecturerId) => {
+  try {
+    const response = await axios.get(`${COURSES_URL}/by-lecturer/${lecturerId}`);
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching courses for lecturer:", error);
+    return [];
+  }
+};
+
+
 // Export all API functions
 export default {
   // Profile
@@ -695,18 +685,8 @@ export default {
   // Resources
   getResources,
   addResource,
-  updateResource,
   deleteResource,
   downloadResource,
-  previewResource,
-  
-  // Requests
-  getRequests,
-  addRequest,
-  updateRequest,
-  updateRequestStatus,
-  submitRequestResponse,
-  deleteRequest,
   
   // Utilities
   searchEntities,

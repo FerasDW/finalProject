@@ -8,12 +8,7 @@ import useCourses from "../../../Hooks/useCourses.js";
 import { useAuth } from "../../../Context/AuthContext.jsx";
 import styles from "../../../CSS/Pages/Courses/courses.module.css";
 
-
-
-
-export default function Courses() {
-  console.log("🔧 Courses component initialized");
-  
+export default function Courses() {  
   // Get authentication data
   const { authData } = useAuth();
   
@@ -59,26 +54,6 @@ export default function Courses() {
   const canEditCourse = isAdmin; // Only admins can edit courses
   const canDeleteCourse = isAdmin; // Only admins can delete courses
   const canViewCourses = isAdmin || isLecturer || isStudent; // All authenticated users can view courses
-
-  console.log("🔐 Role-based permissions:", {
-    userRole: authData?.role || authData?.userType,
-    isLecturer,
-    isAdmin,
-    isStudent,
-    canAddCourse,
-    canEditCourse,
-    canDeleteCourse,
-    canViewCourses
-  });
-
-  console.log("📊 Courses component state:", {
-    coursesCount: displayedCourses.length,
-    fieldsCount: updatedCourseFields.length,
-    isLoading: loading,
-    isPopupOpen: isCoursePopupOpen,
-    isEditing: editingCourse
-  });
-
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -188,19 +163,6 @@ export default function Courses() {
               >
                 Add Course
               </button>
-            )}
-            {/* Show role indicator for debugging/info */}
-            {process.env.NODE_ENV === 'development' && (
-              <span style={{ 
-                marginLeft: '10px', 
-                fontSize: '12px', 
-                color: '#666',
-                padding: '4px 8px',
-                backgroundColor: '#f0f0f0',
-                borderRadius: '4px'
-              }}>
-                Role: {authData?.role || authData?.userType || 'Unknown'}
-              </span>
             )}
           </div>
           <div className={styles.filterContainer}>
