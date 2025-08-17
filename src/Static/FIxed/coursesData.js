@@ -269,8 +269,3 @@ export const courseSpecificData = {
 };
 
 export const semesterOptions = ["1", "2", "Summer"];
-export const getYearOptionsForGroup = (group) => {
-  const baseYears = ["1", "2", "3"];
-  return group === "Certificate IT" ? ["1"] : baseYears;
-};
-export const getAllGroups = () => ["Certificate IT", "Business Diploma", "Information Systems", "Nursing", "General Education"];

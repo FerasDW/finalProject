@@ -3,7 +3,6 @@ import { semesterOptions } from "../Static/FIxed/coursesData.js";
 import { getAllDepartments } from "../Api/coursePageApi.js";
 import { getAllLecturers } from "../Api/dashboardPageApi.js";
 
-
 // Function to generate academic year options from totalAcademicYears
 export const generateAcademicYearOptions = (totalAcademicYears) => {
   if (!totalAcademicYears || totalAcademicYears <= 0) {
@@ -189,46 +188,125 @@ export const getUpdatedCourseFields = async (departments) => {
   return updatedFields;
 };
 
+// FIXED: Filter function with proper data type handling and debugging
 export const filterCourses = (courses, filters, searchInput) => {
+  console.log("🔍 Starting filterCourses with:", {
+    coursesCount: courses.length,
+    filters,
+    searchInput,
+    sampleCourse: courses[0] ? {
+      name: courses[0].name,
+      department: courses[0].department,
+      academicYear: courses[0].academicYear,
+      semester: courses[0].semester,
+      year: courses[0].year,
+      selectable: courses[0].selectable
+    } : 'No courses'
+  });
+
   let filtered = [...courses];
   
+  // Department filter
   if (filters.department && filters.department !== "all") {
+    const beforeCount = filtered.length;
     filtered = filtered.filter(c => c.department === filters.department);
-  }
-  if (filters.academicYear && filters.academicYear !== "all") {
-    filtered = filtered.filter(c => c.academicYear === filters.academicYear);
-  }
-  if (filters.semester && filters.semester !== "all") {
-    filtered = filtered.filter(c => c.semester === filters.semester);
-  }
-  if (filters.year && filters.year !== "all") {
-    filtered = filtered.filter(c => c.year === filters.year);
-  }
-  if (filters.selectable && filters.selectable !== "all") {
-    filtered = filtered.filter(c => (c.selectable === "yes") === (filters.selectable === "yes"));
+    console.log(`🏢 Department filter (${filters.department}): ${beforeCount} → ${filtered.length}`);
   }
   
+  // Academic Year filter
+  if (filters.academicYear && filters.academicYear !== "all") {
+    const beforeCount = filtered.length;
+    // FIXED: Handle both string and number comparisons
+    filtered = filtered.filter(c => {
+      const courseAcademicYear = String(c.academicYear);
+      const filterAcademicYear = String(filters.academicYear);
+      return courseAcademicYear === filterAcademicYear;
+    });
+    console.log(`📚 Academic Year filter (${filters.academicYear}): ${beforeCount} → ${filtered.length}`);
+  }
+  
+  // FIXED: Semester filter with proper string/number handling
+  if (filters.semester && filters.semester !== "all") {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(c => {
+      const courseSemester = String(c.semester);
+      const filterSemester = String(filters.semester);
+      const matches = courseSemester === filterSemester;
+      
+      console.log(`📅 Semester comparison: course.semester="${courseSemester}" vs filter="${filterSemester}" → ${matches}`);
+      return matches;
+    });
+    console.log(`📅 Semester filter (${filters.semester}): ${beforeCount} → ${filtered.length}`);
+  }
+  
+  // FIXED: Year filter with proper number comparison
+  if (filters.year && filters.year !== "all" && filters.year !== "All year") {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(c => {
+      const courseYear = parseInt(c.year);
+      const filterYear = parseInt(filters.year);
+      const matches = courseYear === filterYear;
+      
+      console.log(`📆 Year comparison: course.year=${courseYear} vs filter=${filterYear} → ${matches}`);
+      return matches;
+    });
+    console.log(`📆 Year filter (${filters.year}): ${beforeCount} → ${filtered.length}`);
+  }
+  
+  // FIXED: Selectable filter with proper boolean handling
+  if (filters.selectable && filters.selectable !== "all") {
+    const beforeCount = filtered.length;
+    filtered = filtered.filter(c => {
+      const courseSelectable = c.selectable === true;
+      const filterSelectable = filters.selectable === "yes";
+      const matches = courseSelectable === filterSelectable;
+      
+      console.log(`✅ Selectable comparison: course.selectable=${courseSelectable} vs filter="${filters.selectable}" (${filterSelectable}) → ${matches}`);
+      return matches;
+    });
+    console.log(`✅ Selectable filter (${filters.selectable}): ${beforeCount} → ${filtered.length}`);
+  }
+  
+  // Search filter
   if (searchInput && searchInput.trim()) {
+    const beforeCount = filtered.length;
     const searchLower = searchInput.toLowerCase().trim();
     filtered = filtered.filter(c => 
       (c.name && c.name.toLowerCase().includes(searchLower)) || 
       (c.title && c.title.toLowerCase().includes(searchLower)) || 
       (c.code && c.code.toLowerCase().includes(searchLower))
     );
+    console.log(`🔍 Search filter (${searchInput}): ${beforeCount} → ${filtered.length}`);
   }
   
+  console.log(`✅ Final filtered courses: ${filtered.length}`);
   return filtered;
 };
 
+// FIXED: Filter options with "All year" removal and proper data handling
 export const getFilterOptions = (courses, departments) => {
   const departmentOptions = getDepartmentOptions(departments);
   const allAcademicYears = getAllAcademicYearOptions(departments);
+  
+  // FIXED: Remove "All year" from year options and ensure proper number handling
+  const yearOptions = [...new Set(courses.map(c => c.year))]
+    .filter(year => year != null && year !== "All year" && year !== "all")
+    .map(year => parseInt(year))
+    .filter(year => !isNaN(year))
+    .sort((a, b) => a - b);
+  
+  console.log("📊 Generated filter options:", {
+    departments: departmentOptions,
+    academicYears: allAcademicYears,
+    semesters: semesterOptions,
+    years: yearOptions
+  });
   
   const options = {
     departments: departmentOptions,
     academicYears: allAcademicYears,
     semesters: semesterOptions,
-    years: [...new Set(courses.map(c => c.year))].filter(Boolean),
+    years: yearOptions,
     selectable: ["yes", "no"],
   };
   
@@ -330,6 +408,8 @@ export const getEnrollmentFormFields = (courseData, departments) => {
 };
 
 export const COURSES_PER_PAGE = 12;
+
+// FIXED: Default filters to ensure proper initial state
 export const DEFAULT_FILTERS = { 
   department: "all", 
   academicYear: "all", 

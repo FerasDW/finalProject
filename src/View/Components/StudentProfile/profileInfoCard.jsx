@@ -18,7 +18,6 @@ const ProfileInfoCard = ({ entity, entityType }) => {
           { icon: <Phone />, value: entity.phone || "Not provided" },
           { icon: <MapPin />, value: entity.address || "Not provided", className: "address" },
           { icon: <Calendar />, value: entity.dateOfBirth ? `Born: ${new Date(entity.dateOfBirth).toLocaleDateString()}` : `Enrollment: ${entity.academicYear}` },
-          { icon: <Users />, value: entity.advisor || "Academic Advisor: Not assigned" }
         ]
       },
       statsSection: {

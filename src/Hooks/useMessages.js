@@ -23,8 +23,6 @@ import {
   fetchUsersByRole,
 } from "../Api/messagesPageApi.js";
 
-import axios from 'axios';
-
 const useMessages = () => {
   const { authData } = useAuth();
   const userRole = authData?.role;
@@ -75,20 +73,20 @@ const useMessages = () => {
     if (!userRole) return;
     loadData();
     if (userRole === "1100" || userRole === "1200" || isStudent) {
-        fetchUserLists();
+      fetchUserLists();
     }
   }, [activeSection, userRole]);
 
   const fetchUserLists = async () => {
     try {
-        const adminsList = await fetchUsersByRole("1100");
-        setAdmins(adminsList);
-        const lecturersList = await fetchUsersByRole("1200");
-        setLecturers(lecturersList);
-        const studentsList = await fetchUsersByRole("1300");
-        setStudents(studentsList);
+      const adminsList = await fetchUsersByRole("1100");
+      setAdmins(adminsList);
+      const lecturersList = await fetchUsersByRole("1200");
+      setLecturers(lecturersList);
+      const studentsList = await fetchUsersByRole("1300");
+      setStudents(studentsList);
     } catch (err) {
-        console.error("Failed to fetch user lists:", err);
+      console.error("Failed to fetch user lists:", err);
     }
   };
 
@@ -97,10 +95,17 @@ const useMessages = () => {
     setError(null);
     try {
       if (activeSection === "requests") {
-        let messages;
-        if (userRole === "1300") {
-          messages = await fetchSentMessages();
+        let messages = [];
+        if (userRole === "1300" || userRole === "1200") {
+          // Student or Lecturer: show both sent and received
+          const [sent, received] = await Promise.all([
+            fetchSentMessages(),
+            fetchReceivedMessages(),
+          ]);
+          messages = [...sent, ...received]
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         } else {
+          // Admin: only received
           messages = await fetchReceivedMessages();
         }
         setCurrentMessages(messages);
@@ -126,12 +131,12 @@ const useMessages = () => {
     }
   };
 
-  // --- Message/Request Handlers ---
+  // --- Message Handlers ---
   const handleCreateRequest = () => {
     setRequestFormData({});
     setCreateRequestModalOpen(true);
   };
-  
+
   const handleRequestSubmit = async (formData) => {
     try {
       await createMessage(formData);
@@ -153,7 +158,7 @@ const useMessages = () => {
     setSelectedMessage(row);
     setReplyModalOpen(true);
   };
-  
+
   // --- Announcement Handlers ---
   const handleCreateAnnouncement = () => {
     setSelectedAnnouncement(null);
@@ -161,7 +166,7 @@ const useMessages = () => {
       priority: "medium",
       targetAudienceType: "all",
       expiryDate: "",
-      scheduledDate: ""
+      scheduledDate: "",
     });
     setCreateAnnouncementModalOpen(true);
   };
@@ -176,12 +181,12 @@ const useMessages = () => {
     const formattedData = {
       ...row,
       expiryDate: row.expiryDate ? row.expiryDate.substring(0, 16) : "",
-      scheduledDate: row.scheduledDate ? row.scheduledDate.substring(0, 16) : ""
+      scheduledDate: row.scheduledDate ? row.scheduledDate.substring(0, 16) : "",
     };
     setAnnouncementFormData(formattedData);
     setEditAnnouncementModalOpen(true);
   };
-  
+
   const handleAnnouncementSubmit = async (formData) => {
     try {
       if (selectedAnnouncement) {
@@ -233,41 +238,39 @@ const useMessages = () => {
   };
 
   const handleTemplateSubmit = async (formData) => {
-      try {
-          // 🆕 FIXED: Check if formData.variables is a string before splitting
-          const parsedFormData = {
-              ...formData,
-              variables: typeof formData.variables === 'string' 
-                ? formData.variables.split(',').map(s => s.trim()) 
-                : formData.variables || []
-          };
+    try {
+      const parsedFormData = {
+        ...formData,
+        variables: typeof formData.variables === 'string'
+          ? formData.variables.split(',').map(s => s.trim())
+          : formData.variables || []
+      };
 
-          if (selectedTemplate) {
-              await updateTemplate(selectedTemplate.id, parsedFormData);
-              alert("Template updated successfully!");
-          } else {
-              await createTemplate(parsedFormData);
-              alert("Template created successfully!");
-          }
-          setCreateTemplateModalOpen(false);
-          setEditTemplateModalOpen(false);
-          loadData();
-      } catch (err) {
-          console.error("Error submitting template:", err);
-          alert("Failed to save template. Please try again.");
+      if (selectedTemplate) {
+        await updateTemplate(selectedTemplate.id, parsedFormData);
+        alert("Template updated successfully!");
+      } else {
+        await createTemplate(parsedFormData);
+        alert("Template created successfully!");
       }
+      setCreateTemplateModalOpen(false);
+      setEditTemplateModalOpen(false);
+      loadData();
+    } catch (err) {
+      console.error("Error submitting template:", err);
+      alert("Failed to save template. Please try again.");
+    }
   };
-  
+
   const handleUseTemplate = (row) => {
     setSelectedTemplate(row);
     const dynamicFields = row.variables?.map(variable => ({
-        name: variable,
-        label: variable.charAt(0).toUpperCase() + variable.slice(1),
-        placeholder: `Enter value for ${variable}`,
-        type: "text",
-        required: true,
+      name: variable,
+      label: variable.charAt(0).toUpperCase() + variable.slice(1),
+      placeholder: `Enter value for ${variable}`,
+      type: "text",
+      required: true,
     }));
-    
     setUseTemplateFormFields(dynamicFields || []);
     setUseTemplateModalOpen(true);
   };
@@ -275,12 +278,10 @@ const useMessages = () => {
   const handleUseTemplateSubmit = async (data) => {
     try {
       const { recipientIds, ...variableData } = data;
-      
       const templateData = {
-        recipientIds: recipientIds,
+        recipientIds,
         variableValues: Object.entries(variableData).map(([name, value]) => ({ name, value }))
       };
-      
       await useTemplate(selectedTemplate.id, templateData);
       alert("Template processed successfully! New announcements created.");
       setUseTemplateModalOpen(false);
@@ -294,10 +295,10 @@ const useMessages = () => {
   const handleDeleteTemplate = async (row) => {
     try {
       await deleteTemplate(row.id);
-      return Promise.resolve(); // Return success
+      return Promise.resolve();
     } catch (err) {
       console.error("Error deleting template:", err);
-      throw err; // Re-throw to be caught by the bulk delete handler
+      throw err;
     }
   };
 
@@ -332,10 +333,10 @@ const useMessages = () => {
   const handleDeleteFile = async (row) => {
     try {
       await deleteFile(row.id);
-      return Promise.resolve(); // Return success
+      return Promise.resolve();
     } catch (err) {
       console.error("Error deleting file:", err);
-      throw err; // Re-throw to be caught by the bulk delete handler
+      throw err;
     }
   };
 

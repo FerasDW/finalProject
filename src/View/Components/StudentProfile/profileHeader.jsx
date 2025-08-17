@@ -48,19 +48,10 @@ const ProfileHeader = ({ entity, entityType, onActionsToggle }) => {
                 <h1>{config.title}</h1>
               </div>
               <p>{config.subtitle}</p>
-              {entity && (
-                <div className="entity-preview">
-                  <span className="entity-name">{entity.name}</span>
-                  <span className="entity-id">#{entity.id}</span>
-                </div>
-              )}
+
             </div>
           </div>
           <div className="student-header-right">
-            <button className="btn-secondary" onClick={handleExport}>
-              <Download />
-              <span>Export</span>
-            </button>
             <button onClick={onActionsToggle} className="btn-primary">
               <Edit />
               <span>Actions</span>

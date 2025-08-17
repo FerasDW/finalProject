@@ -19,7 +19,6 @@ import { enrollStudent, getCourseAnalytics, getAssignmentTimeline, unenrollStude
 import { parse } from "url";
 
 const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEnrolled }) => {
-  console.log("courseData:", courseData);
   const isAdmin = userRole === "1100";
   const [activeSection, setActiveSection] = useState("charts");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -59,26 +58,34 @@ const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEn
     '_class'
   ];
 
-  // Fetch enrolled students based on selected year
+  // FIXED: Fetch enrolled students - now only shows students when the course year matches the selected year
   useEffect(() => {
     const fetchEnrolledStudents = async () => {
       setLoadingStudents(true);
-      if (courseData && courseData.enrollments && selectedYear) {
-        const yearlyEnrollment = courseData.enrollments.find(e => e.academicYear === selectedYear);
-        const studentIdsForYear = yearlyEnrollment ? yearlyEnrollment.studentIds : [];
-        if (studentIdsForYear.length > 0) {
+      
+      // Only show students if the course's year matches the selected year
+      if (courseData && courseData.enrollments && courseData.year === selectedYear) {
+        // Get all enrolled student IDs regardless of their academic year (year of study)
+        const allStudentIds = courseData.enrollments.flatMap(enrollment => 
+          enrollment.studentIds || []
+        );
+        
+        if (allStudentIds.length > 0) {
           try {
-            const studentDetails = await getUsersByIds(studentIdsForYear);
+            const studentDetails = await getUsersByIds(allStudentIds);
             setStudents(studentDetails);
           } catch (error) {
-            console.error("Failed to fetch student details for year:", error); setStudents([]);
+            console.error("Failed to fetch student details:", error);
+            setStudents([]);
           }
         } else {
           setStudents([]);
         }
       } else {
+        // If the selected year doesn't match the course year, show no students
         setStudents([]);
       }
+      
       setLoadingStudents(false);
     };
     fetchEnrolledStudents();
@@ -127,10 +134,12 @@ const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEn
       setLoadingAllStudents(false);
     }
   };
+
   const handleShowEnrollmentForm = () => {
     setShowAddStudentForm(true);
     fetchAllStudents();
   };
+
   const handleEnrollStudent = async (formData) => {
     const { studentId, academicYear, learningGroup, status, enrollmentNotes } = formData;
     
@@ -147,8 +156,6 @@ const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEn
         learningGroup, 
         status, 
         enrollmentNotes: enrollmentNotes || '', 
-        // We can optionally still send the student's year of study if your backend needs it
-        // studentYearOfStudy: parseInt(academicYear) 
       };
 
       await enrollStudent(courseData.id, enrollmentData);
@@ -168,75 +175,70 @@ const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEn
     }
   };
 
-// In your CoursePageContent.jsx, update the handleDeleteStudents function:
-
-const handleDeleteStudents = async (selectedStudentObjects) => {
-  if (!selectedStudentObjects || selectedStudentObjects.length === 0) {
-    alert("Please select students to unenroll.");
-    return;
-  }
-
-  // Extract just the IDs from the selected student objects
-  const selectedStudentIds = selectedStudentObjects.map(student => {
-    // Handle both cases: if it's already an ID string, or if it's an object with an 'id' property
-    if (typeof student === 'string') {
-      return student;
-    } else if (student && student.id) {
-      return student.id;
-    } else {
-      return null;
+  const handleDeleteStudents = async (selectedStudentObjects) => {
+    if (!selectedStudentObjects || selectedStudentObjects.length === 0) {
+      alert("Please select students to unenroll.");
+      return;
     }
-  }).filter(id => id !== null); // Remove any null values
 
-  if (selectedStudentIds.length === 0) {
-    alert("No valid student IDs found.");
-    return;
-  }
-
-  const confirmDelete = window.confirm(
-    `Are you sure you want to unenroll ${selectedStudentIds.length} student(s)? This cannot be undone.`
-  );
-
-  if (confirmDelete) {
-    try {
-      await unenrollStudents(courseData.id, selectedStudentIds);
-      alert("Student(s) unenrolled successfully!");
-      // Call the refetch function to update the list
-      if (onStudentEnrolled) {
-        onStudentEnrolled();
+    // Extract just the IDs from the selected student objects
+    const selectedStudentIds = selectedStudentObjects.map(student => {
+      // Handle both cases: if it's already an ID string, or if it's an object with an 'id' property
+      if (typeof student === 'string') {
+        return student;
+      } else if (student && student.id) {
+        return student.id;
+      } else {
+        return null;
       }
-    } catch (error) {
-      alert("Failed to unenroll students. Please try again.");
-    }
-  }
-};
+    }).filter(id => id !== null); // Remove any null values
 
-const handleCancelAddStudent = () => { setShowAddStudentForm(false); setAllStudents([]); };
-console.log("Academic Year Options:", getAcademicYearOptionsForDepartment(courseData?.department, departments));
-const enrollmentFormFields = useMemo(() => {
+    if (selectedStudentIds.length === 0) {
+      alert("No valid student IDs found.");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to unenroll ${selectedStudentIds.length} student(s)? This cannot be undone.`
+    );
+
+    if (confirmDelete) {
+      try {
+        await unenrollStudents(courseData.id, selectedStudentIds);
+        alert("Student(s) unenrolled successfully!");
+        // Call the refetch function to update the list
+        if (onStudentEnrolled) {
+          onStudentEnrolled();
+        }
+      } catch (error) {
+        alert("Failed to unenroll students. Please try again.");
+      }
+    }
+  };
+
+  const handleCancelAddStudent = () => { 
+    setShowAddStudentForm(false); 
+    setAllStudents([]); 
+  };
+
+  console.log("Academic Year Options:", getAcademicYearOptionsForDepartment(courseData?.department, departments));
+
+  const enrollmentFormFields = useMemo(() => {
     const studentOptions = allStudents.map(student => ({
       value: student.id,
       label: `${student.name} (${student.email}) - ${student.department || 'No Department'}`
     }));
 
-    let academicYearOptions = [];
-    const currentDepartment = departments.find(d => d.name === courseData?.department);
-
-    if (currentDepartment && currentDepartment.totalAcademicYears) {
-      academicYearOptions = Array.from(
-        { length: currentDepartment.totalAcademicYears },
-        (_, i) => ({ value: `${i + 1}`, label: `Year ${i + 1}` })
-      );
-    }
-    
-    // ✅ Generate academic year options using utility
-    const yearOptions = getAcademicYearOptionsForDepartment(courseData?.department, departments).map(year => ({
-      value: year,
-      label: `Year ${year}`
-    }));
-
     return [
-      { name: "studentId", label: "Select Student to Enroll", type: "select", placeholder: loadingAllStudents ? "Loading students..." : "Choose a student", required: true, options: studentOptions, disabled: loadingAllStudents },
+      { 
+        name: "studentId", 
+        label: "Select Student to Enroll", 
+        type: "select", 
+        placeholder: loadingAllStudents ? "Loading students..." : "Choose a student", 
+        required: true, 
+        options: studentOptions, 
+        disabled: loadingAllStudents 
+      },
       {
         name: "department",
         label: "Department (Debug)",
@@ -246,20 +248,41 @@ const enrollmentFormFields = useMemo(() => {
       },
       {
         name: "academicYear",
-        label: "Academic Year",
+        label: "Student's Year of Study",
         type: "select",
         required: true,
         options: getAcademicYearOptionsForDepartment(courseData?.department, departments).map(year => ({
           value: year,
           label: `Year ${year}`
         })),
-        placeholder: "Select academic year"
+        placeholder: "Select student's year of study"
       },
-      { name: "learningGroup", label: "Learning Group", type: "select", required: true, options: ["Group A", "Group B", "Group C"], placeholder: "Assign to learning group" },
-      { name: "status", label: "Enrollment Status", type: "select", required: true, options: ["Active", "Inactive", "Graduated", "Suspended"], placeholder: "Set enrollment status" },
-      { name: "enrollmentNotes", label: "Enrollment Notes (Optional)", type: "textarea", placeholder: "Any additional notes...", required: false, rows: 3 }
+      { 
+        name: "learningGroup", 
+        label: "Learning Group", 
+        type: "select", 
+        required: true, 
+        options: ["Group A", "Group B", "Group C"], 
+        placeholder: "Assign to learning group" 
+      },
+      { 
+        name: "status", 
+        label: "Enrollment Status", 
+        type: "select", 
+        required: true, 
+        options: ["Active", "Inactive", "Graduated", "Suspended"], 
+        placeholder: "Set enrollment status" 
+      },
+      { 
+        name: "enrollmentNotes", 
+        label: "Enrollment Notes (Optional)", 
+        type: "textarea", 
+        placeholder: "Any additional notes...", 
+        required: false, 
+        rows: 3 
+      }
     ];
-  }, [allStudents, loadingAllStudents, courseData.department, departments]);
+  }, [allStudents, loadingAllStudents, courseData?.department, departments]);
 
   const getTotalStudentCount = () => {
     if (!courseData || !courseData.enrollments) return 0;
@@ -267,7 +290,6 @@ const enrollmentFormFields = useMemo(() => {
   };
 
   const renderDynamicContent = () => {
-    // ... (This function now uses real data for the stat cards)
     return (
       <div style={{ padding: "20px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px", height: "450px", marginTop: "10px" }}>
@@ -278,12 +300,14 @@ const enrollmentFormFields = useMemo(() => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: "1" }}>
               <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", borderRadius: "12px", padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "white" }}>
                   <Users size={24} style={{ marginBottom: "8px" }} />
-                  <div style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Enrolled This Year</div>
+                  <div style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>
+                    {courseData?.year === selectedYear ? "Enrolled Students" : "No Students (Wrong Year)"}
+                  </div>
                   <div style={{ fontSize: "20px", fontWeight: "700" }}>{students.length}</div>
               </div>
               <div style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", borderRadius: "12px", padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "white" }}>
                   <Calendar size={24} style={{ marginBottom: "8px" }} />
-                  <div style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Academic Year</div>
+                  <div style={{ fontSize: "11px", fontWeight: "600", textTransform: "uppercase", marginBottom: "4px" }}>Selected Year</div>
                   <div style={{ fontSize: "20px", fontWeight: "700" }}>{selectedYear}</div>
               </div>
               <div style={{ background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)", borderRadius: "12px", padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "white" }}>
@@ -299,11 +323,26 @@ const enrollmentFormFields = useMemo(() => {
             </div>
           </div>
         </div>
+        
+        {/* ADDED: Display current course year and selected year for debugging */}
+        {courseData?.year !== selectedYear && (
+          <div style={{ 
+            marginTop: "10px", 
+            padding: "10px", 
+            backgroundColor: "#fef3c7", 
+            border: "1px solid #f59e0b", 
+            borderRadius: "8px", 
+            color: "#92400e",
+            textAlign: "center"
+          }}>
+            <strong>Note:</strong> This course is from {courseData?.year}, but you're viewing {selectedYear}. 
+            Students will only show when the course year matches the selected year.
+          </div>
+        )}
       </div>
     );
   };
 
-  // --- FIX: This function is completely refactored to handle real and fallback data gracefully ---
   const renderSection = () => {
     switch (activeSection) {
       case "charts":
@@ -314,19 +353,15 @@ const enrollmentFormFields = useMemo(() => {
           ? analyticsData.gradeDistribution.labels.map((label, index) => ({ name: label, value: analyticsData.gradeDistribution.data[index] }))
           : fallbackGradeData;
         
-        // --- FIX: The data formatting logic now lives here ---
         const hasRealTimelineData = timelineData && timelineData.some(d => d.value > 0);
         let timelineChartData;
 
         if (hasRealTimelineData) {
-          // If we have real data, transform it into the format Nivo expects.
-          // Your real timelineData is simple: [{ name: '...', value: ... }]
           timelineChartData = [{
               id: 'timeline',
               data: timelineData.map(item => ({ x: item.name, y: item.value }))
           }];
         } else {
-          // Otherwise, use the fallback data, which is already in the correct format.
           timelineChartData = fallbackAssignmentData;
         }
 
@@ -342,24 +377,47 @@ const enrollmentFormFields = useMemo(() => {
       case "students":
         return (
           <>
-            {loadingStudents ? (<div style={{ padding: "20px", textAlign: "center" }}>Loading enrolled students for {selectedYear}...</div>) : (
-              <StudentTable 
-                icon="students" 
-                title={`Enrolled Students for ${selectedYear}`} 
-                subtitle={`Manage students enrolled in ${courseData?.name || 'this course'}`} 
-                addButtonText="Enroll Student" 
-                data={students} 
-                showAddButton={isAdmin} 
-                onAddClick={handleShowEnrollmentForm} 
-                hiddenColumns={studentTableHiddenColumns} 
-                isSelectable={isAdmin}
-                onDelete={handleDeleteStudents}
-              />
+            {loadingStudents ? (
+              <div style={{ padding: "20px", textAlign: "center" }}>Loading enrolled students for {selectedYear}...</div>
+            ) : (
+              <>
+                <StudentTable 
+                  icon="students" 
+                  title={`Enrolled Students for ${selectedYear}`} 
+                  subtitle={`Manage students enrolled in ${courseData?.name || 'this course'} (Course Year: ${courseData?.year})`} 
+                  addButtonText="Enroll Student" 
+                  data={students} 
+                  showAddButton={isAdmin} 
+                  onAddClick={handleShowEnrollmentForm} 
+                  hiddenColumns={studentTableHiddenColumns} 
+                  isSelectable={isAdmin}
+                  onDelete={handleDeleteStudents}
+                />
+                
+                {/* ADDED: Show helpful message when no students are displayed due to year mismatch */}
+                {courseData?.year !== selectedYear && (
+                  <div style={{ 
+                    padding: "20px", 
+                    textAlign: "center", 
+                    backgroundColor: "#fef3c7", 
+                    margin: "10px 0",
+                    borderRadius: "8px",
+                    border: "1px solid #f59e0b"
+                  }}>
+                    <p style={{ margin: 0, color: "#92400e" }}>
+                      <strong>No students shown:</strong> This course is from {courseData?.year}, but you're viewing {selectedYear}.
+                      <br />
+                      Change the year selector to {courseData?.year} to see the enrolled students.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
+            
             <Popup isOpen={showAddStudentForm} onClose={handleCancelAddStudent}>
               <DynamicForm 
                 title={`Enroll Student in ${courseData?.name || 'Course'}`} 
-                subtitle={`Department: ${courseData?.department || 'Unknown'}`} 
+                subtitle={`Department: ${courseData?.department || 'Unknown'} | Course Year: ${courseData?.year}`} 
                 fields={enrollmentFormFields} 
                 onSubmit={handleEnrollStudent} 
                 onCancel={handleCancelAddStudent} 
@@ -388,7 +446,14 @@ const enrollmentFormFields = useMemo(() => {
     <>
       {renderDynamicContent()}
       <div className="navbar" style={{ display: "flex", width: "95%", justifyContent: "center", marginTop: "30px" }}>
-        <MidPageNavbar activeSection={activeSection} setActiveSection={setActiveSection} selectedYear={selectedYear} setSelectedYear={setSelectedYear} sections={["charts", "students", "files"]} isYearSelectorDisabled={!isAdmin} />
+        <MidPageNavbar 
+          activeSection={activeSection} 
+          setActiveSection={setActiveSection} 
+          selectedYear={selectedYear} 
+          setSelectedYear={setSelectedYear} 
+          sections={["charts", "students", "files"]} 
+          isYearSelectorDisabled={!isAdmin} 
+        />
       </div>
       <div className="dynamic-section" style={{ padding: "20px" }}>
         {renderSection()}

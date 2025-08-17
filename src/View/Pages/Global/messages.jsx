@@ -326,86 +326,84 @@ const Messages = () => {
   const [requestFormFields, setRequestFormFields] = useState([]);
 
   // Use useEffect to set request form fields from useMessages hook
-  useEffect(() => {
-    const currentUserId = authData?.id;
-    setRequestFormFields(
-      getRequestFormFields(admins, lecturers, userRole, currentUserId).fields
+useEffect(() => {
+  const currentUserId = authData?.id;
+  const { fields, lecturerOptions } = getRequestFormFields(admins, lecturers, userRole, currentUserId);
+  console.log("Lecturer options after filter:", lecturerOptions); // 👈 Check this
+  setRequestFormFields(fields);
+}, [admins, lecturers, userRole, authData]);
+
+const getRequestFormFields = (admins, lecturers, userRole, currentUserId) => {
+  const adminOptions = admins.map((user) => ({
+    value: user.id,
+    label: `${user.name} (${user.email})`,
+  }));
+
+  // 🔥 Always filter out current user
+  const filteredLecturers = lecturers.filter((user) => user.id !== currentUserId);
+
+  const lecturerOptions = filteredLecturers.map((user) => ({
+    value: user.id,
+    label: `${user.name} (${user.email})`,
+  }));
+
+  const recipientTypeOptions = [];
+  if (userRole === "1300" || userRole === "1200") {
+    recipientTypeOptions.push(
+      { value: "admin", label: "Admin" },
+      { value: "lecturer", label: "Lecturer" }
     );
-  }, [admins, lecturers, userRole, authData]);
+  }
 
-  const getRequestFormFields = (admins, lecturers, userRole, currentUserId) => {
-    const adminOptions = admins.map((user) => ({
-      value: user.id,
-      label: `${user.name} (${user.email})`,
-    }));
+  const fields = [
+    {
+      name: "recipientType",
+      label: "Recipient Type",
+      type: "select",
+      required: true,
+      options: [
+        { value: "", label: "Select a recipient type" },
+        ...recipientTypeOptions,
+      ],
+    },
+    {
+      name: "recipientId",
+      label: "Recipient",
+      type: "select",
+      required: true,
+      options: [],
+      placeholder: "Select a recipient type first",
+    },
+    {
+      name: "subject",
+      label: "Subject",
+      type: "text",
+      required: true,
+      placeholder: "Enter message subject",
+    },
+    {
+      name: "content",
+      label: "Content",
+      type: "textarea",
+      required: true,
+      placeholder: "Write your message content...",
+      rows: 5,
+    },
+    {
+      name: "priority",
+      label: "Priority",
+      type: "select",
+      required: true,
+      options: [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+      ],
+    },
+  ];
 
-    // Filter out the current user from the lecturer list
-    const filteredLecturers = lecturers.filter(
-      (user) => user.id !== currentUserId
-    );
-
-    const lecturerOptions = filteredLecturers.map((user) => ({
-      value: user.id,
-      label: `${user.name} (${user.email})`,
-    }));
-
-    const recipientTypeOptions = [];
-    if (userRole === "1300" || userRole === "1200") {
-      recipientTypeOptions.push(
-        { value: "admin", label: "Admin" },
-        { value: "lecturer", label: "Lecturer" }
-      );
-    }
-
-    const fields = [
-      {
-        name: "recipientType",
-        label: "Recipient Type",
-        type: "select",
-        required: true,
-        options: [
-          { value: "", label: "Select a recipient type" },
-          ...recipientTypeOptions,
-        ],
-      },
-      {
-        name: "recipientId",
-        label: "Recipient",
-        type: "select",
-        required: true,
-        options: [],
-        placeholder: "Select a recipient type first",
-      },
-      {
-        name: "subject",
-        label: "Subject",
-        type: "text",
-        required: true,
-        placeholder: "Enter message subject",
-      },
-      {
-        name: "content",
-        label: "Content",
-        type: "textarea",
-        required: true,
-        placeholder: "Write your message content...",
-        rows: 5,
-      },
-      {
-        name: "priority",
-        label: "Priority",
-        type: "select",
-        required: true,
-        options: [
-          { value: "low", label: "Low" },
-          { value: "medium", label: "Medium" },
-          { value: "high", label: "High" },
-        ],
-      },
-    ];
-
-    return { fields, adminOptions, lecturerOptions };
-  };
+  return { fields, adminOptions, lecturerOptions };
+};
 
   const handleSendReply = async () => {
     if (!replyText.trim()) {
@@ -445,12 +443,6 @@ const Messages = () => {
   const handleViewFile = (file) => {
     setSelectedFile(file);
     setViewFileModalOpen(true);
-  };
-
-  const handleEditFile = (file) => {
-    // Per your request, we are not implementing an edit form for this feature.
-    // However, the handler can be kept for future expansion if needed.
-    console.log("Edit file functionality is not implemented.");
   };
 
   const sectionsToShow = [
@@ -639,15 +631,6 @@ const Messages = () => {
               }
             }}
             actionButtons={[
-              (row) => (
-                <button
-                  onClick={() => handleViewFile(row)}
-                  className="msg-view-btn"
-                >
-                  <ExternalLink size={16} />
-                  Open
-                </button>
-              ),
               (row) => (
                 <button
                   onClick={() => handleDownloadFile(row)}
@@ -855,15 +838,7 @@ const Messages = () => {
         size="large"
         showCloseButton={false}
       >
-        {/* You will need to replace this DynamicForm if needed */}
-        {/* <DynamicForm
-          title="Create New Announcement"
-          fields={announcementFormFields}
-          onSubmit={handleAnnouncementSubmit}
-          onCancel={() => setCreateAnnouncementModalOpen(false)}
-          submitText="Create Announcement"
-          initialData={announcementFormData}
-        /> */}
+
         <AnnouncementForm
           onSave={handleAnnouncementSubmit} // onSave is the create action here
           onCancel={() => setCreateAnnouncementModalOpen(false)}
@@ -877,15 +852,7 @@ const Messages = () => {
         size="large"
         showCloseButton={false}
       >
-        {/* You will need to replace this DynamicForm if needed */}
-        {/* <DynamicForm
-          title="Edit Announcement"
-          fields={announcementFormFields}
-          onSubmit={handleAnnouncementSubmit}
-          onCancel={() => setEditAnnouncementModalOpen(false)}
-          submitText="Save Changes"
-          initialData={announcementFormData}
-        /> */}
+
         <AnnouncementForm
           onSave={handleAnnouncementSubmit} // onSave is the simple update action
           onDuplicate={handleDuplicateAnnouncementSubmit} // onDuplicate is the re-send action
@@ -998,15 +965,6 @@ const Messages = () => {
         size="large"
         showCloseButton={false}
       >
-        {/* You will need to replace this DynamicForm if needed */}
-        {/* <DynamicForm
-          title="Create New Template"
-          fields={templateFormFields}
-          onSubmit={handleTemplateSubmit}
-          onCancel={() => setCreateTemplateModalOpen(false)}
-          submitText="Create Template"
-          initialData={templateFormData}
-        /> */}
         <TemplateForm
           formType="create"
           onSave={handleTemplateSubmit}
@@ -1021,15 +979,6 @@ const Messages = () => {
         size="large"
         showCloseButton={false}
       >
-        {/* You will need to replace this DynamicForm if needed */}
-        {/* <DynamicForm
-          title="Edit Template"
-          fields={templateFormFields}
-          onSubmit={handleTemplateSubmit}
-          onCancel={() => setEditTemplateModalOpen(false)}
-          submitText="Save Changes"
-          initialData={templateFormData}
-        /> */}
         <TemplateForm
           formType="edit"
           onSave={handleTemplateSubmit}
@@ -1140,14 +1089,6 @@ const Messages = () => {
         size="large"
         showCloseButton={false}
       >
-        {/* You will need to replace this DynamicForm if needed */}
-        {/* <DynamicForm
-          title={`Use Template: ${useTemplateFormTitle}`}
-          fields={useTemplateFields}
-          onSubmit={handleUseTemplateSubmit}
-          onCancel={() => setUseTemplateModalOpen(false)}
-          submitText="Send"
-        /> */}
         <TemplateForm
           formType="use"
           onUse={handleUseTemplateSubmit}
@@ -1173,9 +1114,6 @@ const Messages = () => {
           lecturers={lecturers}
         />
       </PopUp>
-
-      {/* 🆕 REMOVED EDIT FILE MODAL */}
-
       <Modal
         isOpen={viewFileModalOpen}
         onClose={() => setViewFileModalOpen(false)}
