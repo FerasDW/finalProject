@@ -3,11 +3,11 @@ import {
   connectWebSocket,
   sendMessage as sendSocketMessage,
 } from "../websocket/chatSocket";
-import { fetchChatMessages } from "../Api/CommunityAPIs/chatApi";
 import { 
-  fetchCommunityChatMessages, 
-  getCommunityUnreadCount,
-  markCommunityMessagesAsRead 
+  fetchChatMessages, 
+  getUnreadCount,
+  markMessagesAsRead as markMessagesAsReadAPI,
+  sendChatMessage as sendChatMessageAPI,
 } from "../Api/CommunityAPIs/chatApi";
 import { AuthContext } from "../Context/AuthContext";
 
@@ -16,30 +16,21 @@ export const ChatContext = createContext();
 export const ChatProvider = ({ children }) => {
   const { authData } = useContext(AuthContext);
   
-  // Separate state for different contexts
-  const [eduSphereMessagesMap, setEduSphereMessagesMap] = useState({});
+  // State for community messages
   const [communityMessagesMap, setCommunityMessagesMap] = useState({});
-  
-  const [eduSphereUnreadMessages, setEduSphereUnreadMessages] = useState({});
   const [communityUnreadMessages, setCommunityUnreadMessages] = useState({});
   
   const [activeChatId, setActiveChatId] = useState(null);
-  const [activeChatContext, setActiveChatContext] = useState('eduSphere');
   
-  // Loading states
+  // Loading state
   const [loadingContacts, setLoadingContacts] = useState({});
 
-  // Initialize WebSocket connections when user is available
   useEffect(() => {
     if (!authData?.id) return;
 
-    // Connect to both WebSocket contexts
-    connectWebSocket(authData.id, 'eduSphere', (incomingMessage) => {
-      handleIncomingMessage(incomingMessage, 'eduSphere');
-    });
-
+    // Connect to community WebSocket context
     connectWebSocket(authData.id, 'community', (incomingMessage) => {
-      handleIncomingMessage(incomingMessage, 'community');
+      handleIncomingMessage(incomingMessage);
     });
 
     // Load initial unread counts
@@ -52,80 +43,52 @@ export const ChatProvider = ({ children }) => {
     if (!authData?.id) return;
     
     try {
-      // Load community unread count
-      const communityUnread = await getCommunityUnreadCount(authData.id);
-      
-      // You can add eduSphere unread count here if you have that API
-      // const eduSphereUnread = await getEduSphereUnreadCount(authData.id);
-      
+      const communityUnread = await getUnreadCount(authData.id);
+      // Assuming the API returns a map of { contactId: unreadCount }
+      if (typeof communityUnread === 'object') {
+        setCommunityUnreadMessages(communityUnread);
+      }
     } catch (error) {
       console.error("Failed to load unread counts:", error);
     }
   };
 
-  const handleIncomingMessage = (incomingMessage, context) => {
+  const handleIncomingMessage = (incomingMessage) => {
     const otherId =
       incomingMessage.senderId === authData.id
         ? incomingMessage.receiverId
         : incomingMessage.senderId;
 
-    if (context === 'eduSphere') {
-      setEduSphereMessagesMap((prev) => {
-        const updated = {
-          ...prev,
-          [otherId]: [...(prev[otherId] || []), incomingMessage],
-        };
-        return updated;
-      });
+    setCommunityMessagesMap((prev) => {
+      const updated = {
+        ...prev,
+        [otherId]: [...(prev[otherId] || []), incomingMessage],
+      };
+      return updated;
+    });
 
-      // Only increment unread if it's for current user and not active chat
-      if (
-        incomingMessage.receiverId === authData.id &&
-        (otherId !== activeChatId || activeChatContext !== 'eduSphere')
-      ) {
-        setEduSphereUnreadMessages((prev) => ({
+    if (
+      incomingMessage.receiverId === authData.id &&
+      otherId !== activeChatId
+    ) {
+      setCommunityUnreadMessages((prev) => {
+        const updated = {
           ...prev,
           [otherId]: (prev[otherId] || 0) + 1,
-        }));
-      }
-    } else if (context === 'community') {
-      setCommunityMessagesMap((prev) => {
-        const updated = {
-          ...prev,
-          [otherId]: [...(prev[otherId] || []), incomingMessage],
         };
         return updated;
       });
-
-      // Only increment unread if it's for current user and not active chat
-      if (
-        incomingMessage.receiverId === authData.id &&
-        (otherId !== activeChatId || activeChatContext !== 'community')
-      ) {
-        setCommunityUnreadMessages((prev) => {
-          const updated = {
-            ...prev,
-            [otherId]: (prev[otherId] || 0) + 1,
-          };
-          return updated;
-        });
-      }
     }
   };
 
-  const loadMessages = async (contactId, context = 'eduSphere') => {
+  const loadMessages = async (contactId) => {
     if (!authData?.id || !contactId) return;
     
-    const messagesMap = context === 'eduSphere' ? eduSphereMessagesMap : communityMessagesMap;
-    const setMessagesMap = context === 'eduSphere' ? setEduSphereMessagesMap : setCommunityMessagesMap;
-    
-    // Don't reload if already loaded and not empty
-    if (messagesMap[contactId] && messagesMap[contactId].length > 0) {
+    if (communityMessagesMap[contactId] && communityMessagesMap[contactId].length > 0) {
       return;
     }
 
-    // Prevent multiple simultaneous loads
-    const loadingKey = `${contactId}_${context}`;
+    const loadingKey = `${contactId}_community`;
     if (loadingContacts[loadingKey]) {
       return;
     }
@@ -133,20 +96,15 @@ export const ChatProvider = ({ children }) => {
     setLoadingContacts(prev => ({ ...prev, [loadingKey]: true }));
 
     try {
-      let data;
-      if (context === 'eduSphere') {
-        data = await fetchChatMessages(authData.id, contactId);
-      } else {
-        data = await fetchCommunityChatMessages(authData.id, contactId);
-      }
+      const data = await fetchChatMessages(authData.id, contactId);
 
-      setMessagesMap((prev) => ({
+      setCommunityMessagesMap((prev) => ({
         ...prev,
         [contactId]: data || [],
       }));
 
     } catch (error) {
-      console.error(`Failed to load messages for ${contactId} in ${context}:`, error);
+      console.error(`Failed to load messages for ${contactId}:`, error);
     } finally {
       setLoadingContacts(prev => {
         const updated = { ...prev };
@@ -156,30 +114,27 @@ export const ChatProvider = ({ children }) => {
     }
   };
 
-  const sendMessage = (receiverId, content, context = 'eduSphere') => {
+  const sendMessage = (receiverId, content) => {
     if (!content.trim()) return;
 
     const msg = {
       senderId: authData.id,
       receiverId,
       content: content.trim(),
-      context
+      context: 'community'
     };
 
     // Send via WebSocket
-    sendSocketMessage(msg, context);
+    sendSocketMessage(msg, 'community');
 
     // Update local state immediately for sender
-    const messagesMap = context === 'eduSphere' ? eduSphereMessagesMap : communityMessagesMap;
-    const setMessagesMap = context === 'eduSphere' ? setEduSphereMessagesMap : setCommunityMessagesMap;
-
     const localMessage = { 
       ...msg, 
       timestamp: new Date().toISOString(),
-      id: `temp_${Date.now()}` // Temporary ID for local message
+      id: `temp_${Date.now()}`
     };
 
-    setMessagesMap((prev) => ({
+    setCommunityMessagesMap((prev) => ({
       ...prev,
       [receiverId]: [
         ...(prev[receiverId] || []),
@@ -188,64 +143,50 @@ export const ChatProvider = ({ children }) => {
     }));
   };
 
-  const getMessagesForContact = (contactId, context = 'eduSphere') => {
-    const messagesMap = context === 'eduSphere' ? eduSphereMessagesMap : communityMessagesMap;
-    const messages = messagesMap[contactId] || [];
+  const getMessagesForContact = (contactId) => {
+    const messages = communityMessagesMap[contactId] || [];
     return messages;
   };
 
-  const markMessagesAsRead = async (contactId, context = 'eduSphere') => {
-    const setUnreadMessages = context === 'eduSphere' ? setEduSphereUnreadMessages : setCommunityUnreadMessages;
-    
-    setUnreadMessages((prev) => {
+  const markMessagesAsRead = async (contactId) => {
+    setCommunityUnreadMessages((prev) => {
       const updated = { ...prev };
       delete updated[contactId];
       return updated;
     });
     
     setActiveChatId(contactId);
-    setActiveChatContext(context);
 
-    // Call API to mark messages as read on server
     try {
-      if (context === 'community') {
-        await markCommunityMessagesAsRead(authData.id, contactId);
-      }
-      // Add eduSphere API call here when available
+      await markMessagesAsReadAPI(authData.id, contactId);
     } catch (error) {
       console.error('Failed to mark messages as read on server:', error);
     }
   };
 
-  const getUnreadCount = (context = 'eduSphere') => {
-    const unreadMessages = context === 'eduSphere' ? eduSphereUnreadMessages : communityUnreadMessages;
-    const total = Object.values(unreadMessages).reduce((total, count) => total + count, 0);
+  const getUnreadCount = () => {
+    const total = Object.values(communityUnreadMessages).reduce((total, count) => total + count, 0);
     return total;
   };
 
-  const getUnreadCountForContact = (contactId, context = 'eduSphere') => {
-    const unreadMessages = context === 'eduSphere' ? eduSphereUnreadMessages : communityUnreadMessages;
-    return unreadMessages[contactId] || 0;
+  const getUnreadCountForContact = (contactId) => {
+    return communityUnreadMessages[contactId] || 0;
   };
 
-  // Get all contacts with messages in a specific context
-  const getContactsWithMessages = (context = 'eduSphere') => {
-    const messagesMap = context === 'eduSphere' ? eduSphereMessagesMap : communityMessagesMap;
-    return Object.keys(messagesMap).filter(contactId => messagesMap[contactId].length > 0);
+  const getContactsWithMessages = () => {
+    return Object.keys(communityMessagesMap).filter(contactId => communityMessagesMap[contactId].length > 0);
   };
 
   return (
     <ChatContext.Provider
       value={{
         // Messages
-        eduSphereMessagesMap,
         communityMessagesMap,
         loadMessages,
         sendMessage,
         getMessagesForContact,
         
         // Unread tracking
-        eduSphereUnreadMessages,
         communityUnreadMessages,
         markMessagesAsRead,
         getUnreadCount,
@@ -253,8 +194,6 @@ export const ChatProvider = ({ children }) => {
         
         // Active chat
         activeChatId,
-        activeChatContext,
-        setActiveChatContext,
         
         // Utility functions
         getContactsWithMessages,

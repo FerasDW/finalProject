@@ -20,7 +20,6 @@ axios.defaults.timeout = 10000;
 // Add request interceptor for error handling
 axios.interceptors.request.use(
     (config) => {
-        console.log(`Making ${config.method?.toUpperCase()} request to: ${config.url}`);
         return config;
     },
     (error) => {

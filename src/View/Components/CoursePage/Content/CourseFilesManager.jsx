@@ -19,7 +19,8 @@ import {
 import * as contentApi from "../../../../Api/coursePageApi.js";
 
 // --- CHANGE 1: The component now accepts 'academicYear' as a prop ---
-const CourseFilesManager = ({ courseId, academicYear, userRole = "1100" }) => {
+const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
+  const canManageFiles = userRole === "1100" || userRole === "1200";
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,8 +28,6 @@ const CourseFilesManager = ({ courseId, academicYear, userRole = "1100" }) => {
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddFile, setShowAddFile] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-
-  const isAdmin = userRole === "1100";
 
   // --- CHANGE 2: The main data-loading useEffect now depends on 'academicYear' ---
   useEffect(() => {
@@ -241,7 +240,7 @@ const handleDeleteFile = async (categoryId, fileId) => {
                           <p className="category-count">{category.files.length} files</p>
                         </div>
                       </div>
-                      {isAdmin && (
+                      {canManageFiles && (
                         <div className="category-actions">
                           <button onClick={(e) => {e.stopPropagation(); handleEditCategory(category);}} className="action-btn"><Edit size={16} /></button>
                           <button onClick={(e) => {e.stopPropagation(); handleDeleteCategory(category.id);}} className="action-btn delete"><Trash2 size={16} /></button>
@@ -251,7 +250,7 @@ const handleDeleteFile = async (categoryId, fileId) => {
                     <p className="category-description">{category.description}</p>
                   </div>
                 ))}
-                {isAdmin && (
+                {canManageFiles  && (
                   <div onClick={() => setShowAddCategory(true)} className="add-category-item">
                     <div className="category-main"><div className="category-info"><div className="add-category-icon"><Plus size={16} /></div><div className="category-details"><h4 className="category-name">Add New Category</h4><p className="category-count">Create a new section</p></div></div></div>
                   </div>
@@ -273,11 +272,11 @@ const handleDeleteFile = async (categoryId, fileId) => {
                     </div>
                     <div className="file-actions">
                       <button className="file-action-btn download" onClick={() => handleDownloadFile(file)}><Download size={16} /> Download</button>
-                      {isAdmin && (<button onClick={() => handleDeleteFile(activeCategory, file.id)} className="file-action-btn delete"><Trash2 size={16} /> Delete</button>)}
+                      {canManageFiles && (<button onClick={() => handleDeleteFile(activeCategory, file.id)} className="file-action-btn delete"><Trash2 size={16} /> Delete</button>)}
                     </div>
                   </div>
                 ))}
-                {isAdmin && (<div className="upload-zone" onClick={() => setShowAddFile(true)}><Upload className="upload-icon" size={32} /><p className="upload-title">Upload New File</p><p className="upload-subtitle">Click to browse files</p></div>)}
+                {canManageFiles && (<div className="upload-zone" onClick={() => setShowAddFile(true)}><Upload className="upload-icon" size={32} /><p className="upload-title">Upload New File</p><p className="upload-subtitle">Click to browse files</p></div>)}
               </div>
             ) : (<div className="empty-state"><Folder className="empty-icon" size={48} /><p className="empty-text">No categories for this year. Please add one.</p></div>)}
           </div>

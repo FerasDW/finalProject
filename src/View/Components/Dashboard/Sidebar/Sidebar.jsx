@@ -98,7 +98,6 @@ const Sidebar = ({ menuItems, position = "left" }) => {
         </div>
         <div className="sidebar-header">
           <img className="sidebar-profile-image" src={Logo} alt="Profile" />
-          <span className="sidebar-profile-username">test</span>
         </div>
         <nav className="sidebar-menu">
           {menuItems.map((item, index) => (

@@ -9,10 +9,11 @@ import ChatInterface from "../../Components/Common/ChatInterface.jsx";
 // Import clean API functions with correct paths
 import { getGroupInvitations } from "../../../Api/CommunityAPIs/groupsApi";
 import { getFriendRequests } from "../../../Api/CommunityAPIs/friendsApi";
-import { 
-  getNotifications, 
-  markNotificationRead, 
-  markAllNotificationsRead 
+import { searchUsers } from "../../../Api/CommunityAPIs/communityUserApi";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
 } from "../../../Api/CommunityAPIs/notificationsApi";
 
 // Import Icons
@@ -27,11 +28,15 @@ import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CloseIcon from "@mui/icons-material/Close";
+import PersonIcon from "@mui/icons-material/Person";
+import SchoolIcon from "@mui/icons-material/School";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { authData } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   // Notification states
   const [showNotifications, setShowNotifications] = useState(false);
@@ -47,8 +52,13 @@ const Navbar = () => {
   const [selectedChatContact, setSelectedChatContact] = useState(null);
   const chatRef = useRef(null);
 
-  const { getUnreadCount, getUnreadCountForContact, markMessagesAsRead } = useChat();
+  const { getUnreadCount, getUnreadCountForContact, markMessagesAsRead } =
+    useChat();
   const { friendsList } = useFriends();
+
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchRef = useRef(null);
   const communityUnreadCount = getUnreadCount("community");
 
   // Load notifications when component mounts
@@ -98,6 +108,18 @@ const Navbar = () => {
     };
   }, [showChatList]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [searchRef]);
+
   const toggleChatList = () => {
     setShowChatList(!showChatList);
     setShowNotifications(false); // Close notifications if open
@@ -139,7 +161,7 @@ const Navbar = () => {
         await Promise.all([
           getGroupInvitations(),
           getFriendRequests(),
-          getNotifications().catch(() => [])
+          getNotifications().catch(() => []),
         ]);
 
       // Group invitations (don't count towards unread)
@@ -237,9 +259,41 @@ const Navbar = () => {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.trim().length >= 2) {
+      setIsSearching(true);
+      try {
+        const results = await searchUsers(value);
+        setSearchResults(results);
+        setShowSearchResults(true);
+      } catch (error) {
+        console.error("Failed to fetch search results:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleSearchKeyPress = async (e) => {
     if (e.key === "Enter" && searchTerm.trim()) {
-      navigate(`/community/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      setIsSearching(true);
+      try {
+        const results = await searchUsers(searchTerm);
+        setSearchResults(results);
+        setShowSearchResults(true);
+      } catch (error) {
+        console.error("Failed to fetch search results:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
     }
   };
 
@@ -266,6 +320,40 @@ const Navbar = () => {
     setShowNotifications(!showNotifications);
   };
 
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
+  const handleUserSelect = (user) => {
+    setShowSearchResults(false);
+    setSearchTerm("");
+    navigate(`/community/profile/${user.id}`);
+  };
+
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case "1200":
+        return <SchoolIcon className="roleIcon lecturer" />;
+      case "1100":
+        return <AdminPanelSettingsIcon className="roleIcon admin" />;
+      default:
+        return <PersonIcon className="roleIcon student" />;
+    }
+  };
+
+  const getRoleText = (role) => {
+    switch (role) {
+      case "1200":
+        return "Lecturer";
+      case "1100":
+        return "Admin";
+      default:
+        return "Student";
+    }
+  };
+
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
     const time = new Date(timestamp);
@@ -290,15 +378,87 @@ const Navbar = () => {
           onClick={() => navigate("/dashboard")}
           style={{ cursor: "pointer" }}
         />
-        <div className="search">
-          <SearchOutlinedIcon />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={handleSearch}
-          />
+        <div className="searchContainer" ref={searchRef}>
+          <div className="search">
+            <SearchOutlinedIcon className="searchIcon" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={handleSearch}
+              onKeyPress={handleSearchKeyPress}
+              className={isSearching ? "searching" : ""}
+            />
+            {isSearching && <div className="searchLoader"></div>}
+            {searchTerm && (
+              <CloseIcon
+                className="clearSearchIcon"
+                onClick={handleClearSearch}
+              />
+            )}
+          </div>
+
+          {showSearchResults && (
+            <div className="searchResultsDropdown">
+              <div className="searchResultsHeader">
+                <span>Search Results</span>
+                {searchResults.length > 0 && (
+                  <span className="resultCount">{searchResults.length} found</span>
+                )}
+              </div>
+              
+              <div className="searchResultsList">
+                {searchResults.length > 0 ? (
+                  searchResults.map((user) => (
+                    <div
+                      key={user.id}
+                      className="searchResultItem"
+                      onClick={() => handleUserSelect(user)}
+                    >
+                      <div className="userAvatar">
+                        <img
+                          src={user.profilePic || "https://via.placeholder.com/40"}
+                          alt={user.name}
+                        />
+                        <div className="roleIconContainer">
+                          {getRoleIcon(user.role)}
+                        </div>
+                      </div>
+                      <div className="userInfo">
+                        <div className="userName">{user.name}</div>
+                        <div className="userDetails">
+                          <span className="userRole">{getRoleText(user.role)}</span>
+                          {user.department && (
+                            <span className="userDepartment">• {user.department}</span>
+                          )}
+                        </div>
+                        {user.email && (
+                          <div className="userEmail">{user.email}</div>
+                        )}
+                      </div>
+                      <div className="userActions">
+                        <PersonOutlinedIcon className="viewProfileIcon" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="noResults">
+                    <SearchOutlinedIcon className="noResultsIcon" />
+                    <span>No users found for "{searchTerm}"</span>
+                    <small>Try searching with different keywords</small>
+                  </div>
+                )}
+              </div>
+              
+              {searchResults.length > 5 && (
+                <div className="searchResultsFooter">
+                  <button className="viewAllResultsBtn">
+                    View All Results ({searchResults.length})
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -307,12 +467,12 @@ const Navbar = () => {
           onClick={() => navigate(`/community/profile/${authData?.id}`)}
           style={{ cursor: "pointer" }}
         />
-        
+
         {/* Simple Chat Container */}
         <div className="chatContainer" ref={chatRef}>
           <div className="chatIcon" onClick={toggleChatList}>
             <EmailOutlinedIcon style={{ cursor: "pointer" }} />
-            
+
             {/* Unread count badge */}
             {communityUnreadCount > 0 && (
               <span className="chatBadge">

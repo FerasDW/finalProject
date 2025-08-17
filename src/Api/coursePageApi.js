@@ -1,3 +1,4 @@
+// src/Api/coursePageApi.js
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:8080/api';
@@ -6,8 +7,10 @@ const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
 
 // FIXED: Updated to match your actual backend endpoints
+
 const CATEGORIES_URL = `${API_BASE_URL}/course-content/categories`;
 const FILES_URL = `${API_BASE_URL}/course-content/files`; // FIXED: Updated to match backend
+
 
 axios.defaults.withCredentials = true;
 
@@ -73,6 +76,22 @@ export const enrollStudent = async (courseId, enrollmentData) => {
         throw error;
     }
 };
+
+
+export const unenrollStudents = async (courseId, studentIds) => {
+  try {
+    const response = await axios.delete(`${COURSES_URL}/${courseId}/enrollments`, {
+      data: { studentIds }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error unenrolling students:", error);
+    throw error;
+  }
+};
+
+
+
 
 /* ==================================================================
                             DEPARTMENTS
@@ -315,8 +334,7 @@ export const deleteFile = async (fileId) => {
 // FIXED: Updated to match backend endpoints
 export const getFilesByCategory = async (categoryId) => {
     try {
-        console.log(`Making GET request to: ${FILES_URL}/by-category/${categoryId}/simple`);
-        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}/simple`, {
+        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}`, {
             withCredentials: true
         });
         return response.data;

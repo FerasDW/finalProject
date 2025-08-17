@@ -68,7 +68,7 @@ export const sendFriendRequest = async (userId) => {
  */
 export const acceptFriendRequest = async (userId) => {
   try {
-    const response = await axios.post(`${BASE_URL}/accept/${userId}`, {}, { withCredentials: true });
+    const response = await axios.put(`${BASE_URL}/accept/${userId}`, {}, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw error;
@@ -82,7 +82,7 @@ export const acceptFriendRequest = async (userId) => {
  */
 export const rejectFriendRequest = async (userId) => {
   try {
-    const response = await axios.post(`${BASE_URL}/reject/${userId}`, {}, { withCredentials: true });
+    const response = await axios.put(`${BASE_URL}/reject/${userId}`, {}, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw error;
@@ -96,7 +96,7 @@ export const rejectFriendRequest = async (userId) => {
  */
 export const removeFriend = async (userId) => {
   try {
-    const response = await axios.post(`${BASE_URL}/remove/${userId}`, {}, { withCredentials: true });
+    const response = await axios.delete(`${BASE_URL}/remove/${userId}`, {}, { withCredentials: true });
     return response.data;
   } catch (error) {
     throw error;

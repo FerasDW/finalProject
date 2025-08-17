@@ -1,29 +1,31 @@
 // useGenericProfile.js - Custom Hook for Generic Profile
-import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import * as profileAPI from '../Api/genericProfilePageApi';
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import * as profileAPI from "../Api/genericProfilePageApi";
+import { getStatCards } from "../Utils/genericProfileUtils.js";
 
 export const useGenericProfile = (initialSection = "overview") => {
   const { entityType, id } = useParams();
   const navigate = useNavigate();
-  
+
   // Core state
   const [profileData, setProfileData] = useState(null);
   const [stats, setStats] = useState({});
   const [statCards, setStatCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // UI state
   const [activeSection, setActiveSection] = useState(initialSection);
   const [selectedYear, setSelectedYear] = useState("");
   const [showActions, setShowActions] = useState(false);
-  
+
   // File upload states
   const [uploadedFiles, setUploadedFiles] = useState(new Map());
   const [fileUploadProgress, setFileUploadProgress] = useState({});
-  
+
   // Modal states
+  const [grades, setGrades] = useState([]);
   const [editGradeModalOpen, setEditGradeModalOpen] = useState(false);
   const [addGradeModalOpen, setAddGradeModalOpen] = useState(false);
   const [editCourseModalOpen, setEditCourseModalOpen] = useState(false);
@@ -35,48 +37,184 @@ export const useGenericProfile = (initialSection = "overview") => {
   const [editResourceModalOpen, setEditResourceModalOpen] = useState(false);
   const [addResourceModalOpen, setAddResourceModalOpen] = useState(false);
   const [viewRequestModalOpen, setViewRequestModalOpen] = useState(false);
-  const [responseRequestModalOpen, setResponseRequestModalOpen] = useState(false);
-  
+  const [responseRequestModalOpen, setResponseRequestModalOpen] =
+    useState(false);
+
   // Form state
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [formData, setFormData] = useState({});
   const [requestResponse, setRequestResponse] = useState("");
 
-  // Load profile data
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [viewMessageModalOpen, setViewMessageModalOpen] = useState(false);
+  const [replyMessageModalOpen, setReplyMessageModalOpen] = useState(false);
+  const [replyText, setReplyText] = useState("");
+
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const validEntityTypes = ['student', 'lecturer'];
+      const validEntityTypes = ["student", "lecturer"];
       if (!entityType || !validEntityTypes.includes(entityType)) {
         throw new Error(`Invalid entity type: "${entityType}"`);
       }
-
-      const sanitizedId = parseInt(id);
-      if (isNaN(sanitizedId) || sanitizedId <= 0) {
+      if (!id || id.trim() === "") {
         throw new Error(`Invalid ID: "${id}"`);
       }
 
-      const data = await profileAPI.getProfileData(entityType, sanitizedId);
-      const calculatedStats = await profileAPI.getProfileStats(entityType, sanitizedId);
-      const cards = await profileAPI.getStatCards(entityType, calculatedStats);
+      // 1. Get core profile data
+      const coreData = await profileAPI.getProfileData(entityType, id);
 
-      setProfileData(data);
-      setStats(calculatedStats);
+      // 2. Get messages
+      const messages = await profileAPI.getMessages(entityType, id);
+
+      // 3. Get enrollments (for students)
+      let enrollments = [];
+      if (entityType === "student") {
+        const studentEnrollments = await profileAPI.getStudentEnrollments(id);
+        enrollments = studentEnrollments.map((course) => ({
+          courseCode: course.courseCode,
+          courseName: course.courseName,
+          credits: course.credits,
+          semester: course.semester,
+          lecturer: course.lecturer,
+          status: course.status,
+        }));
+      }
+
+      // 4. ✅ Get schedules (for lecturers)
+      let schedules = [];
+      if (entityType === "lecturer") {
+        const scheduleData = await profileAPI.getSchedule(entityType, id);
+        schedules = scheduleData.map((item) => ({
+          id: item.id,
+          day: item.day,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          availability: item.availability,
+          notes: item.notes,
+        }));
+      }
+
+      // 5. ✅ Get resources (for lecturers)
+      let resources = [];
+      if (entityType === "lecturer") {
+        const resourceData = await profileAPI.getResources(entityType, id);
+        resources = resourceData.map((item) => ({
+          id: item.id,
+          type: item.type,
+          title: item.title,
+          description: item.description,
+          date: item.date || "",
+          institution: item.institution || "",
+          url: item.url || "",
+          tags: item.tags || "",
+          fileName: item.fileName || "",
+          size: item.size || 0,
+          uploadDate: item.uploadDate || "",
+          downloads: item.downloads || 0,
+          rating: item.rating || 0,
+        }));
+      }
+
+      // 6. ✅ Get courses (for lecturers)
+      let courses = [];
+      if (entityType === "lecturer") {
+        const courseData = await profileAPI.getCourses(entityType, id);
+        courses = courseData.map((course) => ({
+          courseCode: course.courseCode,
+          courseName: course.courseName,
+          credits: course.credits,
+          semester: course.semester,
+          department: course.department,
+          classSize: course.classSize,
+          status: course.status || "Active",
+          description: course.description,
+          notes: course.notes,
+        }));
+      }
+
+      // 6. Build complete profile data
+      const completeProfileData = {
+        ...coreData,
+        enrollments,
+        courses,
+        schedules,
+        resources,
+        messages,
+      };
+
+      setProfileData(completeProfileData);
+
+      // 7. Compute stats and generate cards
+      let computedStats = {};
+      const grades = completeProfileData.grades || [];
+
+      // Compute basic stats
+      if (entityType === "student") {
+        computedStats = {
+          gpa: completeProfileData.gpa || 0,
+          completedCourses: grades.length,
+          totalCredits: grades.reduce((sum, g) => sum + (g.credits || 0), 0),
+          currentEnrollments: enrollments.filter((e) => e.status === "enrolled")
+            .length,
+          status: completeProfileData.status,
+        };
+      } else {
+        // For lecturer, use default stats (if needed)
+        computedStats = stats || {};
+      }
+
+      setStats(computedStats);
+
+      // Generate cards using our new utility
+      const cards = getStatCards(
+        entityType,
+        computedStats,
+        completeProfileData
+      );
       setStatCards(cards);
-
     } catch (err) {
-      console.error('Profile loading error:', err.message);
-      setError(err.message);
-      setTimeout(() => {
-        const dashboardRoute = entityType === 'student' ? '/students' : '/lecturers';
-        navigate(dashboardRoute, { replace: true });
-      }, 5000);
+      console.error("Error loading profile:", err);
+      setError(err.message || "Failed to load profile data");
+      navigate("/dashboard", { replace: true });
     } finally {
       setLoading(false);
     }
   }, [entityType, id, navigate]);
+
+  const handleViewMessage = useCallback((message) => {
+    setSelectedMessage(message);
+    setViewMessageModalOpen(true);
+  }, []);
+
+  const handleReplyMessage = useCallback((message) => {
+    setSelectedMessage(message);
+    setReplyText("");
+    setReplyMessageModalOpen(true);
+  }, []);
+
+  const handleSendReply = useCallback(async () => {
+    if (!replyText.trim()) {
+      alert("Please enter a reply message");
+      return;
+    }
+
+    try {
+      // Call your API to send reply
+      await profileAPI.sendMessageReply(selectedMessage.id, {
+        replyContent: replyText,
+      });
+      alert("Reply sent successfully!");
+      setReplyMessageModalOpen(false);
+      setReplyText("");
+      await loadProfile(); // Refresh the messages
+    } catch (error) {
+      console.error("Error sending reply:", error);
+      alert("Failed to send reply. Please try again.");
+    }
+  }, [replyText, selectedMessage, loadProfile]);
 
   // Grade handlers
   const handleEditGrade = useCallback((row) => {
@@ -85,8 +223,6 @@ export const useGenericProfile = (initialSection = "overview") => {
       courseCode: row.courseCode,
       courseName: row.courseName,
       grade: row.grade,
-      credits: row.credits,
-      semester: row.semester
     });
     setEditGradeModalOpen(true);
   }, []);
@@ -97,44 +233,38 @@ export const useGenericProfile = (initialSection = "overview") => {
     setAddGradeModalOpen(true);
   }, []);
 
-  const handleGradeSubmit = useCallback(async (formData) => {
-    try {
-      if (formData.grade < 0 || formData.grade > 100) {
-        throw new Error('Grade must be between 0 and 100');
-      }
+  const handleGradeSubmit = useCallback(
+    async (formData) => {
+      try {
+        if (formData.grade < 0 || formData.grade > 100) {
+          throw new Error("Grade must be between 0 and 100");
+        }
 
-      if (selectedRecord) {
-        await profileAPI.updateGrade(entityType, id, selectedRecord.id, formData);
-        setEditGradeModalOpen(false);
-      } else {
-        await profileAPI.addGrade(entityType, id, formData);
-        setAddGradeModalOpen(false);
+        if (selectedRecord) {
+          await profileAPI.updateGrade(
+            entityType,
+            id,
+            selectedRecord.id,
+            formData
+          );
+          setEditGradeModalOpen(false);
+        } else {
+          await profileAPI.addGrade(entityType, id, formData);
+          setAddGradeModalOpen(false);
+        }
+
+        await loadProfile();
+        setSelectedRecord(null);
+        setFormData({});
+      } catch (error) {
+        console.error("Error submitting grade:", error);
+        alert(error.message);
       }
-      
-      await loadProfile();
-      setSelectedRecord(null);
-      setFormData({});
-    } catch (error) {
-      console.error('Error submitting grade:', error);
-      alert(error.message);
-    }
-  }, [selectedRecord, entityType, id, loadProfile]);
+    },
+    [selectedRecord, entityType, id, loadProfile]
+  );
 
   // Course handlers
-  const handleEditCourse = useCallback((row) => {
-    setSelectedRecord(row);
-    setFormData({
-      courseCode: row.courseCode,
-      courseName: row.courseName,
-      credits: row.credits,
-      semester: row.semester,
-      department: row.department || '',
-      description: row.description || '',
-      classSize: row.classSize || '',
-      notes: row.notes || ''
-    });
-    setEditCourseModalOpen(true);
-  }, []);
 
   const handleAddCourse = useCallback(() => {
     setSelectedRecord(null);
@@ -142,24 +272,32 @@ export const useGenericProfile = (initialSection = "overview") => {
     setAddCourseModalOpen(true);
   }, []);
 
-  const handleCourseSubmit = useCallback(async (formData) => {
-    try {
-      if (selectedRecord) {
-        await profileAPI.updateCourse(entityType, id, selectedRecord.id, formData);
-        setEditCourseModalOpen(false);
-      } else {
-        await profileAPI.addCourse(entityType, id, formData);
-        setAddCourseModalOpen(false);
+  const handleCourseSubmit = useCallback(
+    async (formData) => {
+      try {
+        if (selectedRecord) {
+          await profileAPI.updateCourse(
+            entityType,
+            id,
+            selectedRecord.id,
+            formData
+          );
+          setEditCourseModalOpen(false);
+        } else {
+          await profileAPI.addCourse(entityType, id, formData);
+          setAddCourseModalOpen(false);
+        }
+
+        await loadProfile();
+        setSelectedRecord(null);
+        setFormData({});
+      } catch (error) {
+        console.error("Error submitting course:", error);
+        alert(error.message);
       }
-      
-      await loadProfile();
-      setSelectedRecord(null);
-      setFormData({});
-    } catch (error) {
-      console.error('Error submitting course:', error);
-      alert(error.message);
-    }
-  }, [selectedRecord, entityType, id, loadProfile]);
+    },
+    [selectedRecord, entityType, id, loadProfile]
+  );
 
   // Enrollment handlers
   const handleEditEnrollment = useCallback((row) => {
@@ -170,7 +308,7 @@ export const useGenericProfile = (initialSection = "overview") => {
       credits: row.credits,
       semester: row.semester,
       instructor: row.instructor,
-      status: row.status || 'enrolled'
+      status: row.status || "enrolled",
     });
     setEditEnrollmentModalOpen(true);
   }, []);
@@ -181,24 +319,32 @@ export const useGenericProfile = (initialSection = "overview") => {
     setAddEnrollmentModalOpen(true);
   }, []);
 
-  const handleEnrollmentSubmit = useCallback(async (formData) => {
-    try {
-      if (selectedRecord) {
-        await profileAPI.updateEnrollment(entityType, id, selectedRecord.id, formData);
-        setEditEnrollmentModalOpen(false);
-      } else {
-        await profileAPI.addEnrollment(entityType, id, formData);
-        setAddEnrollmentModalOpen(false);
+  const handleEnrollmentSubmit = useCallback(
+    async (formData) => {
+      try {
+        if (selectedRecord) {
+          await profileAPI.updateEnrollment(
+            entityType,
+            id,
+            selectedRecord.id,
+            formData
+          );
+          setEditEnrollmentModalOpen(false);
+        } else {
+          await profileAPI.addEnrollment(entityType, id, formData);
+          setAddEnrollmentModalOpen(false);
+        }
+
+        await loadProfile();
+        setSelectedRecord(null);
+        setFormData({});
+      } catch (error) {
+        console.error("Error submitting enrollment:", error);
+        alert(error.message);
       }
-      
-      await loadProfile();
-      setSelectedRecord(null);
-      setFormData({});
-    } catch (error) {
-      console.error('Error submitting enrollment:', error);
-      alert(error.message);
-    }
-  }, [selectedRecord, entityType, id, loadProfile]);
+    },
+    [selectedRecord, entityType, id, loadProfile]
+  );
 
   // Schedule handlers
   const handleEditSchedule = useCallback((row) => {
@@ -208,10 +354,7 @@ export const useGenericProfile = (initialSection = "overview") => {
       startTime: row.startTime,
       endTime: row.endTime,
       availability: row.availability,
-      notes: row.notes || '',
-      courseCode: row.courseCode || '',
-      room: row.room || '',
-      students: row.students || ''
+      notes: row.notes || "",
     });
     setEditScheduleModalOpen(true);
   }, []);
@@ -222,43 +365,36 @@ export const useGenericProfile = (initialSection = "overview") => {
     setAddScheduleModalOpen(true);
   }, []);
 
-  const handleScheduleSubmit = useCallback(async (formData) => {
-    try {
-      if (formData.startTime >= formData.endTime) {
-        throw new Error('End time must be after start time');
-      }
+  const handleScheduleSubmit = useCallback(
+    async (formData) => {
+      try {
+        if (formData.startTime >= formData.endTime) {
+          throw new Error("End time must be after start time");
+        }
 
-      if (selectedRecord) {
-        await profileAPI.updateSchedule(entityType, id, selectedRecord.id, formData);
-        setEditScheduleModalOpen(false);
-      } else {
-        await profileAPI.addSchedule(entityType, id, formData);
-        setAddScheduleModalOpen(false);
-      }
-      
-      await loadProfile();
-      setSelectedRecord(null);
-      setFormData({});
-    } catch (error) {
-      console.error('Error submitting schedule:', error);
-      alert(error.message);
-    }
-  }, [selectedRecord, entityType, id, loadProfile]);
+        if (selectedRecord) {
+          await profileAPI.updateSchedule(
+            entityType,
+            id,
+            selectedRecord.id,
+            formData
+          );
+          setEditScheduleModalOpen(false);
+        } else {
+          await profileAPI.addSchedule(entityType, id, formData);
+          setAddScheduleModalOpen(false);
+        }
 
-  // Resource handlers
-  const handleEditResource = useCallback((row) => {
-    setSelectedRecord(row);
-    setFormData({
-      type: row.type,
-      title: row.title,
-      description: row.description,
-      date: row.date || '',
-      institution: row.institution || '',
-      url: row.url || '',
-      tags: row.tags || ''
-    });
-    setEditResourceModalOpen(true);
-  }, []);
+        await loadProfile();
+        setSelectedRecord(null);
+        setFormData({});
+      } catch (error) {
+        console.error("Error submitting schedule:", error);
+        alert(error.message);
+      }
+    },
+    [selectedRecord, entityType, id, loadProfile]
+  );
 
   const handleAddResource = useCallback(() => {
     setSelectedRecord(null);
@@ -266,72 +402,57 @@ export const useGenericProfile = (initialSection = "overview") => {
     setAddResourceModalOpen(true);
   }, []);
 
-  const handleResourceSubmit = useCallback(async (formData) => {
-    try {
-      if (!selectedRecord && !formData.file) {
-        throw new Error('Please select a file to upload');
-      }
 
-      if (formData.file && formData.file.size > 10 * 1024 * 1024) {
-        throw new Error('File size must be less than 10MB');
-      }
+  const handleDownloadResource = useCallback(
+    async (row) => {
+      try {
+        if (row.id) {
+          // Use the same endpoint structure as your working download
+          window.open(
+            `http://localhost:8080/api/resources/${row.id}/download`,
+            "_blank"
+          );
 
-      setFileUploadProgress({ status: 'uploading', progress: 0 });
-
-      // Simulate upload progress
-      const interval = setInterval(() => {
-        setFileUploadProgress(prev => {
-          if (prev.progress >= 100) {
-            clearInterval(interval);
-            setTimeout(() => setFileUploadProgress({}), 1000);
-            return { status: 'completed', progress: 100 };
-          }
-          return { ...prev, progress: prev.progress + 10 };
-        });
-      }, 100);
-
-      if (selectedRecord) {
-        await profileAPI.updateResource(entityType, id, selectedRecord.id, formData);
-        if (formData.file) {
-          setUploadedFiles(prev => new Map(prev.set(selectedRecord.id, formData.file)));
+          // Optional: Update download count after successful download
+          await loadProfile();
+        } else {
+          console.error(
+            "No download method available for resource:",
+            row.title
+          );
+          alert("Unable to download resource.");
         }
-        setEditResourceModalOpen(false);
-      } else {
-        const newResource = await profileAPI.addResource(entityType, id, formData);
-        if (formData.file && newResource.id) {
-          setUploadedFiles(prev => new Map(prev.set(newResource.id, formData.file)));
-        }
-        setAddResourceModalOpen(false);
+      } catch (error) {
+        console.error("Download error:", error);
+        alert("Error downloading file. Please try again.");
+      }
+    },
+    [loadProfile]
+  );
+
+  // New delete handler
+  const handleDeleteResource = useCallback(
+    async (row) => {
+      // Confirm before deleting
+      if (
+        !window.confirm(
+          `Are you sure you want to delete "${row.title}"? This action cannot be undone.`
+        )
+      ) {
+        return;
       }
 
-      await loadProfile();
-      setSelectedRecord(null);
-      setFormData({});
-    } catch (error) {
-      console.error('Error uploading resource:', error);
-      alert(error.message);
-      setFileUploadProgress({ status: 'error', progress: 0 });
-    }
-  }, [selectedRecord, entityType, id, loadProfile]);
-
-  const handleDownloadResource = useCallback(async (row) => {
-    try {
-      await profileAPI.downloadResource(entityType, id, row.id);
-      await loadProfile(); // Refresh to update download count
-    } catch (error) {
-      console.error('Download error:', error);
-      alert('Error downloading file. Please try again.');
-    }
-  }, [entityType, id, loadProfile]);
-
-  const handlePreviewResource = useCallback(async (row) => {
-    try {
-      await profileAPI.previewResource(entityType, id, row.id);
-    } catch (error) {
-      console.error('Preview error:', error);
-      alert('Error previewing file. Please try again.');
-    }
-  }, [entityType, id]);
+      try {
+        await profileAPI.deleteResource(entityType, id, row.id);
+        await loadProfile(); // Refresh the data
+        alert("Resource deleted successfully!");
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Error deleting resource. Please try again.");
+      }
+    },
+    [entityType, id, loadProfile]
+  );
 
   // Request handlers
   const handleViewRequest = useCallback((row) => {
@@ -344,43 +465,6 @@ export const useGenericProfile = (initialSection = "overview") => {
     setRequestResponse("");
     setResponseRequestModalOpen(true);
   }, []);
-
-  const handleApproveRequest = useCallback(async (row) => {
-    try {
-      await profileAPI.updateRequestStatus(entityType, id, row.id, 'approved');
-      await loadProfile();
-    } catch (error) {
-      console.error('Error approving request:', error);
-      alert('Error approving request. Please try again.');
-    }
-  }, [entityType, id, loadProfile]);
-
-  const handleRejectRequest = useCallback(async (row) => {
-    try {
-      await profileAPI.updateRequestStatus(entityType, id, row.id, 'rejected');
-      await loadProfile();
-    } catch (error) {
-      console.error('Error rejecting request:', error);
-      alert('Error rejecting request. Please try again.');
-    }
-  }, [entityType, id, loadProfile]);
-
-  const handleSubmitResponse = useCallback(async () => {
-    try {
-      if (!requestResponse.trim()) {
-        throw new Error('Please enter a response');
-      }
-
-      await profileAPI.submitRequestResponse(entityType, id, selectedRecord.id, requestResponse);
-      setResponseRequestModalOpen(false);
-      setRequestResponse("");
-      setSelectedRecord(null);
-      await loadProfile();
-    } catch (error) {
-      console.error('Error submitting response:', error);
-      alert(error.message);
-    }
-  }, [requestResponse, selectedRecord, entityType, id, loadProfile]);
 
   // Card click handler
   const handleCardClick = useCallback((card) => {
@@ -395,9 +479,9 @@ export const useGenericProfile = (initialSection = "overview") => {
       "cv-status": "resources",
       "education-records": "resources",
       "research-projects": "resources",
-      "career-milestones": "resources"
+      "career-milestones": "resources",
     };
-    
+
     if (sectionMap[card.id]) {
       setActiveSection(sectionMap[card.id]);
     }
@@ -408,7 +492,7 @@ export const useGenericProfile = (initialSection = "overview") => {
     if (entityType && id) {
       loadProfile();
     } else {
-      setError('Missing required parameters');
+      setError("Missing required parameters");
       setLoading(false);
     }
   }, [entityType, id, loadProfile]);
@@ -425,8 +509,9 @@ export const useGenericProfile = (initialSection = "overview") => {
     showActions,
     uploadedFiles,
     fileUploadProgress,
-    
+
     // Modal states
+    grades,
     editGradeModalOpen,
     addGradeModalOpen,
     editCourseModalOpen,
@@ -439,12 +524,26 @@ export const useGenericProfile = (initialSection = "overview") => {
     addResourceModalOpen,
     viewRequestModalOpen,
     responseRequestModalOpen,
-    
+
     // Form state
     selectedRecord,
     formData,
     requestResponse,
-    
+
+    // Message related state
+    selectedMessage,
+    viewMessageModalOpen,
+    replyMessageModalOpen,
+    replyText,
+
+    // Message handlers
+    handleViewMessage,
+    handleReplyMessage,
+    handleSendReply,
+    setReplyText,
+    setViewMessageModalOpen,
+    setReplyMessageModalOpen,
+
     // Setters
     setActiveSection,
     setSelectedYear,
@@ -463,12 +562,11 @@ export const useGenericProfile = (initialSection = "overview") => {
     setViewRequestModalOpen,
     setResponseRequestModalOpen,
     setRequestResponse,
-    
+
     // Handlers
     handleEditGrade,
     handleAddGrade,
     handleGradeSubmit,
-    handleEditCourse,
     handleAddCourse,
     handleCourseSubmit,
     handleEditEnrollment,
@@ -477,21 +575,41 @@ export const useGenericProfile = (initialSection = "overview") => {
     handleEditSchedule,
     handleAddSchedule,
     handleScheduleSubmit,
-    handleEditResource,
     handleAddResource,
-    handleResourceSubmit,
     handleDownloadResource,
-    handlePreviewResource,
+    handleDeleteResource,
     handleViewRequest,
     handleResponseRequest,
-    handleApproveRequest,
-    handleRejectRequest,
-    handleSubmitResponse,
     handleCardClick,
-    
+
     // Derived data
     entityType,
     id,
-    mainEntity: profileData ? (entityType === "student" ? profileData.student : profileData.lecturer) : null
+    mainEntity: profileData
+      ? {
+          ...profileData,
+          id: profileData._id?.$oid || profileData.id,
+          phone: profileData.phoneNumber,
+          // Add student-specific fields
+          ...(entityType === "student" && {
+            gpa: stats?.gpa || "N/A",
+            major: profileData.department,
+            academicYear: profileData.academicYear,
+            status: profileData.status,
+          }),
+          // Add lecturer-specific fields
+          ...(entityType === "lecturer" && {
+            activeCourses: Array.isArray(profileData?.courses)
+              ? profileData.courses.length
+              : 0,
+          }),
+        }
+      : null, // Add these for the other tables
+    grades: profileData ? profileData.grades : [],
+    courses: profileData ? profileData.courses : [],
+    enrollments: profileData ? profileData.enrollments : [],
+    messages: profileData ? profileData.messages : [],
+    schedules: profileData ? profileData.schedules : [],
+    resources: profileData ? profileData.resources : [],
   };
 };

@@ -22,7 +22,6 @@ export const formatHeaderName = (name) => {
  * Get the appropriate icon component based on entity type or icon prop
  */
 export const getIconComponent = (icon, entityType) => {
-  console.log("getIconComponent called with icon:", icon, "entityType:", entityType);
   
   const iconMap = {
     // Core icons

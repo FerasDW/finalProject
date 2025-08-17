@@ -1,10 +1,32 @@
+// src/Components/Dashboard/Topbar/Topbar.jsx
+
 import { Bell, User, Settings } from "react-feather";
-import { useContext } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { AuthContext } from "../../../../Context/AuthContext";
 import "../../../../CSS/Components/Global/Topbar.css";
+import QuickActions from "./QuickAction.jsx";
 
 const Topbar = () => {
   const { authData, loading } = useContext(AuthContext);
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const toggleQuickActions = () => {
+    setShowQuickActions(!showQuickActions);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowQuickActions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   // Show loading state
   if (loading) {
@@ -39,21 +61,13 @@ const Topbar = () => {
         </div>
       </div>
 
-      <div className="topbar-center">
-        {/* Search removed */}
-      </div>
-
-      <div className="topbar-right">
+      <div className="topbar-right" ref={dropdownRef}>
         <div className="topbar-icons">
-          <button className="icon-button notification-button" title="Notifications">
-            <Bell size={20} />
-            <span className="notification-badge">3</span>
-          </button>
-          
-          <button className="icon-button" title="Settings">
+          <button className="icon-button" title="Settings" onClick={toggleQuickActions}>
             <Settings size={20} />
           </button>
         </div>
+        {showQuickActions && <QuickActions onClose={() => setShowQuickActions(false)} />}
       </div>
     </div>
   );
