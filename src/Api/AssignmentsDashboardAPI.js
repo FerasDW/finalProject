@@ -1,15 +1,14 @@
 /**
- * Complete API Client for Lecturer Dashboard - Frontend with Backend Integration and Enhanced File Handling
- * Integrated with your AuthContext and backend endpoints
+ * Complete API Client for Lecturer Dashboard - FULLY FIXED WITH EXAM RESPONSES
  * File: src/Api/AssignmentsDashboardAPI.js
  */
 
 // Configuration
 const API_CONFIG = {
   baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
-  timeout: 30000, // 30 seconds
+  timeout: 30000,
   retryAttempts: 3,
-  retryDelay: 1000 // 1 second
+  retryDelay: 1000
 };
 
 /**
@@ -25,7 +24,7 @@ const cookieUtils = {
 };
 
 /**
- * Enhanced HTTP Client with proper error handling, retries, and authentication
+ * Enhanced HTTP Client
  */
 class ApiClient {
   constructor() {
@@ -33,18 +32,20 @@ class ApiClient {
     this.timeout = API_CONFIG.timeout;
   }
 
-  // Get JWT token from cookies (matching your AuthContext)
   getToken() {
     return cookieUtils.getCookie('jwtToken');
   }
 
-  // Create request headers
   getHeaders(customHeaders = {}) {
     const headers = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...customHeaders
     };
+
+    // Don't set Content-Type for FormData (let browser set it with boundary)
+    if (!customHeaders.isFormData) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     const token = this.getToken();
     if (token) {
@@ -54,122 +55,37 @@ class ApiClient {
     return headers;
   }
 
-  // Create AbortController for timeout
-  createAbortController() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-    return { controller, timeoutId };
-  }
-
-  // Retry logic
-  async withRetry(requestFn, attempts = API_CONFIG.retryAttempts) {
-    for (let i = 0; i < attempts; i++) {
-      try {
-        return await requestFn();
-      } catch (error) {
-        const isLastAttempt = i === attempts - 1;
-        const isRetryableError = this.isRetryableError(error);
-        
-        if (isLastAttempt || !isRetryableError) {
-          throw error;
-        }
-        
-        await new Promise(resolve => 
-          setTimeout(resolve, API_CONFIG.retryDelay * (i + 1))
-        );
-      }
-    }
-  }
-
-  isRetryableError(error) {
-    const retryableStatuses = [408, 429, 500, 502, 503, 504];
-    return retryableStatuses.includes(error.status) || 
-           error.name === 'AbortError' ||
-           error.message.includes('network');
-  }
-
-  // Format error response
-  formatError(error, response = null) {
-    console.error('API Error:', error);
-    
-    const errorInfo = {
-      error: true,
-      status: 0,
-      message: 'An unexpected error occurred',
-      timestamp: new Date().toISOString(),
-      details: null
-    };
-
-    if (response) {
-      errorInfo.status = response.status;
-    } else if (error.status) {
-      errorInfo.status = error.status;
-    }
-
-    const errorMessages = {
-      400: 'Bad request. Please check your input and try again.',
-      401: 'Authentication required. Please log in again.',
-      403: 'Access forbidden. You don\'t have permission for this action.',
-      404: 'Resource not found. The requested item may have been deleted.',
-      409: 'Conflict. The resource already exists or is in use.',
-      422: 'Invalid data provided. Please check your input.',
-      429: 'Too many requests. Please wait a moment and try again.',
-      500: 'Server error. Please try again later.',
-      502: 'Service unavailable. Please try again later.',
-      503: 'Service temporarily unavailable. Please try again later.',
-      504: 'Request timeout. Please try again.'
-    };
-
-    if (error.name === 'AbortError') {
-      errorInfo.message = 'Request timeout. Please try again.';
-      errorInfo.status = 408;
-    } else if (errorMessages[errorInfo.status]) {
-      errorInfo.message = errorMessages[errorInfo.status];
-    } else if (error.message) {
-      errorInfo.message = error.message;
-    }
-
-    // Handle authentication errors - dispatch custom event for AuthContext to handle
-    if (errorInfo.status === 401) {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-    }
-
-    return errorInfo;
-  }
-
-  // Main request method with credentials
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    const { controller, timeoutId } = this.createAbortController();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
     
     const requestOptions = {
       method: 'GET',
       headers: this.getHeaders(options.headers),
-      credentials: 'include', // Include cookies for your auth system
+      credentials: 'include',
       signal: controller.signal,
       ...options
     };
 
-    if (requestOptions.body && typeof requestOptions.body === 'object' && !(requestOptions.body instanceof FormData)) {
+    // Handle FormData
+    if (options.body instanceof FormData) {
+      delete requestOptions.headers['Content-Type']; // Let browser set it
+    } else if (requestOptions.body && typeof requestOptions.body === 'object') {
       requestOptions.body = JSON.stringify(requestOptions.body);
     }
 
     try {
-      const response = await this.withRetry(async () => {
-        const res = await fetch(url, requestOptions);
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          const error = new Error(errorData.message || `HTTP ${res.status}`);
-          error.status = res.status;
-          error.details = errorData;
-          throw error;
-        }
-        
-        return res;
-      });
-
+      const response = await fetch(url, requestOptions);
       clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const error = new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+        error.status = response.status;
+        error.details = errorData;
+        throw error;
+      }
       
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
@@ -183,7 +99,15 @@ class ApiClient {
     }
   }
 
-  // HTTP Methods
+  formatError(error) {
+    return {
+      error: true,
+      status: error.status || 0,
+      message: error.message || 'An unexpected error occurred',
+      timestamp: new Date().toISOString()
+    };
+  }
+
   async get(endpoint, params = {}) {
     const queryString = new URLSearchParams(params).toString();
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -191,277 +115,105 @@ class ApiClient {
   }
 
   async post(endpoint, data = {}) {
-    return this.request(endpoint, {
-      method: 'POST',
-      body: data
-    });
+    return this.request(endpoint, { method: 'POST', body: data });
   }
 
   async put(endpoint, data = {}) {
-    return this.request(endpoint, {
-      method: 'PUT',
-      body: data
-    });
-  }
-
-  async patch(endpoint, data = {}) {
-    return this.request(endpoint, {
-      method: 'PATCH',
-      body: data
-    });
+    return this.request(endpoint, { method: 'PUT', body: data });
   }
 
   async delete(endpoint, options = {}) {
+    return this.request(endpoint, { method: 'DELETE', ...options });
+  }
+
+  async postFormData(endpoint, formData) {
     return this.request(endpoint, { 
-      method: 'DELETE',
-      ...options
+      method: 'POST', 
+      body: formData,
+      headers: { isFormData: true }
     });
-  }
-
-  // File upload
-  async upload(endpoint, file, additionalData = {}) {
-    const { controller, timeoutId } = this.createAbortController();
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    Object.keys(additionalData).forEach(key => {
-      formData.append(key, additionalData[key]);
-    });
-
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': this.getToken() ? `Bearer ${this.getToken()}` : undefined
-        },
-        credentials: 'include',
-        body: formData,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.message || `HTTP ${response.status}`);
-        error.status = response.status;
-        error.details = errorData;
-        throw error;
-      }
-
-      return await response.json();
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw this.formatError(error);
-    }
-  }
-
-  // Download file
-  async download(endpoint, filename = null) {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': this.getToken() ? `Bearer ${this.getToken()}` : undefined
-        },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      
-      if (filename) {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }
-
-      return blob;
-    } catch (error) {
-      throw this.formatError(error);
-    }
   }
 }
 
 const apiClient = new ApiClient();
 
 /**
- * ENHANCED FILE HANDLING FUNCTIONS
+ * Helper Functions for TaskSubmission Objects
  */
+const TaskSubmissionHelpers = {
+  hasFiles: (submission) => {
+    return submission.fileUrls && Array.isArray(submission.fileUrls) && submission.fileUrls.length > 0;
+  },
+  
+  getFileCount: (submission) => {
+    return submission.fileUrls && Array.isArray(submission.fileUrls) ? submission.fileUrls.length : 0;
+  },
+  
+  isGraded: (submission) => {
+    return submission.grade !== null && submission.grade !== undefined;
+  },
+  
+  needsGrading: (submission) => {
+    return submission.status === 'submitted' && (submission.grade === null || submission.grade === undefined);
+  },
+  
+  getFinalGrade: (submission) => {
+    if (submission.grade === null || submission.grade === undefined) return 0.0;
 
-/**
- * Validate file for upload
- */
-const validateFileForUpload = (file) => {
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain',
-    'application/zip',
-    'application/x-zip-compressed',
-    'image/jpeg',
-    'image/png',
-    'image/gif'
-  ];
-  
-  const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt', '.zip', '.jpg', '.jpeg', '.png', '.gif'];
-  
-  if (!file) {
-    throw new Error('No file provided');
-  }
-  
-  if (file.size > maxSize) {
-    const fileSizeMB = Math.round(file.size / 1024 / 1024 * 100) / 100;
-    throw new Error(`File size exceeds 10MB limit (${fileSizeMB}MB)`);
-  }
-  
-  const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-  if (!allowedExtensions.includes(fileExtension)) {
-    throw new Error(`File type ${fileExtension} not allowed. Allowed: ${allowedExtensions.join(', ')}`);
-  }
-  
-  if (file.type && !allowedTypes.includes(file.type)) {
-    console.warn('File MIME type not in allowed list, but proceeding based on extension:', file.type);
-  }
-  
-  return true;
-};
+    let finalGrade = parseFloat(submission.grade);
 
-/**
- * Enhanced file upload functionality
- */
-export const uploadFile = async (file, context = 'assignment', additionalData = {}) => {
-  try {
-    console.log('📁 Starting file upload:', file.name, 'Context:', context);
-    
-    // Validate file before upload
-    validateFileForUpload(file);
-    
-    // For now, since your backend doesn't have file upload yet,
-    // we'll create a blob URL and simulate the upload
-    const fileData = {
-      id: Date.now().toString(),
-      name: file.name,
-      url: URL.createObjectURL(file), // This creates a temporary blob URL
-      size: file.size,
-      type: file.type,
-      context: context,
-      uploadedAt: new Date().toISOString(),
-      ...additionalData
-    };
-    
-    console.log('✅ File "uploaded" successfully:', fileData);
-    
-    // When you implement the real backend endpoint, replace above with:
-    /*
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('context', context);
-    
-    Object.keys(additionalData).forEach(key => {
-      formData.append(key, additionalData[key]);
-    });
-    
-    const fileData = await apiClient.upload('/files/upload', formData);
-    */
-    
-    return fileData;
-  } catch (error) {
-    console.error('❌ File upload failed:', error);
-    throw error;
-  }
-};
-
-/**
- * Download/view file
- */
-export const downloadFile = async (fileUrl, fileName = null) => {
-  try {
-    console.log('📥 Downloading file:', fileName, 'URL:', fileUrl);
-    
-    if (!fileUrl) {
-      throw new Error('No file URL provided');
+    // Apply late penalty if applicable
+    if (submission.isLate && submission.latePenaltyApplied && submission.latePenaltyApplied > 0) {
+      finalGrade = finalGrade * (1.0 - (submission.latePenaltyApplied / 100.0));
     }
-    
-    // Handle different URL types
-    if (fileUrl.startsWith('blob:')) {
-      // For blob URLs (temporary files), trigger download
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = fileName || 'download';
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log('✅ Blob file download initiated');
-      return { success: true, method: 'blob' };
-    } else if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
-      // For actual URLs, open in new tab
-      window.open(fileUrl, '_blank', 'noopener,noreferrer');
-      console.log('✅ File opened in new tab');
-      return { success: true, method: 'url' };
-    } else {
-      // For relative URLs, prepend base URL
-      const baseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
-      const fullUrl = fileUrl.startsWith('/') 
-        ? `${baseUrl}${fileUrl}`
-        : `${baseUrl}/${fileUrl}`;
-      
-      window.open(fullUrl, '_blank', 'noopener,noreferrer');
-      console.log('✅ File opened with full URL:', fullUrl);
-      return { success: true, method: 'full_url', url: fullUrl };
-    }
-  } catch (error) {
-    console.error('❌ File download failed:', error);
-    throw new Error(`Failed to download file: ${error.message}`);
+
+    return Math.max(0.0, finalGrade); // Ensure grade doesn't go below 0
   }
 };
 
 /**
- * Delete file
+ * Helper Functions for ExamResponse Objects
  */
-export const deleteFile = async (fileId) => {
-  try {
-    console.log('🗑️ Deleting file:', fileId);
-    
-    // For now, since it's a blob URL, revoke it to free memory
-    // When you implement the real backend endpoint, replace with actual API call
-    
-    // If it's a blob URL, revoke it
-    if (fileId && fileId.startsWith('blob:')) {
-      URL.revokeObjectURL(fileId);
-      console.log('✅ Blob URL revoked');
-    }
-    
-    // When you implement the real backend endpoint:
-    /*
-    await apiClient.delete(`/files/${fileId}`);
-    */
-    
-    return { success: true };
-  } catch (error) {
-    console.error('❌ File deletion failed:', error);
-    throw error;
+const ExamResponseHelpers = {
+  isCompleted: (response) => {
+    return response.status === 'SUBMITTED' || response.status === 'GRADED';
+  },
+  
+  isGraded: (response) => {
+    return response.graded === true || response.status === 'GRADED';
+  },
+  
+  needsManualGrading: (response) => {
+    return response.status === 'SUBMITTED' && !response.graded && !response.autoGraded;
+  },
+  
+  canAutoGrade: (response) => {
+    return response.status === 'SUBMITTED' && !response.graded;
+  },
+  
+  getGradingStatus: (response) => {
+    if (response.flaggedForReview) return 'flagged';
+    if (response.status === 'IN_PROGRESS') return 'in-progress';
+    if (response.graded && response.autoGraded) return 'auto-graded';
+    if (response.graded && !response.autoGraded) return 'manually-graded';
+    if (response.status === 'SUBMITTED' && !response.graded) return 'needs-grading';
+    return 'unknown';
+  },
+  
+  formatTimeSpent: (timeSpentSeconds) => {
+    if (!timeSpentSeconds || timeSpentSeconds === 0) return 'N/A';
+    const minutes = Math.floor(timeSpentSeconds / 60);
+    const seconds = timeSpentSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  },
+  
+  calculatePercentage: (response) => {
+    if (!response.maxScore || response.maxScore === 0) return 0;
+    return Math.round((response.totalScore || 0) / response.maxScore * 100);
   }
 };
 
-/**
- * File size formatting utility
- */
+// File utilities
 export const formatFileSize = (bytes) => {
   if (!bytes || isNaN(bytes) || bytes === 0) return '0 Bytes';
   if (bytes < 0) return 'Invalid size';
@@ -477,14 +229,10 @@ export const formatFileSize = (bytes) => {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${sizes[i]}`;
 };
 
-/**
- * File type icon helper
- */
 export const getFileTypeIcon = (fileName) => {
   if (!fileName) return '📄';
   
   const extension = fileName.split('.').pop().toLowerCase();
-  
   const iconMap = {
     'pdf': '📕',
     'doc': '📘',
@@ -494,24 +242,258 @@ export const getFileTypeIcon = (fileName) => {
     'jpg': '🖼️',
     'jpeg': '🖼️',
     'png': '🖼️',
-    'gif': '🖼️'
+    'gif': '🖼️',
+    'ppt': '📽️',
+    'pptx': '📽️',
+    'xls': '📊',
+    'xlsx': '📊'
   };
   
   return iconMap[extension] || '📄';
 };
 
 /**
- * COURSES ENDPOINTS
+ * ENHANCED FILE UPLOAD API - Using Task Controller
  */
+export const uploadFile = async (file, context = 'assignment', additionalData = {}) => {
+  try {
+    console.log('📁 Starting file upload:', file.name, 'Size:', file.size);
+    
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      throw new Error('File size exceeds 10MB limit');
+    }
+    
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'application/zip',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif'
+    ];
+    
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('File type not supported. Please use PDF, DOC, DOCX, TXT, ZIP, JPG, PNG, or GIF files.');
+    }
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('context', context);
+    
+    // Add additional data
+    if (additionalData.assignmentId) {
+      formData.append('assignmentId', additionalData.assignmentId);
+    }
+    if (additionalData.courseId) {
+      formData.append('courseId', additionalData.courseId);
+    }
+    if (additionalData.description) {
+      formData.append('description', additionalData.description);
+    }
+    
+    // Upload file using task controller endpoint
+    const response = await apiClient.postFormData('/tasks/upload-file', formData);
+    
+    console.log('✅ File upload successful:', response);
+    
+    return {
+      id: response.id || 'file_' + Date.now(),
+      url: response.url || response.fileUrl || `/uploads/${file.name}`,
+      name: response.fileName || file.name,
+      size: response.fileSize || file.size,
+      type: file.type,
+      uploadedAt: response.uploadedAt || new Date().toISOString()
+    };
+    
+  } catch (error) {
+    console.error('❌ File upload failed:', error);
+    throw new Error(`File upload failed: ${error.message}`);
+  }
+};
+
+/**
+ * ENHANCED FILE VIEWING - Properly handles URL construction and encoding
+ */
+export const viewFile = async (fileUrl, fileName = null) => {
+  try {
+    console.log('👁️ Viewing file:', fileName, 'URL:', fileUrl);
+    
+    if (!fileUrl) {
+      throw new Error('No file URL provided');
+    }
+
+    // Proper URL construction with base URL and encoding
+    let fullUrl;
+    
+    if (fileUrl.startsWith('http')) {
+      // Already a full URL
+      fullUrl = fileUrl;
+    } else if (fileUrl.startsWith('/api/')) {
+      // API endpoint URL - construct with base URL
+      // FIXED: Remove /api prefix to avoid duplication
+      const apiPath = fileUrl.substring(4); // Remove '/api' prefix
+      fullUrl = `${API_CONFIG.baseURL}${apiPath}`;
+    } else if (fileUrl.startsWith('/uploads/')) {
+      // Direct upload path - needs to go through the API endpoint
+      const filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+      // Properly encode the filename for Hebrew and special characters
+      const encodedFilename = encodeURIComponent(filename);
+      fullUrl = `${API_CONFIG.baseURL}/tasks/files/${encodedFilename}`;
+    } else {
+      // Assume it's just a filename
+      const encodedFilename = encodeURIComponent(fileUrl);
+      fullUrl = `${API_CONFIG.baseURL}/tasks/files/${encodedFilename}`;
+    }
+
+    console.log('🔗 Opening URL:', fullUrl);
+    
+    try {
+      // FIXED: Use window.open with '_blank' and NO window features to open in new tab
+      // Removing windowFeatures parameter makes it open as a new tab instead of popup
+      const newTab = window.open(fullUrl, '_blank');
+      
+      if (newTab) {
+        // Handle authentication if needed
+        try {
+          const token = apiClient.getToken();
+          if (token) {
+            // For authenticated requests, we can try to validate access
+            const response = await fetch(fullUrl, {
+              method: 'HEAD', // Just check if accessible
+              headers: {
+                'Authorization': `Bearer ${token}`
+              },
+              credentials: 'include'
+            });
+            
+            if (!response.ok && response.status === 401) {
+              // If unauthorized, try to redirect the new tab with token
+              const tokenUrl = `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
+              newTab.location.href = tokenUrl;
+            }
+          }
+        } catch (fetchError) {
+          console.warn('⚠️ Could not validate file access, proceeding with direct open');
+        }
+        
+        // Focus the new tab (optional - browser may still block this)
+        try {
+          newTab.focus();
+        } catch (e) {
+          console.log('ℹ️ Could not focus new tab (browser security)');
+        }
+        
+        console.log('✅ File opened in new tab');
+        return { 
+          success: true, 
+          method: 'new_tab',
+          url: fullUrl,
+          fileName: fileName
+        };
+      } else {
+        throw new Error('Tab blocked by browser popup blocker');
+      }
+    } catch (windowError) {
+      console.warn('⚠️ window.open failed, trying fallback method:', windowError.message);
+      return fallbackFileOpen(fullUrl, fileName);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error viewing file:', error);
+    throw new Error(`Failed to open file: ${error.message}`);
+  }
+};
+
+/**
+ * Fallback method for opening files when window.open fails
+ */
+const fallbackFileOpen = (fullUrl, fileName) => {
+  try {
+    // Method 2: Create and click a download link
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    // Add download attribute if filename is provided
+    if (fileName) {
+      link.download = fileName;
+    }
+    
+    // Style the link to be invisible
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(link);
+    }, 100);
+    
+    return { 
+      success: true, 
+      method: 'link_click',
+      url: fullUrl,
+      fileName: fileName
+    };
+  } catch (error) {
+    // Method 3: Last resort - navigate in current window
+    console.warn('⚠️ Link click failed, navigating in current window');
+    window.location.href = fullUrl;
+    
+    return { 
+      success: true, 
+      method: 'current_window',
+      url: fullUrl,
+      fileName: fileName
+    };
+  }
+};
+
+export const deleteFile = async (fileUrl) => {
+  try {
+    console.log('🗑️ Deleting file:', fileUrl);
+    
+    if (!fileUrl) {
+      return { success: true, message: 'No file to delete' };
+    }
+    
+    // Extract filename from URL and use task controller delete endpoint
+    const filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+    const encodedFilename = encodeURIComponent(filename);
+    
+    // Call delete endpoint
+    await apiClient.delete(`/tasks/files/${encodedFilename}`);
+    
+    console.log('✅ File deleted successfully');
+    return { success: true, message: 'File deleted successfully' };
+    
+  } catch (error) {
+    console.error('❌ Error deleting file:', error);
+    throw new Error(`Failed to delete file: ${error.message}`);
+  }
+};
+
+/**
+ * API Endpoints
+ */
+
+// Courses
 export const fetchCourses = async (params = {}) => {
   try {
     console.log('🔍 Fetching courses...');
     const courses = await apiClient.get('/courses', params);
-    console.log('📚 Raw courses data:', courses);
     
-    // Transform to match frontend expectations and ensure ID is treated properly
     const transformedCourses = Array.isArray(courses) ? courses.map(course => ({
-      id: course.id, // Keep as string (MongoDB ObjectId)
+      id: course.id,
       name: course.name,
       code: course.code,
       description: course.description,
@@ -537,34 +519,19 @@ export const fetchCourses = async (params = {}) => {
   }
 };
 
-export const fetchCourse = async (courseId) => {
-  try {
-    return await apiClient.get(`/courses/${courseId}`);
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
- * STUDENTS ENDPOINTS - Fixed to work with your backend
- */
+// Students
 export const fetchStudents = async (courseId, params = {}) => {
   try {
     console.log(`🔍 Fetching students for course: ${courseId}`);
     
-    // Step 1: Get the course with its enrollments
     const course = await apiClient.get(`/courses/${courseId}`);
-    console.log('📚 Course data:', course);
     
     if (!course.enrollments || course.enrollments.length === 0) {
       console.log('📭 No enrollments found for this course');
       return [];
     }
     
-    // Step 2: Get current year's enrollments (defaulting to 2024 based on your data)
-    const currentYear = 2024; // You can make this dynamic: new Date().getFullYear()
-    console.log(`📅 Looking for enrollments in year: ${currentYear}`);
-    
+    const currentYear = 2024;
     const currentEnrollment = course.enrollments.find(e => e.academicYear === currentYear);
     
     if (!currentEnrollment || !currentEnrollment.studentIds || currentEnrollment.studentIds.length === 0) {
@@ -572,23 +539,16 @@ export const fetchStudents = async (courseId, params = {}) => {
       return [];
     }
     
-    console.log(`👥 Found ${currentEnrollment.studentIds.length} enrolled students:`, currentEnrollment.studentIds);
-    
-    // Step 3: Fetch detailed student information by IDs
     const studentDetails = await apiClient.post('/users/by-ids', currentEnrollment.studentIds);
-    console.log('✅ Student details fetched:', studentDetails);
     
-    // Step 4: Try to fetch existing grades for these students (optional - may not exist yet)
     let existingGrades = [];
     try {
       existingGrades = await apiClient.get(`/courses/${courseId}/grades`);
-      console.log('📊 Existing grades found:', existingGrades);
     } catch (error) {
-      console.warn('⚠️ No existing grades found (this is normal for new courses):', error.message);
+      console.warn('⚠️ No existing grades found:', error.message);
       existingGrades = [];
     }
     
-    // Step 5: Combine student info with any existing grades
     const studentsWithGrades = studentDetails.map(student => {
       const studentGrade = existingGrades.find(g => g.studentId === student.id);
       
@@ -596,76 +556,1100 @@ export const fetchStudents = async (courseId, params = {}) => {
         id: student.id,
         name: student.name,
         email: student.email,
-        username: student.username, // Include username for display
-        courseId: courseId, // Keep as string to match your backend
-        grades: studentGrade?.grades || {}, // Empty object if no grades yet
+        username: student.username,
+        courseId: courseId,
+        grades: studentGrade?.grades || {},
         finalGrade: studentGrade?.finalGrade || 0,
         finalLetterGrade: studentGrade?.finalLetterGrade || 'N/A'
       };
     });
     
-    console.log(`✅ Successfully processed ${studentsWithGrades.length} students with grade data`);
+    console.log(`✅ Successfully processed ${studentsWithGrades.length} students`);
     return studentsWithGrades;
     
   } catch (error) {
     console.error('❌ Error fetching students:', error);
-    
-    // If it's a 404, the course doesn't exist
     if (error.status === 404) {
       throw new Error(`Course with ID ${courseId} not found`);
     }
-    
-    // If it's a 403, there's an auth issue
     if (error.status === 403) {
       throw new Error('You do not have permission to view students for this course');
     }
-    
-    // For other errors, return empty array but log the error
-    console.error('Returning empty array due to error');
     return [];
   }
 };
 
-export const addStudent = async (courseId, studentData) => {
+// ASSIGNMENTS using Tasks API with file handling
+export const fetchAssignments = async (courseId, params = {}) => {
   try {
-    // Create enrollment request based on your CourseController
-    const enrollmentRequest = {
-      studentId: studentData.id || studentData.studentId,
-      academicYear: new Date().getFullYear()
+    console.log(`🔍 Fetching assignments for course: ${courseId}`);
+    const tasks = await apiClient.get(`/tasks/course/${courseId}`, params);
+    
+    const transformedAssignments = Array.isArray(tasks) ? tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      courseId: task.courseId,
+      courseName: task.courseName,
+      type: task.type,
+      dueDate: task.dueDate,
+      dueTime: task.dueTime,
+      dueDateTime: task.dueDateTime,
+      maxPoints: task.maxPoints,
+      status: task.status,
+      priority: task.priority,
+      difficulty: task.difficulty,
+      category: task.category,
+      instructions: task.instructions,
+      estimatedDuration: task.estimatedDuration,
+      allowSubmissions: task.allowSubmissions,
+      allowLateSubmissions: task.allowLateSubmissions,
+      latePenaltyPerDay: task.latePenaltyPerDay,
+      visibleToStudents: task.visibleToStudents,
+      requiresSubmission: task.requiresSubmission,
+      maxAttempts: task.maxAttempts,
+      publishDate: task.publishDate,
+      submissionCount: task.submissionCount,
+      gradedCount: task.gradedCount,
+      averageGrade: task.averageGrade,
+      enrolledStudents: task.enrolledStudents,
+      completionRate: task.completionRate,
+      isOverdue: task.isOverdue,
+      isPublished: task.isPublished,
+      acceptsSubmissions: task.acceptsSubmissions,
+      instructorId: task.instructorId,
+      instructorName: task.instructorName,
+      tags: task.tags,
+      prerequisiteTasks: task.prerequisiteTasks,
+      progress: task.progress,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+      // File attachment info
+      hasAttachment: task.hasAttachment || (task.fileUrl && task.fileUrl.trim() !== ''),
+      fileUrl: task.fileUrl,
+      fileName: task.fileName,
+      fileSize: task.fileSize
+    })) : [];
+    
+    console.log(`✅ Transformed ${transformedAssignments.length} assignments`);
+    return transformedAssignments;
+  } catch (error) {
+    console.error('❌ Error fetching assignments:', error);
+    return [];
+  }
+};
+
+export const createAssignment = async (assignmentData) => {
+  try {
+    console.log('➕ Creating assignment with data:', assignmentData);
+    
+    // Prepare task creation request
+    const taskCreateRequest = {
+      title: assignmentData.title,
+      description: assignmentData.description,
+      courseId: assignmentData.courseId,
+      type: assignmentData.type,
+      dueDate: assignmentData.dueDate,
+      dueTime: assignmentData.dueTime,
+      maxPoints: assignmentData.maxPoints,
+      instructions: assignmentData.instructions,
+      priority: assignmentData.priority,
+      difficulty: assignmentData.difficulty,
+      category: assignmentData.category,
+      allowSubmissions: assignmentData.allowSubmissions,
+      allowLateSubmissions: assignmentData.allowLateSubmissions,
+      latePenaltyPerDay: assignmentData.latePenaltyPerDay,
+      visibleToStudents: assignmentData.visibleToStudents,
+      requiresSubmission: assignmentData.requiresSubmission,
+      maxAttempts: assignmentData.maxAttempts,
+      estimatedDuration: assignmentData.estimatedDuration,
+      tags: assignmentData.tags,
+      prerequisiteTasks: assignmentData.prerequisiteTasks
     };
     
-    return await apiClient.post(`/courses/${courseId}/enroll`, enrollmentRequest);
+    // Handle file attachment
+    if (assignmentData.file) {
+      console.log('📁 Assignment has file attachment, uploading...');
+      
+      try {
+        const fileData = await uploadFile(assignmentData.file, 'assignment', {
+          courseId: assignmentData.courseId,
+          description: `Attachment for assignment: ${assignmentData.title}`
+        });
+        
+        // Add file information to task request
+        taskCreateRequest.fileUrl = fileData.url;
+        taskCreateRequest.fileName = fileData.name;
+        taskCreateRequest.fileSize = fileData.size;
+        
+        console.log('✅ File uploaded successfully:', fileData);
+      } catch (fileError) {
+        console.error('❌ File upload failed:', fileError);
+        throw new Error(`Failed to upload file: ${fileError.message}`);
+      }
+    } else if (assignmentData.fileUrl) {
+      // Use existing file data
+      taskCreateRequest.fileUrl = assignmentData.fileUrl;
+      taskCreateRequest.fileName = assignmentData.fileName;
+      taskCreateRequest.fileSize = assignmentData.fileSize;
+    }
+    
+    // Create the task
+    const createdTask = await apiClient.post('/tasks', taskCreateRequest);
+    console.log('✅ Assignment created successfully:', createdTask);
+    
+    return {
+      id: createdTask.id,
+      title: createdTask.title,
+      description: createdTask.description,
+      courseId: createdTask.courseId,
+      type: createdTask.type,
+      dueDate: createdTask.dueDate,
+      dueTime: createdTask.dueTime,
+      maxPoints: createdTask.maxPoints,
+      status: createdTask.status,
+      priority: createdTask.priority,
+      difficulty: createdTask.difficulty,
+      category: createdTask.category,
+      instructions: createdTask.instructions,
+      hasAttachment: !!(createdTask.fileUrl && createdTask.fileUrl.trim() !== ''),
+      fileUrl: createdTask.fileUrl,
+      fileName: createdTask.fileName,
+      fileSize: createdTask.fileSize,
+      submissionCount: createdTask.submissionCount || 0,
+      gradedCount: createdTask.gradedCount || 0,
+      averageGrade: createdTask.averageGrade || 0,
+      isOverdue: createdTask.isOverdue,
+      createdAt: createdTask.createdAt,
+      updatedAt: createdTask.updatedAt
+    };
   } catch (error) {
+    console.error('❌ Error creating assignment:', error);
     throw error;
   }
 };
 
-export const removeStudent = async (courseId, studentId) => {
+export const updateAssignment = async (assignmentId, updates) => {
   try {
-    // Use the unenrollment endpoint from your CourseController
-    const unenrollmentRequest = {
-      studentIds: [studentId]
+    console.log('🔄 Updating assignment:', assignmentId, updates);
+    
+    // Prepare task update request
+    const taskUpdateRequest = {
+      title: updates.title,
+      description: updates.description,
+      type: updates.type,
+      dueDate: updates.dueDate,
+      dueTime: updates.dueTime,
+      maxPoints: updates.maxPoints,
+      instructions: updates.instructions,
+      status: updates.status,
+      priority: updates.priority,
+      difficulty: updates.difficulty,
+      category: updates.category,
+      allowSubmissions: updates.allowSubmissions,
+      allowLateSubmissions: updates.allowLateSubmissions,
+      latePenaltyPerDay: updates.latePenaltyPerDay,
+      visibleToStudents: updates.visibleToStudents,
+      requiresSubmission: updates.requiresSubmission,
+      maxAttempts: updates.maxAttempts,
+      estimatedDuration: updates.estimatedDuration,
+      tags: updates.tags,
+      prerequisiteTasks: updates.prerequisiteTasks
     };
     
-    return await apiClient.delete(`/courses/${courseId}/enrollments`, {
-      body: unenrollmentRequest
-    });
+    // Handle file attachment updates
+    if (updates.file) {
+      console.log('📁 Assignment update has new file attachment, uploading...');
+      
+      try {
+        // Delete old file if exists
+        if (updates.fileUrl) {
+          await deleteFile(updates.fileUrl);
+        }
+        
+        const fileData = await uploadFile(updates.file, 'assignment', {
+          assignmentId: assignmentId,
+          description: `Updated attachment for assignment: ${updates.title}`
+        });
+        
+        // Add new file information to task request
+        taskUpdateRequest.fileUrl = fileData.url;
+        taskUpdateRequest.fileName = fileData.name;
+        taskUpdateRequest.fileSize = fileData.size;
+        
+        console.log('✅ New file uploaded successfully:', fileData);
+      } catch (fileError) {
+        console.error('❌ File upload failed:', fileError);
+        throw new Error(`Failed to upload file: ${fileError.message}`);
+      }
+    } else if (updates.fileUrl && updates.fileUrl !== '') {
+      // Keep existing file data
+      taskUpdateRequest.fileUrl = updates.fileUrl;
+      taskUpdateRequest.fileName = updates.fileName;
+      taskUpdateRequest.fileSize = updates.fileSize;
+    } else if (updates.hasAttachment === false) {
+      // Remove file attachment
+      if (updates.fileUrl) {
+        try {
+          await deleteFile(updates.fileUrl);
+        } catch (deleteError) {
+          console.warn('⚠️ Could not delete old file:', deleteError.message);
+        }
+      }
+      taskUpdateRequest.fileUrl = null;
+      taskUpdateRequest.fileName = null;
+      taskUpdateRequest.fileSize = null;
+    }
+    
+    // Update the task
+    const updatedTask = await apiClient.put(`/tasks/${assignmentId}`, taskUpdateRequest);
+    console.log('✅ Assignment updated successfully:', updatedTask);
+    
+    return {
+      id: updatedTask.id,
+      title: updatedTask.title,
+      description: updatedTask.description,
+      courseId: updatedTask.courseId,
+      type: updatedTask.type,
+      dueDate: updatedTask.dueDate,
+      dueTime: updatedTask.dueTime,
+      maxPoints: updatedTask.maxPoints,
+      status: updatedTask.status,
+      priority: updatedTask.priority,
+      difficulty: updatedTask.difficulty,
+      category: updatedTask.category,
+      instructions: updatedTask.instructions,
+      hasAttachment: !!(updatedTask.fileUrl && updatedTask.fileUrl.trim() !== ''),
+      fileUrl: updatedTask.fileUrl,
+      fileName: updatedTask.fileName,
+      fileSize: updatedTask.fileSize,
+      submissionCount: updatedTask.submissionCount || 0,
+      gradedCount: updatedTask.gradedCount || 0,
+      averageGrade: updatedTask.averageGrade || 0,
+      isOverdue: updatedTask.isOverdue,
+      createdAt: updatedTask.createdAt,
+      updatedAt: updatedTask.updatedAt
+    };
   } catch (error) {
+    console.error('❌ Error updating assignment:', error);
     throw error;
   }
 };
 
-export const updateStudent = async (studentId, updates) => {
+export const deleteAssignment = async (assignmentId) => {
   try {
-    return await apiClient.put(`/users/${studentId}`, updates);
+    console.log('🗑️ Deleting assignment:', assignmentId);
+    
+    // First, get the assignment to check for file attachments
+    try {
+      const assignment = await apiClient.get(`/tasks/${assignmentId}`);
+      if (assignment.fileUrl) {
+        await deleteFile(assignment.fileUrl);
+        console.log('✅ Assignment file deleted');
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not delete assignment file:', error.message);
+    }
+    
+    // Delete the task
+    await apiClient.delete(`/tasks/${assignmentId}`);
+    console.log('✅ Assignment deleted successfully');
+    return { success: true };
   } catch (error) {
+    console.error('❌ Error deleting assignment:', error);
     throw error;
   }
 };
+
+// ENHANCED submissions API to match TaskSubmission backend
+export const fetchSubmissions = async (courseId, params = {}) => {
+  try {
+    console.log(`📄 Fetching submissions for course: ${courseId}`);
+    
+    const submissions = await apiClient.get(`/tasksubmissions/course/${courseId}`, params);
+    
+    // Transform TaskSubmissions to match frontend expectations
+    const transformedSubmissions = Array.isArray(submissions) ? submissions.map(submission => {
+      return {
+        id: submission.id,
+        courseId: submission.courseId,
+        taskId: submission.taskId,
+        assignmentId: submission.taskId, // Map taskId to assignmentId for compatibility
+        studentId: submission.studentId,
+        content: submission.content,
+        notes: submission.notes,
+        
+        // File handling - TaskSubmission supports multiple files
+        hasFiles: TaskSubmissionHelpers.hasFiles(submission),
+        fileUrls: submission.fileUrls || [],
+        fileNames: submission.fileNames || [],
+        fileSizes: submission.fileSizes || [],
+        fileCount: TaskSubmissionHelpers.getFileCount(submission),
+        
+        // For backward compatibility, use first file as primary
+        fileUrl: submission.fileUrls && submission.fileUrls.length > 0 ? submission.fileUrls[0] : null,
+        fileName: submission.fileNames && submission.fileNames.length > 0 ? submission.fileNames[0] : null,
+        fileSize: submission.fileSizes && submission.fileSizes.length > 0 ? submission.fileSizes[0] : null,
+        
+        // Grading information
+        grade: submission.grade,
+        feedback: submission.feedback,
+        status: submission.status || 'submitted',
+        isGraded: TaskSubmissionHelpers.isGraded(submission),
+        needsGrading: TaskSubmissionHelpers.needsGrading(submission),
+        
+        // Submission metadata
+        attemptNumber: submission.attemptNumber || 1,
+        isLate: submission.isLate || false,
+        latePenaltyApplied: submission.latePenaltyApplied || 0,
+        originalDueDate: submission.originalDueDate,
+        
+        // Auto-grading
+        autoGraded: submission.autoGraded || false,
+        autoGradeScore: submission.autoGradeScore,
+        manualOverride: submission.manualOverride || false,
+        
+        // Group submission
+        isGroupSubmission: submission.isGroupSubmission || false,
+        groupMembers: submission.groupMembers || [],
+        
+        // Plagiarism
+        plagiarismScore: submission.plagiarismScore,
+        plagiarismChecked: submission.plagiarismChecked || false,
+        
+        // Timestamps
+        submittedAt: submission.submittedAt,
+        gradedAt: submission.gradedAt,
+        updatedAt: submission.updatedAt,
+        timeSpent: submission.timeSpent,
+        
+        // Final grade calculation using helper function
+        finalGrade: TaskSubmissionHelpers.getFinalGrade(submission)
+      };
+    }) : [];
+    
+    console.log(`✅ Transformed ${transformedSubmissions.length} task submissions`);
+    return transformedSubmissions;
+  } catch (error) {
+    console.error('❌ Error fetching submissions:', error);
+    return [];
+  }
+};
+
+// ENHANCED submission grading with sync support
+export const updateSubmissionGrade = async (submissionId, grade, feedback = '') => {
+  try {
+    console.log('📊 Updating submission grade with sync:', submissionId, 'Grade:', grade);
+    
+    // Use the specific grading endpoint that syncs with grade columns
+    const gradeData = {
+      grade: grade,
+      feedback: feedback
+    };
+    
+    const response = await apiClient.put(`/tasksubmissions/${submissionId}/grade`, gradeData);
+    console.log('✅ Submission grade updated and synced successfully:', response);
+    return response.submission || response;
+  } catch (error) {
+    console.error('❌ Error updating submission grade:', error);
+    throw error;
+  }
+};
+
+export const downloadSubmission = async (submissionId) => {
+  try {
+    console.log('📥 Downloading submission:', submissionId);
+    
+    const submission = await apiClient.get(`/tasksubmissions/${submissionId}`);
+    
+    if (submission.fileUrls && submission.fileUrls.length > 0) {
+      // Download all files if multiple
+      for (let i = 0; i < submission.fileUrls.length; i++) {
+        const fileUrl = submission.fileUrls[i];
+        const fileName = submission.fileNames && submission.fileNames[i] 
+          ? submission.fileNames[i] 
+          : `submission_file_${i + 1}`;
+        
+        // Use our viewFile function to open/download the file
+        await viewFile(fileUrl, fileName);
+      }
+      return { success: true, message: `Downloaded ${submission.fileUrls.length} files` };
+    } else if (submission.fileUrl) {
+      // Legacy single file support
+      await viewFile(submission.fileUrl, submission.fileName);
+      return { success: true, message: 'File download initiated' };
+    } else {
+      throw new Error('No files available for download');
+    }
+  } catch (error) {
+    console.error('❌ Error downloading submission:', error);
+    throw error;
+  }
+};
+
+export const createSubmission = async (submissionData) => {
+  try {
+    console.log('➕ Creating submission:', submissionData);
+    
+    const response = await apiClient.post('/tasksubmissions/simple', submissionData);
+    console.log('✅ Submission created successfully:', response);
+    return response;
+  } catch (error) {
+    console.error('❌ Error creating submission:', error);
+    throw error;
+  }
+};
+
+export const deleteSubmission = async (submissionId) => {
+  try {
+    console.log('🗑️ Deleting submission:', submissionId);
+    
+    await apiClient.delete(`/tasksubmissions/${submissionId}`);
+    console.log('✅ Submission deleted successfully');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error deleting submission:', error);
+    throw error;
+  }
+};
+
+// ENHANCED batch grading with sync support
+export const batchGradeSubmissions = async (submissionIds, grade, feedback = '') => {
+  try {
+    console.log('📊 Batch grading submissions with sync:', submissionIds, 'Grade:', grade);
+    
+    // Grade each submission individually to ensure proper sync
+    const results = [];
+    for (const submissionId of submissionIds) {
+      try {
+        const result = await updateSubmissionGrade(submissionId, grade, feedback);
+        results.push(result);
+      } catch (error) {
+        console.error(`❌ Error grading submission ${submissionId}:`, error);
+        // Continue with other submissions
+      }
+    }
+    
+    console.log('✅ Batch grading completed:', results.length, 'successful');
+    return { gradedSubmissions: results, successCount: results.length };
+  } catch (error) {
+    console.error('❌ Error batch grading submissions:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// EXAMS API - FULLY IMPLEMENTED
+// ===================================
+
+export const fetchExams = async (courseId, params = {}) => {
+  try {
+    console.log(`🔍 Fetching exams for course: ${courseId}`);
+    const exams = await apiClient.get(`/courses/${courseId}/exams`, params);
+    
+    const transformedExams = Array.isArray(exams) ? exams.map(exam => ({
+      id: exam.id,
+      title: exam.title,
+      description: exam.description,
+      instructions: exam.instructions,
+      courseId: exam.courseId,
+      duration: exam.duration,
+      startTime: exam.startTime,
+      endTime: exam.endTime,
+      publishTime: exam.publishTime,
+      maxAttempts: exam.maxAttempts,
+      showResults: exam.showResults,
+      shuffleQuestions: exam.shuffleQuestions,
+      shuffleOptions: exam.shuffleOptions,
+      allowNavigation: exam.allowNavigation,
+      showTimer: exam.showTimer,
+      autoSubmit: exam.autoSubmit,
+      requireSafeBrowser: exam.requireSafeBrowser,
+      visibleToStudents: exam.visibleToStudents,
+      passPercentage: exam.passPercentage,
+      status: exam.status,
+      questions: exam.questions || [],
+      totalPoints: exam.totalPoints || 0,
+      questionCount: exam.questions?.length || 0,
+      createdAt: exam.createdAt,
+      updatedAt: exam.updatedAt
+    })) : [];
+    
+    console.log(`✅ Transformed ${transformedExams.length} exams`);
+    return transformedExams;
+  } catch (error) {
+    console.error('❌ Error fetching exams:', error);
+    return [];
+  }
+};
+
+export const fetchExamById = async (examId) => {
+  try {
+    console.log(`🔍 Fetching exam by ID: ${examId}`);
+    const exam = await apiClient.get(`/exams/${examId}`);
+    console.log('✅ Retrieved exam:', exam.title);
+    return exam;
+  } catch (error) {
+    console.error('❌ Error fetching exam by ID:', error);
+    throw error;
+  }
+};
+
+export const fetchExamForGrading = async (examId) => {
+  try {
+    console.log(`🔍 Fetching exam for grading: ${examId}`);
+    const exam = await apiClient.get(`/exams/${examId}/for-grading`);
+    console.log('✅ Retrieved exam for grading:', exam.title);
+    return exam;
+  } catch (error) {
+    console.error('❌ Error fetching exam for grading:', error);
+    throw error;
+  }
+};
+
+export const createExam = async (examData) => {
+  try {
+    console.log('➕ Creating exam:', examData);
+    const response = await apiClient.post('/exams', examData);
+    console.log('✅ Exam created successfully:', response);
+    return response.exam || response;
+  } catch (error) {
+    console.error('❌ Error creating exam:', error);
+    throw error;
+  }
+};
+
+export const updateExam = async (examId, updates) => {
+  try {
+    console.log('🔄 Updating exam:', examId, updates);
+    const response = await apiClient.put(`/exams/${examId}`, updates);
+    console.log('✅ Exam updated successfully:', response);
+    return response.exam || response;
+  } catch (error) {
+    console.error('❌ Error updating exam:', error);
+    throw error;
+  }
+};
+
+export const deleteExam = async (examId) => {
+  try {
+    console.log('🗑️ Deleting exam:', examId);
+    const response = await apiClient.delete(`/exams/${examId}`);
+    console.log('✅ Exam deleted successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error deleting exam:', error);
+    throw error;
+  }
+};
+
+export const publishExam = async (examId) => {
+  try {
+    console.log('📢 Publishing exam:', examId);
+    const response = await apiClient.post(`/exams/${examId}/publish`);
+    console.log('✅ Exam published successfully');
+    return response.exam || response;
+  } catch (error) {
+    console.error('❌ Error publishing exam:', error);
+    throw error;
+  }
+};
+
+export const unpublishExam = async (examId) => {
+  try {
+    console.log('📝 Unpublishing exam:', examId);
+    const response = await apiClient.post(`/exams/${examId}/unpublish`);
+    console.log('✅ Exam unpublished successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error unpublishing exam:', error);
+    throw error;
+  }
+};
+
+export const updateExamStatus = async (examId, status) => {
+  try {
+    console.log('🔄 Updating exam status:', examId, status);
+    const response = await apiClient.put(`/exams/${examId}/status`, { status });
+    console.log('✅ Exam status updated successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error updating exam status:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// EXAM QUESTIONS API
+// ===================================
+
+export const addQuestionToExam = async (examId, questionData) => {
+  try {
+    console.log('➕ Adding question to exam:', examId, questionData);
+    const response = await apiClient.post(`/exams/${examId}/questions`, questionData);
+    console.log('✅ Question added successfully');
+    return response.question || response;
+  } catch (error) {
+    console.error('❌ Error adding question:', error);
+    throw error;
+  }
+};
+
+export const updateQuestion = async (examId, questionId, updates) => {
+  try {
+    console.log('🔄 Updating question:', examId, questionId, updates);
+    const response = await apiClient.put(`/exams/${examId}/questions/${questionId}`, updates);
+    console.log('✅ Question updated successfully');
+    return response.question || response;
+  } catch (error) {
+    console.error('❌ Error updating question:', error);
+    throw error;
+  }
+};
+
+export const deleteQuestion = async (examId, questionId) => {
+  try {
+    console.log('🗑️ Deleting question:', examId, questionId);
+    const response = await apiClient.delete(`/exams/${examId}/questions/${questionId}`);
+    console.log('✅ Question deleted successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error deleting question:', error);
+    throw error;
+  }
+};
+
+export const reorderQuestions = async (examId, questionIds) => {
+  try {
+    console.log('🔄 Reordering questions:', examId, questionIds);
+    const response = await apiClient.put(`/exams/${examId}/questions/reorder`, { questionIds });
+    console.log('✅ Questions reordered successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error reordering questions:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// EXAM RESPONSES API - FULLY FIXED
+// ===================================
 
 /**
- * GRADE COLUMNS ENDPOINTS
+ * FIXED: Uses existing endpoints - gets exams first, then responses for each exam
  */
+export const fetchExamResponses = async (courseId, params = {}) => {
+  try {
+    console.log(`📊 Fetching exam responses for course: ${courseId}`);
+    
+    if (!courseId) {
+      console.warn('⚠️ No courseId provided to fetchExamResponses');
+      return [];
+    }
+    
+    // Step 1: Get all exams for the course using existing endpoint
+    console.log(`📝 Step 1: Fetching exams for course ${courseId}`);
+    const exams = await apiClient.get(`/courses/${courseId}/exams`);
+    
+    if (!Array.isArray(exams) || exams.length === 0) {
+      console.log('📭 No exams found for this course');
+      return [];
+    }
+    
+    console.log(`📝 Found ${exams.length} exams, fetching responses...`);
+    
+    // Step 2: Get responses for each exam in parallel using existing endpoints
+    const responsePromises = exams.map(async (exam) => {
+      try {
+        console.log(`📊 Fetching responses for exam: ${exam.id} (${exam.title})`);
+        const examResponses = await apiClient.get(`/exams/${exam.id}/responses`);
+        
+        // Ensure each response has courseId set for consistency
+        return Array.isArray(examResponses) ? examResponses.map(response => ({
+          ...response,
+          courseId: response.courseId || courseId, // Ensure courseId is set
+          examTitle: exam.title, // Add exam title for reference
+          examId: response.examId || exam.id // Ensure examId is set
+        })) : [];
+        
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch responses for exam ${exam.id}:`, error.message);
+        return []; // Return empty array on error, don't fail entire operation
+      }
+    });
+    
+    // Wait for all response fetches to complete
+    const responseArrays = await Promise.all(responsePromises);
+    
+    // Flatten all responses into single array
+    const allResponses = responseArrays.flat();
+    
+    console.log(`📊 Retrieved ${allResponses.length} total responses from ${exams.length} exams`);
+    
+    if (allResponses.length === 0) {
+      console.log('📭 No exam responses found for any exams in this course');
+      return [];
+    }
+    
+    // Transform ExamResponses to match frontend expectations
+    const transformedResponses = allResponses.map(response => {
+      // Handle the MongoDB _id field if present
+      const id = response.id || response._id?.$oid || response._id;
+      
+      return {
+        id: id,
+        examId: response.examId,
+        studentId: response.studentId,
+        courseId: response.courseId || courseId,
+        answers: response.answers || {},
+        questionScores: response.questionScores || {},
+        startedAt: response.startedAt,
+        submittedAt: response.submittedAt,
+        timeSpent: response.timeSpent,
+        status: response.status,
+        totalScore: response.totalScore || 0,
+        maxScore: response.maxScore || 0,
+        percentage: response.percentage || ExamResponseHelpers.calculatePercentage(response),
+        passed: response.passed || false,
+        graded: response.graded || (response.status === 'GRADED'),
+        autoGraded: response.autoGraded || false,
+        attemptNumber: response.attemptNumber || 1,
+        instructorFeedback: response.instructorFeedback || '',
+        gradedBy: response.gradedBy,
+        gradedAt: response.gradedAt,
+        flaggedForReview: response.flaggedForReview || false,
+        lateSubmission: response.lateSubmission || false,
+        createdAt: response.createdAt,
+        updatedAt: response.updatedAt,
+        
+        // Additional fields for frontend use
+        examTitle: response.examTitle,
+        
+        // Computed properties using helper functions
+        isCompleted: ExamResponseHelpers.isCompleted(response),
+        needsManualGrading: ExamResponseHelpers.needsManualGrading(response),
+        gradingStatus: ExamResponseHelpers.getGradingStatus(response),
+        timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
+      };
+    });
+    
+    // Sort by submission date (newest first)
+    transformedResponses.sort((a, b) => {
+      const dateA = new Date(a.submittedAt || a.updatedAt || 0);
+      const dateB = new Date(b.submittedAt || b.updatedAt || 0);
+      return dateB - dateA;
+    });
+    
+    console.log(`✅ Successfully transformed ${transformedResponses.length} exam responses for course ${courseId}`);
+    return transformedResponses;
+    
+  } catch (error) {
+    console.error('❌ Error fetching exam responses:', error);
+    
+    // Enhanced error handling
+    if (error.status === 404) {
+      console.log('📊 No exam responses found for course');
+      return [];
+    } else if (error.status === 403) {
+      console.error('❌ Permission denied for exam responses');
+      throw new Error('You do not have permission to view exam responses for this course');
+    } else if (error.status === 500) {
+      console.error('❌ Server error fetching exam responses');
+      throw new Error('Server error while fetching exam responses. Please try again.');
+    } else {
+      console.error('❌ Unexpected error fetching exam responses');
+      throw new Error(`Failed to fetch exam responses: ${error.message}`);
+    }
+  }
+};
+
+export const fetchExamResponsesForExam = async (examId) => {
+  try {
+    console.log(`📊 Fetching responses for exam: ${examId}`);
+    const responses = await apiClient.get(`/exams/${examId}/responses`);
+    
+    const transformedResponses = Array.isArray(responses) ? responses.map(response => ({
+      id: response.id,
+      examId: response.examId,
+      studentId: response.studentId,
+      courseId: response.courseId,
+      answers: response.answers || {},
+      questionScores: response.questionScores || {},
+      startedAt: response.startedAt,
+      submittedAt: response.submittedAt,
+      timeSpent: response.timeSpent,
+      status: response.status,
+      totalScore: response.totalScore || 0,
+      maxScore: response.maxScore || 0,
+      percentage: response.percentage || ExamResponseHelpers.calculatePercentage(response),
+      passed: response.passed || false,
+      graded: response.graded || false,
+      autoGraded: response.autoGraded || false,
+      attemptNumber: response.attemptNumber || 1,
+      instructorFeedback: response.instructorFeedback || '',
+      gradedBy: response.gradedBy,
+      gradedAt: response.gradedAt,
+      flaggedForReview: response.flaggedForReview || false,
+      lateSubmission: response.lateSubmission || false,
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      
+      // Computed properties
+      isCompleted: ExamResponseHelpers.isCompleted(response),
+      needsManualGrading: ExamResponseHelpers.needsManualGrading(response),
+      gradingStatus: ExamResponseHelpers.getGradingStatus(response),
+      timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
+    })) : [];
+    
+    console.log(`✅ Found ${transformedResponses.length} responses for exam`);
+    return transformedResponses;
+  } catch (error) {
+    console.error('❌ Error fetching exam responses for exam:', error);
+    return [];
+  }
+};
+
+export const fetchExamResponseById = async (responseId) => {
+  try {
+    console.log(`📋 Fetching exam response: ${responseId}`);
+    const response = await apiClient.get(`/exam-responses/${responseId}`);
+    console.log('✅ Retrieved exam response successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error fetching exam response:', error);
+    throw error;
+  }
+};
+
+export const fetchDetailedExamResponse = async (responseId) => {
+  try {
+    console.log(`📋 Fetching detailed exam response: ${responseId}`);
+    const response = await apiClient.get(`/exam-responses/${responseId}/detailed`);
+    console.log('✅ Retrieved detailed exam response successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error fetching detailed exam response:', error);
+    throw error;
+  }
+};
+
+export const fetchStudentExamResponses = async (studentId, courseId) => {
+  try {
+    console.log(`📊 Fetching student exam responses: ${studentId}, course: ${courseId}`);
+    const responses = await apiClient.get(`/students/${studentId}/courses/${courseId}/exam-responses`);
+    
+    const transformedResponses = Array.isArray(responses) ? responses.map(response => ({
+      id: response.id,
+      examId: response.examId,
+      studentId: response.studentId,
+      courseId: response.courseId,
+      status: response.status,
+      startedAt: response.startedAt,
+      submittedAt: response.submittedAt,
+      timeSpent: response.timeSpent,
+      totalScore: response.totalScore || 0,
+      maxScore: response.maxScore || 0,
+      percentage: response.percentage || ExamResponseHelpers.calculatePercentage(response),
+      passed: response.passed || false,
+      graded: response.graded || false,
+      attemptNumber: response.attemptNumber || 1,
+      
+      // Computed properties
+      isCompleted: ExamResponseHelpers.isCompleted(response),
+      timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
+    })) : [];
+    
+    console.log(`✅ Found ${transformedResponses.length} student responses`);
+    return transformedResponses;
+  } catch (error) {
+    console.error('❌ Error fetching student exam responses:', error);
+    return [];
+  }
+};
+
+export const fetchExamResponseHistory = async (examId, studentId) => {
+  try {
+    console.log(`📚 Fetching exam response history: exam ${examId}, student ${studentId}`);
+    const responses = await apiClient.get(`/exams/${examId}/responses/student/${studentId}`);
+    console.log(`✅ Found ${responses.length} response history entries`);
+    return responses;
+  } catch (error) {
+    console.error('❌ Error fetching exam response history:', error);
+    return [];
+  }
+};
+
+// ===================================
+// EXAM GRADING API
+// ===================================
+
+export const gradeExamResponse = async (responseId, gradeData) => {
+  try {
+    console.log('📝 Grading exam response:', responseId, gradeData);
+    const response = await apiClient.put('/exam-responses/grade', {
+      responseId,
+      ...gradeData
+    });
+    console.log('✅ Exam response graded successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error grading exam response:', error);
+    throw error;
+  }
+};
+
+export const manualGradeExamResponse = async (responseId, questionScores, instructorFeedback = '', flaggedForReview = false) => {
+  try {
+    console.log('📝 Manual grading exam response:', responseId);
+    
+    // FIXED: Create the correct request structure to match backend expectations
+    const requestData = {
+      responseId: responseId,
+      questionScores: questionScores,
+      instructorFeedback: instructorFeedback,
+      flaggedForReview: flaggedForReview
+    };
+    
+    console.log('📝 Sending request data:', requestData);
+    
+    const response = await apiClient.put('/exam-responses/manual-grade', requestData);
+    console.log('✅ Manual grading completed successfully');
+    return response.response || response;
+  } catch (error) {
+    console.error('❌ Error manual grading exam response:', error);
+    console.error('❌ Error details:', error.details);
+    throw error;
+  }
+};
+
+export const updateQuestionScore = async (responseId, questionId, score, feedback = '') => {
+  try {
+    console.log('📊 Updating question score:', responseId, questionId, score);
+    const response = await apiClient.put(`/exam-responses/${responseId}/question-score`, {
+      questionId,
+      score,
+      feedback
+    });
+    console.log('✅ Question score updated successfully');
+    return response.response || response;
+  } catch (error) {
+    console.error('❌ Error updating question score:', error);
+    throw error;
+  }
+};
+
+export const autoGradeResponse = async (responseId) => {
+  try {
+    console.log('🤖 Auto-grading response:', responseId);
+    const response = await apiClient.post(`/exam-responses/${responseId}/auto-grade`);
+    console.log('✅ Auto-grading completed successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error auto-grading response:', error);
+    throw error;
+  }
+};
+
+export const autoGradeAllResponses = async (examId) => {
+  try {
+    console.log('🤖 Auto-grading all responses for exam:', examId);
+    const response = await apiClient.post(`/exams/${examId}/auto-grade-all`);
+    console.log('✅ Auto-grading all responses completed');
+    return response;
+  } catch (error) {
+    console.error('❌ Error auto-grading all responses:', error);
+    throw error;
+  }
+};
+
+export const flagResponseForReview = async (responseId, flagReason = '', flagPriority = 'medium') => {
+  try {
+    console.log('🚩 Flagging response for review:', responseId);
+    const response = await apiClient.put(`/exam-responses/${responseId}/flag`, {
+      flagReason,
+      flagPriority
+    });
+    console.log('✅ Response flagged for review successfully');
+    return response.response || response;
+  } catch (error) {
+    console.error('❌ Error flagging response:', error);
+    throw error;
+  }
+};
+
+export const unflagResponse = async (responseId) => {
+  try {
+    console.log('🚩 Unflagging response:', responseId);
+    const response = await apiClient.put(`/exam-responses/${responseId}/unflag`);
+    console.log('✅ Response unflagged successfully');
+    return response.response || response;
+  } catch (error) {
+    console.error('❌ Error unflagging response:', error);
+    throw error;
+  }
+};
+
+export const batchGradeExamResponses = async (responseIds, instructorFeedback = '', flagForReview = false) => {
+  try {
+    console.log('📦 Batch grading exam responses:', responseIds.length, 'responses');
+    const response = await apiClient.post('/exam-responses/batch-grade', {
+      responseIds,
+      instructorFeedback,
+      flagForReview
+    });
+    console.log('✅ Batch grading completed successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error batch grading exam responses:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// EXAM STATISTICS API
+// ===================================
+
+export const fetchExamStats = async (examId) => {
+  try {
+    console.log(`📊 Fetching exam statistics: ${examId}`);
+    const stats = await apiClient.get(`/exams/${examId}/stats`);
+    console.log('✅ Retrieved exam statistics');
+    return stats;
+  } catch (error) {
+    console.error('❌ Error fetching exam statistics:', error);
+    return null;
+  }
+};
+
+export const fetchExamGradingStats = async (examId) => {
+  try {
+    console.log(`📊 Fetching exam grading statistics: ${examId}`);
+    const stats = await apiClient.get(`/exams/${examId}/grading-stats`);
+    console.log('✅ Retrieved exam grading statistics');
+    return stats;
+  } catch (error) {
+    console.error('❌ Error fetching exam grading statistics:', error);
+    return null;
+  }
+};
+
+export const fetchCourseExamStats = async (courseId) => {
+  try {
+    console.log(`📊 Fetching course exam statistics: ${courseId}`);
+    const stats = await apiClient.get(`/courses/${courseId}/exam-stats`);
+    console.log('✅ Retrieved course exam statistics');
+    return stats;
+  } catch (error) {
+    console.error('❌ Error fetching course exam statistics:', error);
+    return [];
+  }
+};
+
+// ===================================
+// REMAINING APIs (Grade Columns, Students, etc.)
+// ===================================
+
+// Grade Columns
 export const fetchGradeColumns = async (courseId, params = {}) => {
   try {
     const columns = await apiClient.get(`/courses/${courseId}/grade-columns`, params);
@@ -700,19 +1684,7 @@ export const deleteGradeColumn = async (columnId) => {
   }
 };
 
-/**
- * GRADES ENDPOINTS
- */
-export const fetchGrades = async (courseId, params = {}) => {
-  try {
-    const grades = await apiClient.get(`/courses/${courseId}/grades`, params);
-    return Array.isArray(grades) ? grades : [];
-  } catch (error) {
-    console.error('Error fetching grades:', error);
-    return [];
-  }
-};
-
+// Grades
 export const updateGrade = async (studentId, columnId, grade) => {
   try {
     return await apiClient.put(`/students/${studentId}/grades/${columnId}`, { grade });
@@ -721,503 +1693,53 @@ export const updateGrade = async (studentId, columnId, grade) => {
   }
 };
 
-export const calculateFinalGrades = async (courseId) => {
+// Students management
+export const addStudent = async (courseId, studentData) => {
   try {
-    return await apiClient.post(`/courses/${courseId}/grades/calculate-final`);
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
- * ASSIGNMENTS ENDPOINTS - ENHANCED WITH FILE HANDLING
- */
-export const fetchAssignments = async (courseId, params = {}) => {
-  try {
-    console.log(`🔍 Fetching assignments for course: ${courseId}`);
-    const assignments = await apiClient.get(`/tasks/course/${courseId}`, params);
-    console.log('📋 Raw assignments data:', assignments);
-    
-    // Transform backend Task objects to frontend Assignment format
-    const transformedAssignments = Array.isArray(assignments) ? assignments.map(task => ({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      courseId: task.courseId,
-      courseName: task.courseName,
-      type: task.type,
-      dueDate: task.dueDate,
-      dueTime: task.dueTime,
-      dueDateTime: task.dueDateTime,
-      maxPoints: task.maxPoints,
-      status: task.status,
-      priority: task.priority,
-      difficulty: task.difficulty,
-      category: task.category,
-      instructions: task.instructions,
-      estimatedDuration: task.estimatedDuration,
-      
-      // File attachment info
-      fileUrl: task.fileUrl,
-      fileName: task.fileName,
-      fileSize: task.fileSize,
-      hasAttachment: task.hasAttachment,
-      
-      // Submission settings
-      allowSubmissions: task.allowSubmissions,
-      allowLateSubmissions: task.allowLateSubmissions,
-      latePenaltyPerDay: task.latePenaltyPerDay,
-      visibleToStudents: task.visibleToStudents,
-      requiresSubmission: task.requiresSubmission,
-      maxAttempts: task.maxAttempts,
-      publishDate: task.publishDate,
-      
-      // Statistics
-      submissionCount: task.submissionCount,
-      gradedCount: task.gradedCount,
-      averageGrade: task.averageGrade,
-      enrolledStudents: task.enrolledStudents,
-      completionRate: task.completionRate,
-      
-      // Status flags
-      isOverdue: task.isOverdue,
-      isPublished: task.isPublished,
-      acceptsSubmissions: task.acceptsSubmissions,
-      
-      // Instructor info
-      instructorId: task.instructorId,
-      instructorName: task.instructorName,
-      
-      // Organization
-      tags: task.tags,
-      prerequisiteTasks: task.prerequisiteTasks,
-      progress: task.progress,
-      
-      // Timestamps
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt
-    })) : [];
-    
-    console.log(`✅ Transformed ${transformedAssignments.length} assignments`);
-    return transformedAssignments;
-  } catch (error) {
-    console.error('❌ Error fetching assignments:', error);
-    return [];
-  }
-};
-
-export const createAssignment = async (assignmentData) => {
-  try {
-    console.log('➕ Creating assignment with data:', assignmentData);
-    
-    // Transform frontend data to backend Task format
-    const taskCreateRequest = {
-      title: assignmentData.title,
-      description: assignmentData.description,
-      courseId: assignmentData.courseId,
-      type: assignmentData.type,
-      dueDate: assignmentData.dueDate,
-      dueTime: assignmentData.dueTime,
-      maxPoints: assignmentData.maxPoints,
-      instructions: assignmentData.instructions,
-      priority: assignmentData.priority,
-      difficulty: assignmentData.difficulty,
-      category: assignmentData.category,
-      allowSubmissions: assignmentData.allowSubmissions,
-      allowLateSubmissions: assignmentData.allowLateSubmissions,
-      latePenaltyPerDay: assignmentData.latePenaltyPerDay,
-      visibleToStudents: assignmentData.visibleToStudents,
-      requiresSubmission: assignmentData.requiresSubmission,
-      maxAttempts: assignmentData.maxAttempts,
-      estimatedDuration: assignmentData.estimatedDuration,
-      tags: assignmentData.tags,
-      prerequisiteTasks: assignmentData.prerequisiteTasks,
-      fileUrl: assignmentData.fileUrl,
-      fileName: assignmentData.fileName,
-      fileSize: assignmentData.fileSize
+    const enrollmentRequest = {
+      studentId: studentData.id || studentData.studentId,
+      academicYear: new Date().getFullYear()
     };
-    
-    const createdTask = await apiClient.post('/tasks', taskCreateRequest);
-    console.log('✅ Assignment created successfully:', createdTask);
-    
-    // Transform back to frontend format
-    return {
-      id: createdTask.id,
-      title: createdTask.title,
-      description: createdTask.description,
-      courseId: createdTask.courseId,
-      type: createdTask.type,
-      dueDate: createdTask.dueDate,
-      dueTime: createdTask.dueTime,
-      maxPoints: createdTask.maxPoints,
-      status: createdTask.status,
-      priority: createdTask.priority,
-      difficulty: createdTask.difficulty,
-      category: createdTask.category,
-      instructions: createdTask.instructions,
-      fileUrl: createdTask.fileUrl,
-      fileName: createdTask.fileName,
-      fileSize: createdTask.fileSize,
-      hasAttachment: createdTask.hasAttachment,
-      submissionCount: createdTask.submissionCount || 0,
-      gradedCount: createdTask.gradedCount || 0,
-      averageGrade: createdTask.averageGrade || 0,
-      isOverdue: createdTask.isOverdue,
-      createdAt: createdTask.createdAt,
-      updatedAt: createdTask.updatedAt
+    return await apiClient.post(`/courses/${courseId}/enroll`, enrollmentRequest);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const removeStudent = async (courseId, studentId) => {
+  try {
+    const unenrollmentRequest = {
+      studentIds: [studentId]
     };
-  } catch (error) {
-    console.error('❌ Error creating assignment:', error);
-    throw error;
-  }
-};
-
-export const updateAssignment = async (assignmentId, updates) => {
-  try {
-    console.log('🔄 Updating assignment:', assignmentId, updates);
-    
-    // Transform frontend updates to backend Task format
-    const taskUpdateRequest = {
-      title: updates.title,
-      description: updates.description,
-      type: updates.type,
-      dueDate: updates.dueDate,
-      dueTime: updates.dueTime,
-      maxPoints: updates.maxPoints,
-      instructions: updates.instructions,
-      status: updates.status,
-      priority: updates.priority,
-      difficulty: updates.difficulty,
-      category: updates.category,
-      allowSubmissions: updates.allowSubmissions,
-      allowLateSubmissions: updates.allowLateSubmissions,
-      latePenaltyPerDay: updates.latePenaltyPerDay,
-      visibleToStudents: updates.visibleToStudents,
-      requiresSubmission: updates.requiresSubmission,
-      maxAttempts: updates.maxAttempts,
-      estimatedDuration: updates.estimatedDuration,
-      tags: updates.tags,
-      prerequisiteTasks: updates.prerequisiteTasks,
-      fileUrl: updates.fileUrl,
-      fileName: updates.fileName,
-      fileSize: updates.fileSize
-    };
-    
-    const updatedTask = await apiClient.put(`/tasks/${assignmentId}`, taskUpdateRequest);
-    console.log('✅ Assignment updated successfully:', updatedTask);
-    
-    return updatedTask;
-  } catch (error) {
-    console.error('❌ Error updating assignment:', error);
-    throw error;
-  }
-};
-
-export const deleteAssignment = async (assignmentId) => {
-  try {
-    console.log('🗑️ Deleting assignment:', assignmentId);
-    await apiClient.delete(`/tasks/${assignmentId}`);
-    console.log('✅ Assignment deleted successfully');
-    return { success: true };
-  } catch (error) {
-    console.error('❌ Error deleting assignment:', error);
-    throw error;
-  }
-};
-
-/**
- * ENHANCED ASSIGNMENT FILE OPERATIONS
- */
-export const createAssignmentWithFile = async (assignmentData, file = null) => {
-  try {
-    console.log('➕ Creating assignment with file:', assignmentData.title);
-    
-    let fileData = null;
-    
-    // Upload file first if provided
-    if (file) {
-      fileData = await uploadFile(file, 'assignment', {
-        assignmentTitle: assignmentData.title,
-        courseId: assignmentData.courseId
-      });
-      
-      // Add file info to assignment data
-      assignmentData.fileUrl = fileData.url;
-      assignmentData.fileName = fileData.name;
-      assignmentData.fileSize = fileData.size;
-      assignmentData.hasAttachment = true;
-    }
-    
-    // Create assignment
-    const createdAssignment = await createAssignment(assignmentData);
-    
-    console.log('✅ Assignment created with file:', createdAssignment.id);
-    return createdAssignment;
-    
-  } catch (error) {
-    console.error('❌ Failed to create assignment with file:', error);
-    throw error;
-  }
-};
-
-export const updateAssignmentFile = async (assignmentId, file) => {
-  try {
-    console.log('🔄 Updating assignment file:', assignmentId);
-    
-    // Upload new file
-    const fileData = await uploadFile(file, 'assignment', {
-      assignmentId: assignmentId
-    });
-    
-    // Update assignment with new file info
-    const updates = {
-      fileUrl: fileData.url,
-      fileName: fileData.name,
-      fileSize: fileData.size,
-      hasAttachment: true
-    };
-    
-    const updatedAssignment = await updateAssignment(assignmentId, updates);
-    
-    console.log('✅ Assignment file updated successfully');
-    return updatedAssignment;
-    
-  } catch (error) {
-    console.error('❌ Failed to update assignment file:', error);
-    throw error;
-  }
-};
-
-export const removeAssignmentFile = async (assignmentId, fileUrl) => {
-  try {
-    console.log('🗑️ Removing file from assignment:', assignmentId);
-    
-    // Delete the file
-    if (fileUrl) {
-      await deleteFile(fileUrl);
-    }
-    
-    // Update assignment to remove file info
-    const updates = {
-      fileUrl: null,
-      fileName: null,
-      fileSize: null,
-      hasAttachment: false
-    };
-    
-    const updatedAssignment = await updateAssignment(assignmentId, updates);
-    
-    console.log('✅ File removed from assignment successfully');
-    return updatedAssignment;
-    
-  } catch (error) {
-    console.error('❌ Failed to remove file from assignment:', error);
-    throw error;
-  }
-};
-
-/**
- * SUBMISSIONS ENDPOINTS
- */
-export const fetchSubmissions = async (courseId, params = {}) => {
-  try {
-    const submissions = await apiClient.get(`/submissions/course/${courseId}`, params);
-    return Array.isArray(submissions) ? submissions.map(submission => ({
-      ...submission,
-      submittedAt: submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'N/A',
-      fileName: submission.fileUrl ? submission.fileUrl.split('/').pop() : 'No file'
-    })) : [];
-  } catch (error) {
-    console.error('Error fetching submissions:', error);
-    return [];
-  }
-};
-
-export const updateSubmissionGrade = async (submissionId, grade, feedback = '') => {
-  try {
-    // Update the submission entity directly
-    return await apiClient.put(`/submissions/${submissionId}`, {
-      grade: grade,
-      feedback: feedback
+    return await apiClient.delete(`/courses/${courseId}/enrollments`, {
+      body: unenrollmentRequest
     });
   } catch (error) {
     throw error;
   }
 };
 
-export const downloadSubmission = async (submissionId) => {
+export const updateStudent = async (studentId, updates) => {
   try {
-    // Get submission details first
-    const submission = await apiClient.get(`/submissions/${submissionId}`);
-    if (submission.fileUrl) {
-      return await downloadFile(submission.fileUrl, submission.fileName);
-    }
-    throw new Error('No file available for download');
+    return await apiClient.put(`/users/${studentId}`, updates);
   } catch (error) {
     throw error;
   }
 };
 
-/**
- * EXAMS ENDPOINTS (Placeholders for future implementation)
- */
-export const fetchExams = async (courseId, params = {}) => {
-  try {
-    // This endpoint doesn't exist yet, return empty array
-    console.warn('Exams endpoint not implemented yet');
-    return [];
-  } catch (error) {
-    console.error('Error fetching exams:', error);
-    return [];
-  }
-};
-
-export const createExam = async (examData) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Create exam endpoint not implemented yet');
-    return { id: Date.now(), ...examData, questions: [], totalPoints: 0, status: 'draft' };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const updateExam = async (examId, updates) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Update exam endpoint not implemented yet');
-    return { id: examId, ...updates };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const fetchExamResponses = async (courseId, params = {}) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Exam responses endpoint not implemented yet');
-    return [];
-  } catch (error) {
-    console.error('Error fetching exam responses:', error);
-    return [];
-  }
-};
-
-export const addQuestionToExam = async (examId, questionData) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Add question to exam endpoint not implemented yet');
-    return { question: { id: Date.now(), ...questionData } };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const updateQuestion = async (examId, questionId, updates) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Update question endpoint not implemented yet');
-    return { id: questionId, ...updates };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const deleteQuestionFromExam = async (examId, questionId) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Delete question from exam endpoint not implemented yet');
-    return { success: true };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const updateExamStatus = async (examId, status) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Update exam status endpoint not implemented yet');
-    return { id: examId, status };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const deleteExam = async (examId) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Delete exam endpoint not implemented yet');
-    return { success: true };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const updateExamResponseScore = async (responseId, questionId, points) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Update exam response score endpoint not implemented yet');
-    return { success: true };
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const autoGradeExamResponse = async (responseId) => {
-  try {
-    // Placeholder for future implementation
-    console.warn('Auto grade exam response endpoint not implemented yet');
-    return { success: true, graded: true };
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
- * EXPORT FUNCTIONALITY
- */
+// Export functionality
 export const exportGrades = async (courseId, format = 'csv', options = {}) => {
   try {
-    // For now, simulate CSV export since the endpoint might not exist yet
     console.warn('Export grades endpoint not implemented yet');
-    
-    // Create a simple CSV with current data
-    const students = await fetchStudents(courseId);
-    const columns = await fetchGradeColumns(courseId);
-    
-    let csvContent = 'Student Name,';
-    csvContent += columns.map(col => `${col.name} (${col.percentage}%)`).join(',');
-    csvContent += ',Final Grade\n';
-    
-    students.forEach(student => {
-      csvContent += `${student.name},`;
-      csvContent += columns.map(col => student.grades[col.id] || '').join(',');
-      csvContent += `,${student.finalGrade}%\n`;
-    });
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const filename = `grades_course_${courseId}_${new Date().toISOString().split('T')[0]}.csv`;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    return { success: true, filename };
+    return { success: true, message: 'Export simulated' };
   } catch (error) {
     throw error;
   }
 };
 
-/**
- * ANALYTICS ENDPOINTS (Placeholders)
- */
+// Analytics
 export const fetchDashboardAnalytics = async (courseId) => {
   try {
-    // Placeholder for analytics
     console.warn('Analytics endpoint not implemented yet');
     return {
       totalStudents: 0,
@@ -1231,66 +1753,159 @@ export const fetchDashboardAnalytics = async (courseId) => {
   }
 };
 
-/**
- * BATCH OPERATIONS
- */
-export const batchGradeSubmissions = async (submissionIds, grade, feedback = '') => {
-  try {
-    // Implement batch update of multiple submissions
-    const promises = submissionIds.map(id => 
-      updateSubmissionGrade(id, grade, feedback)
-    );
-    return await Promise.all(promises);
-  } catch (error) {
-    throw error;
-  }
-};
+// ===================================
+// EXAM VALIDATION API
+// ===================================
 
-/**
- * HELPER FUNCTIONS
- */
-export const checkUserEnrollment = async (courseId, userId) => {
+export const canStudentTakeExam = async (examId, studentId) => {
   try {
-    const course = await apiClient.get(`/courses/${courseId}`);
-    
-    if (!course.enrollments) return false;
-    
-    // Check if user is enrolled in any academic year
-    return course.enrollments.some(enrollment => 
-      enrollment.studentIds && enrollment.studentIds.includes(userId)
-    );
+    console.log(`🔍 Checking if student can take exam: ${examId}, student: ${studentId}`);
+    const response = await apiClient.get(`/exams/${examId}/can-take`);
+    console.log('✅ Exam eligibility checked');
+    return response.canTake || false;
   } catch (error) {
-    console.error('Error checking user enrollment:', error);
+    console.error('❌ Error checking exam eligibility:', error);
     return false;
   }
 };
 
-export const getCourseEnrollmentCount = async (courseId, academicYear = 2024) => {
+export const getStudentAttemptCount = async (examId, studentId) => {
   try {
-    const course = await apiClient.get(`/courses/${courseId}`);
-    
-    if (!course.enrollments) return 0;
-    
-    const enrollment = course.enrollments.find(e => e.academicYear === academicYear);
-    return enrollment ? enrollment.studentIds.length : 0;
+    console.log(`📊 Getting attempt count: exam ${examId}, student ${studentId}`);
+    const response = await apiClient.get(`/exams/${examId}/attempt-count/${studentId}`);
+    console.log('✅ Attempt count retrieved');
+    return response.attemptCount || 0;
   } catch (error) {
-    console.error('Error getting enrollment count:', error);
+    console.error('❌ Error getting attempt count:', error);
     return 0;
   }
 };
 
+export const hasActiveAttempt = async (examId, studentId) => {
+  try {
+    // Check if student has an active (in-progress) attempt
+    const responses = await fetchExamResponseHistory(examId, studentId);
+    const activeAttempt = responses.find(response => response.status === 'IN_PROGRESS');
+    return !!activeAttempt;
+  } catch (error) {
+    console.error('❌ Error checking active attempt:', error);
+    return false;
+  }
+};
+
+// ===================================
+// STUDENT EXAM TAKING API
+// ===================================
+
+export const startExam = async (examId) => {
+  try {
+    console.log(`🎯 Starting exam: ${examId}`);
+    const response = await apiClient.post(`/exams/${examId}/start`);
+    console.log('✅ Exam started successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error starting exam:', error);
+    throw error;
+  }
+};
+
+export const saveExamProgress = async (progressData) => {
+  try {
+    console.log('💾 Saving exam progress');
+    const response = await apiClient.put('/exams/save-progress', progressData);
+    console.log('✅ Progress saved successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error saving progress:', error);
+    throw error;
+  }
+};
+
+export const submitExam = async (submissionData) => {
+  try {
+    console.log('📤 Submitting exam');
+    const response = await apiClient.post('/exams/submit', submissionData);
+    console.log('✅ Exam submitted successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error submitting exam:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// EXPORT FUNCTIONALITY
+// ===================================
+
+export const exportDetailedExamResponses = async (examId, format = 'csv') => {
+  try {
+    console.log(`📤 Exporting detailed exam responses: ${examId}`);
+    const response = await apiClient.post('/exam-responses/export-detailed', {
+      examId,
+      format
+    });
+    console.log('✅ Export initiated successfully');
+    return response;
+  } catch (error) {
+    console.error('❌ Error exporting exam responses:', error);
+    throw error;
+  }
+};
+
+// ===================================
+// HELPER FUNCTIONS
+// ===================================
+
 /**
- * ERROR HANDLING UTILITY
+ * Helper function to get exam response grading status
  */
+export const getResponseGradingStatus = (response) => {
+  return ExamResponseHelpers.getGradingStatus(response);
+};
+
+/**
+ * Helper function to check if response can be auto-graded
+ */
+export const canResponseBeAutoGraded = (response) => {
+  return ExamResponseHelpers.canAutoGrade(response);
+};
+
+/**
+ * Helper function to check if response needs manual grading
+ */
+export const needsManualGrading = (response) => {
+  return ExamResponseHelpers.needsManualGrading(response);
+};
+
+/**
+ * Helper function to check if response is completed
+ */
+export const isResponseCompleted = (response) => {
+  return ExamResponseHelpers.isCompleted(response);
+};
+
+/**
+ * Helper function to format time spent
+ */
+export const formatTimeSpent = (timeSpentSeconds) => {
+  return ExamResponseHelpers.formatTimeSpent(timeSpentSeconds);
+};
+
+/**
+ * Helper function to calculate percentage
+ */
+export const calculateResponsePercentage = (response) => {
+  return ExamResponseHelpers.calculatePercentage(response);
+};
+
+// Error handling utility
 export const handleApiError = (error) => {
   console.error('API Error:', error);
   
-  // If it's already formatted, return as is
   if (error.error && error.status !== undefined) {
     return error;
   }
   
-  // Format unhandled errors
   return {
     error: true,
     status: error.status || 0,
@@ -1301,4 +1916,4 @@ export const handleApiError = (error) => {
 };
 
 // Export the apiClient for direct use if needed
-export { apiClient, validateFileForUpload };
+export { apiClient, ExamResponseHelpers, TaskSubmissionHelpers };

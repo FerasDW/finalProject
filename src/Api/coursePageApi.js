@@ -7,8 +7,10 @@ const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
 
 // FIXED: Updated to match your actual backend endpoints
-const CATEGORIES_URL = `${API_BASE_URL}/categories`;
-const FILES_URL = `${API_BASE_URL}/files`; // FIXED: This was the main issue!
+
+const CATEGORIES_URL = `${API_BASE_URL}/course-content/categories`;
+const FILES_URL = `${API_BASE_URL}/course-content/files`; // FIXED: Updated to match backend
+
 
 axios.defaults.withCredentials = true;
 
@@ -158,7 +160,6 @@ export const getCategoriesByCourse = async (courseId, year) => {
     } catch (error) {
         console.error("Error fetching categories by course:", error);
         
-        // Better error handling
         if (error.response) {
             const status = error.response.status;
             const errorMessage = error.response.data?.error || error.response.data?.message || 'Unknown error';
@@ -264,7 +265,6 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
         const formData = new FormData();
         formData.append('file', file);
         
-        // Add optional description
         if (metadata.description) {
             formData.append('description', metadata.description);
         }
@@ -301,10 +301,10 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
 export const deleteFile = async (fileId) => {
     try {
         console.log(`🗑️ Attempting to delete file: ${fileId}`);
-        console.log(`🔗 DELETE URL: ${FILES_URL}/course/${fileId}`);
+        console.log(`🔗 DELETE URL: ${FILES_URL}/${fileId}`);
         
-        // FIXED: Updated endpoint to match your backend change: /course/{fileId}
-        await axios.delete(`${FILES_URL}/course/${fileId}`, {
+        // FIXED: Updated endpoint to match your backend: /{fileId}
+        await axios.delete(`${FILES_URL}/${fileId}`, {
             withCredentials: true
         });
         
@@ -331,7 +331,7 @@ export const deleteFile = async (fileId) => {
     }
 };
 
-// FIXED: Changed from fetch to axios and updated endpoint
+// FIXED: Updated to match backend endpoints
 export const getFilesByCategory = async (categoryId) => {
     try {
         const response = await axios.get(`${FILES_URL}/by-category/${categoryId}`, {

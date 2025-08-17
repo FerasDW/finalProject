@@ -66,7 +66,7 @@ export const leftMenuItems = {
       { title: "Community", icon: <Users /> },
       { title: "Statistics", icon: <BarChart2 /> },
         { title: "Video Meeting", icon: <Video /> },
-
+{ title: "Assignments And Tests Grades", icon: <ClipboardCheck /> },
       { title: "Settings", icon: <Settings /> },
       { title: "Logout", icon: <LogOut /> },
     ],
