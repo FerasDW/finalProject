@@ -15,6 +15,7 @@ import { Navigate } from "react-router-dom";
 import GenerateSemester from "../View/Pages/Admin/GenerateSemester.jsx";
 import AssignmentDashboard from "../View/Pages/Lecturer/AssignmentsDashboard.jsx";
 
+import StudentDashboard from "../View/Pages/Student/StudentDashboard.jsx";
 
 import VideoMeetingDashboard from "../View/Components/VideoMeeting/MeetingDashboard.jsx";
 // ADD THIS IMPORT - This is likely missing
@@ -89,6 +90,8 @@ function GlobalRoutes() {
         <Route path="/profileA" element={<ProfileA />} />
         <Route path="/Messages" element={<Messages />} />
         <Route path="/generateSemester" element={<GenerateSemester />} />
+        
+        <Route path="/StudentAssignmentDashboard" element={<StudentDashboard />} />
         
         {/* Secure Profile Routes with Path Parameters */}
         <Route path="/profile/:entityType/:id" element={<GenericProfile />} />
