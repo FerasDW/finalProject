@@ -5,11 +5,8 @@ const API_BASE_URL = 'http://localhost:8080/api';
 const COURSES_URL = `${API_BASE_URL}/courses`;
 const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
-
-// FIXED: Updated to match your actual backend endpoints
-
 const CATEGORIES_URL = `${API_BASE_URL}/course-content/categories`;
-const FILES_URL = `${API_BASE_URL}/course-content/files`; // FIXED: Updated to match backend
+const FILES_URL = `${API_BASE_URL}/course-content/files`;
 
 
 axios.defaults.withCredentials = true;
@@ -151,7 +148,6 @@ export const getAssignmentTimeline = async (courseId, year) => {
 
 export const getCategoriesByCourse = async (courseId, year) => {
     try {
-        console.log(`Making GET request to: ${CATEGORIES_URL}/by-course/${courseId}?year=${year}`);
         const response = await axios.get(`${CATEGORIES_URL}/by-course/${courseId}`, {
             params: { year },
             withCredentials: true
@@ -334,7 +330,7 @@ export const deleteFile = async (fileId) => {
 // FIXED: Updated to match backend endpoints
 export const getFilesByCategory = async (categoryId) => {
     try {
-        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}`, {
+        const response = await axios.get(`${FILES_URL}/by-category/${categoryId}/simple`, {
             withCredentials: true
         });
         return response.data;

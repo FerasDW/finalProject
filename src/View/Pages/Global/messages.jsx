@@ -329,7 +329,6 @@ const Messages = () => {
 useEffect(() => {
   const currentUserId = authData?.id;
   const { fields, lecturerOptions } = getRequestFormFields(admins, lecturers, userRole, currentUserId);
-  console.log("Lecturer options after filter:", lecturerOptions); // 👈 Check this
   setRequestFormFields(fields);
 }, [admins, lecturers, userRole, authData]);
 

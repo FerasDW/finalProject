@@ -79,9 +79,7 @@ export const meetingApi = {
    * @returns {Promise<Array>} - User's meetings
    */
   getUserMeetings: async (filters = {}) => {
-    try {
-      console.log('DEBUG: Fetching user meetings with filters:', filters);
-      
+    try {      
       const queryParams = new URLSearchParams();
       
       // Add filters to query params

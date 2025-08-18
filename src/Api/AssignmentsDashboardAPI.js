@@ -76,6 +76,7 @@ class ApiClient {
     }
 
     try {
+      console.log(`🔗 Making request toooooooooooo: ${url}`, requestOptions);
       const response = await fetch(url, requestOptions);
       clearTimeout(timeoutId);
       
@@ -531,16 +532,21 @@ export const fetchStudents = async (courseId, params = {}) => {
       return [];
     }
     
-    const currentYear = 2024;
-    const currentEnrollment = course.enrollments.find(e => e.academicYear === currentYear);
+    const allStudentIds = course.enrollments.flatMap(enrollment => 
+      enrollment.studentIds || []
+    );
     
-    if (!currentEnrollment || !currentEnrollment.studentIds || currentEnrollment.studentIds.length === 0) {
-      console.log(`📭 No student enrollments found for year ${currentYear}`);
+    if (allStudentIds.length === 0) {
+      console.log('📭 No student IDs found in enrollments');
       return [];
     }
     
-    const studentDetails = await apiClient.post('/users/by-ids', currentEnrollment.studentIds);
+    console.log(`👥 Found ${allStudentIds.length} student IDs:`, allStudentIds);
     
+    // Fetch student details
+    const studentDetails = await apiClient.post('/users/by-ids', allStudentIds);
+    
+    // Fetch existing grades
     let existingGrades = [];
     try {
       existingGrades = await apiClient.get(`/courses/${courseId}/grades`);
@@ -549,8 +555,14 @@ export const fetchStudents = async (courseId, params = {}) => {
       existingGrades = [];
     }
     
+    // Combine student details with grades
     const studentsWithGrades = studentDetails.map(student => {
       const studentGrade = existingGrades.find(g => g.studentId === student.id);
+      
+      // Find which academic year this student is enrolled in
+      const studentEnrollment = course.enrollments.find(enrollment => 
+        enrollment.studentIds?.includes(student.id)
+      );
       
       return {
         id: student.id,
@@ -558,6 +570,7 @@ export const fetchStudents = async (courseId, params = {}) => {
         email: student.email,
         username: student.username,
         courseId: courseId,
+        academicYear: studentEnrollment?.academicYear || null,
         grades: studentGrade?.grades || {},
         finalGrade: studentGrade?.finalGrade || 0,
         finalLetterGrade: studentGrade?.finalLetterGrade || 'N/A'

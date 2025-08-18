@@ -40,7 +40,7 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
         const fetchedCategories = await contentApi.getCategoriesByCourse(courseId, academicYear);
         const categoriesWithFiles = fetchedCategories.map(cat => ({
           ...cat,
-          files: [],
+          files: Array.isArray(cat.files) ? cat.files : [], // Ensure files is always an array
           filesLoaded: false // Add a flag to prevent re-fetching
         }));
         setCategories(categoriesWithFiles);
@@ -72,12 +72,20 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
         setCategories(prevCategories =>
           prevCategories.map(cat =>
             cat.id === activeCategory
-              ? { ...cat, files: files, filesLoaded: true }
+              ? { ...cat, files: Array.isArray(files) ? files : [], filesLoaded: true }
               : cat
           )
         );
       } catch (error) {
         console.error("Error loading files for category:", error);
+        // Set empty array on error to prevent crashes
+        setCategories(prevCategories =>
+          prevCategories.map(cat =>
+            cat.id === activeCategory
+              ? { ...cat, files: [], filesLoaded: true }
+              : cat
+          )
+        );
       }
     };
 
@@ -85,7 +93,7 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
   }, [activeCategory, categories]);
 
   // ... (getFileIcon function is unchanged)
-    const getFileIcon = (type) => {
+  const getFileIcon = (type) => {
     const iconProps = { size: 24 };
     switch (type) {
       case "presentation":
@@ -124,11 +132,17 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
 
     try {
       if (editingCategory) {
-        const updatedCategory = await contentApi.updateCategory(editingCategory.id, data);
+        // Only send the necessary fields for update
+        const updateData = {
+          name: data.name,
+          description: data.description || "",
+          color: data.color || "#3b82f6"
+        };
+        const updatedCategory = await contentApi.updateCategory(editingCategory.id, updateData);
         setCategories(
           categories.map((cat) =>
             cat.id === editingCategory.id
-              ? { ...cat, ...updatedCategory }
+              ? { ...cat, ...updatedCategory, files: Array.isArray(cat.files) ? cat.files : [] }
               : cat
           )
         );
@@ -150,7 +164,7 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
   };
 
   // ... (handleDeleteCategory, handleDeleteFile, handleFileUpload are mostly unchanged in logic)
-    const handleDeleteCategory = async (categoryId) => {
+  const handleDeleteCategory = async (categoryId) => {
     if (!window.confirm("Are you sure you want to delete this category and all its files?")) {
       return;
     }
@@ -168,26 +182,26 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
     }
   };
 
-const handleDeleteFile = async (categoryId, fileId) => {
-  if (!window.confirm("Are you sure you want to delete this file?")) {
-    return;
-  }
+  const handleDeleteFile = async (categoryId, fileId) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) {
+      return;
+    }
 
-  try {
-    // This will now use the updated API endpoint /course/{fileId}
-    await contentApi.deleteFile(fileId);
-    setCategories(
-      categories.map((cat) =>
-        cat.id === categoryId
-          ? { ...cat, files: cat.files.filter((file) => file.id !== fileId) }
-          : cat
-      )
-    );
-  } catch (error) {
-    console.error("Error deleting file:", error);
-    alert("Error deleting file. Please try again.");
-  }
-};
+    try {
+      // This will now use the updated API endpoint /course/{fileId}
+      await contentApi.deleteFile(fileId);
+      setCategories(
+        categories.map((cat) =>
+          cat.id === categoryId
+            ? { ...cat, files: Array.isArray(cat.files) ? cat.files.filter((file) => file.id !== fileId) : [] }
+            : cat
+        )
+      );
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      alert("Error deleting file. Please try again.");
+    }
+  };
 
   const handleFileUpload = async (data) => {
     if (!data.categoryId || !data.file) {
@@ -199,7 +213,7 @@ const handleDeleteFile = async (categoryId, fileId) => {
       setCategories(
         categories.map((cat) =>
           cat.id === data.categoryId 
-            ? { ...cat, files: [...cat.files, newFile] } 
+            ? { ...cat, files: Array.isArray(cat.files) ? [...cat.files, newFile] : [newFile] } 
             : cat
         )
       );
@@ -211,12 +225,16 @@ const handleDeleteFile = async (categoryId, fileId) => {
     }
   };
 
-
-  const activeFiles =
-    categories.find((cat) => cat.id === activeCategory)?.files || [];
-  const filteredFiles = activeFiles.filter((file) =>
-    file?.fileName?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false
-  );
+  // FIX: Ensure activeFiles is always an array before filtering
+  const activeCategory_data = categories.find((cat) => cat.id === activeCategory);
+  const activeFiles = activeCategory_data?.files || [];
+  
+  // Double-check that activeFiles is an array before calling filter
+  const filteredFiles = Array.isArray(activeFiles) 
+    ? activeFiles.filter((file) =>
+        file?.fileName?.toLowerCase()?.includes(searchTerm.toLowerCase()) || false
+      )
+    : [];
 
   if (loading) {
     return <div className="files-manager"><div className="loading-state">Loading materials for {academicYear}...</div></div>;
@@ -237,7 +255,7 @@ const handleDeleteFile = async (categoryId, fileId) => {
                         <div className="category-color" style={{ backgroundColor: category.color }} />
                         <div className="category-details">
                           <h4 className="category-name">{category.name}</h4>
-                          <p className="category-count">{category.files.length} files</p>
+                          <p className="category-count">{Array.isArray(category.files) ? category.files.length : 0} files</p>
                         </div>
                       </div>
                       {canManageFiles && (
