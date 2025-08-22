@@ -1,1324 +1,591 @@
-import React from 'react';
-import { 
-  Calendar, 
-  GraduationCap, 
-  Users, 
-  BookOpen, 
-  Settings, 
-  User,
-  Plus,
-  Eye,
-  Building2,
-  Hash,
-  Mail,
-  Phone,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  TrendingUp,
-  BarChart3,
-  PieChart
-} from 'lucide-react';
+import React, { useState } from 'react';
 
-// Import hooks and utilities
-import { useGenerateSemester } from '../../../Hooks/useGenerateSemester';
-import { 
-  StatCardsContainer,
-  MidPageNavbar,
-  DataTable,
-  PopUp,
-  DynamicForm,
-  getFormFieldConfigs,
-  tabs,
-  getTableColumns
-} from '../../../Utils/GenerateSemesterUtils';
+const OptaPlannerTestPage = () => {
+  const [isCreatingData, setIsCreatingData] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [dataResult, setDataResult] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [error, setError] = useState(null);
 
-const SemesterGenerationPage = () => {
-  // Use the custom hook for all state and logic
-  const {
-    // Data
-    mockDepartments,
-    currentDepartment,
-    filteredStudents,
-    filteredLecturers,
-    filteredCourses,
+  // API Base URL - adjust this to match your backend
+  const API_BASE_URL = 'http://localhost:8080/api';
+
+  // Get authentication headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token') || localStorage.getItem('jwtToken') || localStorage.getItem('authToken');
     
-    // Form state
-    selectedDepartment,
-    setSelectedDepartment,
-    selectedSemester,
-    setSelectedSemester,
-    selectedAcademicYear,
-    setSelectedAcademicYear,
-    selectedDivision,
-    setSelectedDivision,
-    startDate,
-    setStartDate,
-    endDate,
-    setEndDate,
-    
-    // UI state
-    activeTab,
-    setActiveTab,
-    isLoading,
-    showPreview,
-    setShowPreview,
-    showAddStudentForm,
-    setShowAddStudentForm,
-    showAddLecturerForm,
-    setShowAddLecturerForm,
-    showAddCourseForm,
-    setShowAddCourseForm,
-    
-    // Actions
-    handleGenerateSemester,
-    handleAddStudent,
-    handleAddLecturer,
-    handleAddCourse
-  } = useGenerateSemester();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
 
-  // Get form field configurations
-  const { studentFormFields, lecturerFormFields, courseFormFields } = getFormFieldConfigs(currentDepartment, filteredLecturers);
-  
-  // Get table column configurations
-  const { studentColumns, lecturerColumns, courseColumns } = getTableColumns();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
-  // Calculate statistics for overview
-  const totalCredits = filteredCourses.reduce((sum, course) => sum + course.credits, 0);
-  const activeStudents = filteredStudents.filter(s => s.status === 'active').length;
-  const activeLecturers = filteredLecturers.filter(l => l.status === 'active').length;
-  const duration = startDate && endDate 
-    ? Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24))
-    : 0;
+    return headers;
+  };
 
-  // Data for charts in overview
-  const divisionData = currentDepartment?.divisions.map(div => ({
-    division: div,
-    students: filteredStudents.filter(s => s.division === div).length,
-    percentage: filteredStudents.length > 0 ? Math.round((filteredStudents.filter(s => s.division === div).length / filteredStudents.length) * 100) : 0
-  })) || [];
+  const createTestData = async () => {
+    setIsCreatingData(true);
+    setError(null);
+    setDataResult(null);
 
-  const courseCreditsData = filteredCourses.map(course => ({
-    name: course.title,
-    credits: course.credits
-  }));
+    try {
+      const response = await fetch(`${API_BASE_URL}/scheduling/test/setup-mock-data`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setDataResult(result);
+        console.log('Test data created successfully:', result);
+      } else {
+        setError(result.error || 'Failed to create test data');
+      }
+    } catch (err) {
+      setError('Error creating test data: ' + err.message);
+      console.error('Error creating test data:', err);
+    } finally {
+      setIsCreatingData(false);
+    }
+  };
+
+  const testPlanner = async () => {
+    setIsTesting(true);
+    setError(null);
+    setTestResult(null);
+
+    const testConfig = {
+      departmentId: "1",
+      academicYear: "2025",
+      semester: "Fall",
+      division: "A",
+      startDate: "2025-09-01",
+      endDate: "2025-12-15"
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/scheduling/generate-semester`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(testConfig)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setTestResult(result);
+        console.log('Schedule generated successfully:', result);
+      } else {
+        setError(result.message || 'Failed to generate schedule');
+      }
+    } catch (err) {
+      setError('Error testing planner: ' + err.message);
+      console.error('Error testing planner:', err);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
+  const checkDataAvailability = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/scheduling/test/data-check?departmentId=1&academicYear=2025&semester=Fall`,
+        {
+          headers: getAuthHeaders()
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Current data in database:', result);
+      alert(`Data Check:\nCourses: ${result.courses}\nLecturers: ${result.lecturers}\nStudents: ${result.students}\nSchedules: ${result.lecturerSchedules}`);
+    } catch (err) {
+      console.error('Error checking data:', err);
+      alert('Error checking data: ' + err.message);
+    }
+  };
+
+  const clearData = async () => {
+    if (window.confirm('Are you sure you want to clear all test data?')) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/scheduling/test/clear-mock-data`, {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          alert('Test data cleared successfully');
+          setDataResult(null);
+          setTestResult(null);
+        } else {
+          alert('Failed to clear data: ' + result.error);
+        }
+      } catch (err) {
+        alert('Error clearing data: ' + err.message);
+      }
+    }
+  };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f8fafc',
-      padding: '24px'
+    <div style={{
+      fontFamily: 'Arial, sans-serif',
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '20px',
+      backgroundColor: '#f5f5f5',
+      minHeight: '100vh'
     }}>
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '20px',
-        padding: '32px',
+        backgroundColor: '#2c3e50',
         color: 'white',
-        marginBottom: '32px',
-        boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        textAlign: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-          <GraduationCap size={32} />
+        <h1 style={{ margin: '0 0 10px 0', fontSize: '28px' }}>
+          OptaPlanner Scheduling Test
+        </h1>
+        <p style={{ margin: '0', fontSize: '16px', opacity: '0.9' }}>
+          Test the automatic semester schedule generation system
+        </p>
+      </div>
+
+      {/* Test Configuration Info */}
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        border: '1px solid #ddd'
+      }}>
+        <h2 style={{ margin: '0 0 15px 0', color: '#2c3e50' }}>
+          Test Configuration
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '15px',
+          fontSize: '14px'
+        }}>
           <div>
-            <h1 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: '700' }}>
-              Semester Generation
-            </h1>
-            <p style={{ margin: 0, fontSize: '16px', opacity: 0.9 }}>
-              Configure and generate semester schedules for your college system
+            <strong>Department ID:</strong> 1 (Computer Science)
+          </div>
+          <div>
+            <strong>Academic Year:</strong> 2025
+          </div>
+          <div>
+            <strong>Semester:</strong> Fall
+          </div>
+          <div>
+            <strong>Duration:</strong> Sep 1 - Dec 15, 2025
+          </div>
+        </div>
+      </div>
+
+      {/* Expected Test Data Info */}
+      <div style={{
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        border: '1px solid #ddd'
+      }}>
+        <h2 style={{ margin: '0 0 15px 0', color: '#2c3e50' }}>
+          What Will Be Created
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '15px'
+        }}>
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#e3f2fd', 
+            borderRadius: '6px',
+            border: '1px solid #90caf9'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#1976d2' }}>
+              📚 Courses (4)
+            </h3>
+            <ul style={{ margin: '0', paddingLeft: '20px', fontSize: '14px' }}>
+              <li>CS101 - Introduction to Programming (3 credits)</li>
+              <li>CS102 - Data Structures (4 credits)</li>
+              <li>MATH201 - Calculus I (3 credits)</li>
+              <li>ENG101 - English Composition (2 credits)</li>
+            </ul>
+          </div>
+
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#e8f5e8', 
+            borderRadius: '6px',
+            border: '1px solid #81c784'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#388e3c' }}>
+              👨‍🏫 Lecturers (3)
+            </h3>
+            <ul style={{ margin: '0', paddingLeft: '20px', fontSize: '14px' }}>
+              <li>Dr. Alice Johnson (CS101, ENG101)</li>
+              <li>Dr. Bob Smith (CS102)</li>
+              <li>Dr. Carol Davis (MATH201)</li>
+            </ul>
+          </div>
+
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#fff3e0', 
+            borderRadius: '6px',
+            border: '1px solid #ffb74d'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#f57c00' }}>
+              👥 Students (45)
+            </h3>
+            <p style={{ margin: '0', fontSize: '14px' }}>
+              All students enrolled in all courses.<br/>
+              Will be split into 3 groups of 15 per course.
+            </p>
+          </div>
+
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#f3e5f5', 
+            borderRadius: '6px',
+            border: '1px solid #ba68c8'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#7b1fa2' }}>
+              📅 Expected Output
+            </h3>
+            <p style={{ margin: '0', fontSize: '14px' }}>
+              12 scheduled lectures (4 courses × 3 groups).<br/>
+              No conflicts, proper time allocation.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Configuration Form */}
+      {/* Action Buttons */}
       <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e5e7eb'
+        backgroundColor: 'white',
+        padding: '20px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        border: '1px solid #ddd'
       }}>
-        <h2 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-          Semester Configuration
+        <h2 style={{ margin: '0 0 20px 0', color: '#2c3e50' }}>
+          Test Actions
         </h2>
-
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '32px',
-          marginBottom: '32px'
+        
+        <div style={{
+          display: 'flex',
+          gap: '15px',
+          flexWrap: 'wrap',
+          marginBottom: '20px'
         }}>
-          {/* Department Selection */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              Department *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Building2 size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }} />
-              <select
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px 12px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              >
-                <option value="">Select Department</option>
-                {mockDepartments.map(dept => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name} ({dept.code})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Academic Year Selection */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              Academic Year *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <GraduationCap size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }} />
-              <select
-                value={selectedAcademicYear}
-                onChange={(e) => setSelectedAcademicYear(e.target.value)}
-                disabled={!currentDepartment}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px 12px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: currentDepartment ? 'white' : '#f9fafb',
-                  cursor: currentDepartment ? 'pointer' : 'not-allowed',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              >
-                <option value="">Select Academic Year</option>
-                {currentDepartment?.academicYears.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Semester Selection */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              Semester *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Calendar size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }} />
-              <select
-                value={selectedSemester}
-                onChange={(e) => setSelectedSemester(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px 12px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              >
-                <option value="">Select Semester</option>
-                <option value="Fall">Fall Semester</option>
-                <option value="Spring">Spring Semester</option>
-                <option value="Summer">Summer Semester</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Division Selection */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '8px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              Division (Optional)
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Users size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }} />
-              <select
-                value={selectedDivision}
-                onChange={(e) => setSelectedDivision(e.target.value)}
-                disabled={!currentDepartment}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px 12px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: currentDepartment ? 'white' : '#f9fafb',
-                  cursor: currentDepartment ? 'pointer' : 'not-allowed',
-                  transition: 'border-color 0.2s ease'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-              >
-                <option value="">All Divisions</option>
-                {currentDepartment?.divisions.map(division => (
-                  <option key={division} value={division}>Division {division}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Start Date - Enhanced with better spacing */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '12px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              Start Date *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Calendar size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af',
-                zIndex: 1
-              }} />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 20px 14px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  transition: 'all 0.2s ease',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#3b82f6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-          </div>
-
-          {/* End Date - Enhanced with better spacing */}
-          <div>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: '12px', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              color: '#374151' 
-            }}>
-              End Date *
-            </label>
-            <div style={{ position: 'relative' }}>
-              <Clock size={20} style={{
-                position: 'absolute',
-                left: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af',
-                zIndex: 1
-              }} />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 20px 14px 48px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  transition: 'all 0.2s ease',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = '#3b82f6';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#e5e7eb';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
           <button
-            onClick={() => setShowPreview(!showPreview)}
-            disabled={!selectedDepartment || !selectedAcademicYear || !selectedSemester}
+            onClick={createTestData}
+            disabled={isCreatingData}
             style={{
-              padding: '12px 24px',
-              backgroundColor: showPreview ? '#3b82f6' : '#f3f4f6',
-              color: showPreview ? 'white' : '#6b7280',
-              border: '2px solid #e5e7eb',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              opacity: (!selectedDepartment || !selectedAcademicYear || !selectedSemester) ? 0.5 : 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <Eye size={16} />
-            {showPreview ? 'Hide Preview' : 'Preview Data'}
-          </button>
-          
-          <button
-            onClick={handleGenerateSemester}
-            disabled={isLoading || !selectedDepartment || !selectedSemester || !selectedAcademicYear || !startDate || !endDate}
-            style={{
-              padding: '12px 24px',
-              background: isLoading ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '15px 25px',
+              backgroundColor: isCreatingData ? '#95a5a6' : '#3498db',
               color: 'white',
               border: 'none',
-              borderRadius: '12px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: isCreatingData ? 'not-allowed' : 'pointer',
+              minWidth: '200px',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseOver={(e) => {
+              if (!isCreatingData) e.target.style.backgroundColor = '#2980b9';
+            }}
+            onMouseOut={(e) => {
+              if (!isCreatingData) e.target.style.backgroundColor = '#3498db';
             }}
           >
-            {isLoading ? (
-              <>
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '2px solid rgba(255, 255, 255, 0.3)',
-                  borderTop: '2px solid white',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Plus size={16} />
-                Generate Semester
-              </>
-            )}
+            {isCreatingData ? '⏳ Creating Data...' : '🏗️ Create Test Data'}
           </button>
+
+          <button
+            onClick={testPlanner}
+            disabled={isTesting}
+            style={{
+              padding: '15px 25px',
+              backgroundColor: isTesting ? '#95a5a6' : '#27ae60',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: isTesting ? 'not-allowed' : 'pointer',
+              minWidth: '200px',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseOver={(e) => {
+              if (!isTesting) e.target.style.backgroundColor = '#219a52';
+            }}
+            onMouseOut={(e) => {
+              if (!isTesting) e.target.style.backgroundColor = '#27ae60';
+            }}
+          >
+            {isTesting ? '⚙️ Testing Planner...' : '🚀 Test Planner'}
+          </button>
+
+          <button
+            onClick={checkDataAvailability}
+            style={{
+              padding: '15px 25px',
+              backgroundColor: '#f39c12',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              minWidth: '150px',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#e67e22'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#f39c12'}
+          >
+            📊 Check Data
+          </button>
+
+          <button
+            onClick={clearData}
+            style={{
+              padding: '15px 25px',
+              backgroundColor: '#e74c3c',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              minWidth: '150px',
+              transition: 'background-color 0.3s'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#c0392b'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#e74c3c'}
+          >
+            🗑️ Clear Data
+          </button>
+        </div>
+
+        <div style={{
+          padding: '15px',
+          backgroundColor: '#ecf0f1',
+          borderRadius: '6px',
+          fontSize: '14px',
+          color: '#2c3e50'
+        }}>
+          <strong>Instructions:</strong>
+          <ol style={{ margin: '10px 0 0 0', paddingLeft: '20px' }}>
+            <li>Click "Create Test Data" to populate the database with sample courses, lecturers, students, and schedules</li>
+            <li>Click "Test Planner" to run the OptaPlanner scheduling algorithm</li>
+            <li>Use "Check Data" to verify what's currently in the database</li>
+            <li>Use "Clear Data" to remove all test data when finished</li>
+          </ol>
         </div>
       </div>
 
-      {/* Statistics Dashboard */}
-      {(selectedDepartment && selectedAcademicYear && selectedSemester) && (
-        <StatCardsContainer
-          cards={[
-            {
-              id: 'students',
-              title: 'Total Students',
-              value: filteredStudents.length,
-              icon: React.createElement(Users, { size: 24 }),
-              backgroundColor: '#3b82f6',
-              subtitle: selectedDivision ? `Division ${selectedDivision}` : "All divisions"
-            },
-            {
-              id: 'lecturers',
-              title: 'Available Lecturers',
-              value: filteredLecturers.length,
-              icon: React.createElement(User, { size: 24 }),
-              backgroundColor: '#10b981',
-              subtitle: "Department faculty"
-            },
-            {
-              id: 'courses',
-              title: 'Course Offerings',
-              value: filteredCourses.length,
-              icon: React.createElement(BookOpen, { size: 24 }),
-              backgroundColor: '#f59e0b',
-              subtitle: `${selectedSemester} semester`
-            },
-            {
-              id: 'credits',
-              title: 'Total Credits',
-              value: totalCredits,
-              icon: React.createElement(GraduationCap, { size: 24 }),
-              backgroundColor: '#8b5cf6',
-              subtitle: "Combined courses"
-            }
-          ]}
-          size="default"
-          columns={4}
-        />
-      )}
-
-      {/* Data Preview Section */}
-      {showPreview && (selectedDepartment && selectedAcademicYear && selectedSemester) && (
+      {/* Error Display */}
+      {error && (
         <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '32px',
-          marginBottom: '32px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e5e7eb',
-          animation: 'slideDown 0.3s ease-out'
+          backgroundColor: '#f8d7da',
+          color: '#721c24',
+          padding: '15px',
+          borderRadius: '6px',
+          marginBottom: '20px',
+          border: '1px solid #f5c6cb'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-            <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-              Semester Data Preview
-            </h2>
-            <button
-              onClick={() => setShowPreview(false)}
-              style={{
-                padding: '8px',
-                background: 'none',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                color: '#6b7280',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Tab Navigation */}
-          <MidPageNavbar
-            activeSection={activeTab}
-            setActiveSection={setActiveTab}
-            sections={tabs.map(tab => tab.key)}
-            showYear={false}
-          />
-
-          {/* Tab Content */}
-          {activeTab === 'overview' && (
-            <div>
-              {/* Header Section with Configuration Summary */}
-              <div style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '20px',
-                padding: '32px',
-                color: 'white',
-                marginBottom: '32px',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)'
-              }}>
-                {/* Decorative Elements */}
-                <div style={{
-                  position: 'absolute',
-                  top: '-100px',
-                  right: '-100px',
-                  width: '300px',
-                  height: '300px',
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%)',
-                  borderRadius: '50%'
-                }} />
-                
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  marginBottom: '24px',
-                  position: 'relative',
-                  zIndex: 2
-                }}>
-                  <div style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '16px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backdropFilter: 'blur(10px)'
-                  }}>
-                    <Settings size={28} style={{ color: 'white' }} />
-                  </div>
-                  <div>
-                    <h3 style={{ 
-                      margin: 0, 
-                      fontSize: '28px', 
-                      fontWeight: '700', 
-                      color: 'white',
-                      textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                    }}>
-                      Semester Configuration Overview
-                    </h3>
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: '16px', 
-                      opacity: 0.9,
-                      fontWeight: '400'
-                    }}>
-                      {selectedSemester} {selectedAcademicYear} • {currentDepartment?.name} Department
-                    </p>
-                  </div>
-                </div>
-
-                {/* Configuration Details in Timeline Format */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '24px',
-                  position: 'relative',
-                  zIndex: 2,
-                  flexWrap: 'wrap'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Building2 size={18} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                      {currentDepartment?.name} ({currentDepartment?.code})
-                    </span>
-                  </div>
-                  
-                  <div style={{ width: '1px', height: '20px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Calendar size={18} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                      {selectedSemester} Semester
-                    </span>
-                  </div>
-                  
-                  <div style={{ width: '1px', height: '20px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Users size={18} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                      {selectedDivision ? `Division ${selectedDivision}` : 'All Divisions'}
-                    </span>
-                  </div>
-                  
-                  <div style={{ width: '1px', height: '20px', backgroundColor: 'rgba(255, 255, 255, 0.3)' }} />
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Clock size={18} style={{ color: 'rgba(255, 255, 255, 0.8)' }} />
-                    <span style={{ fontSize: '14px', fontWeight: '500' }}>
-                      {duration} days duration
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Dashboard Grid */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '24px',
-                marginBottom: '32px'
-              }}>
-                {/* Statistics Panel */}
-                <div style={{
-                  background: 'white',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <BarChart3 size={20} style={{ color: 'white' }} />
-                    </div>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
-                      Key Metrics
-                    </h3>
-                  </div>
-
-                  {/* Metrics List */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px 16px',
-                      backgroundColor: '#f8fafc',
-                      borderRadius: '12px',
-                      border: '1px solid #e2e8f0'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Users size={20} style={{ color: '#3b82f6' }} />
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                          Total Students
-                        </span>
-                      </div>
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        padding: '4px 12px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        borderRadius: '8px'
-                      }}>
-                        {filteredStudents.length}
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px 16px',
-                      backgroundColor: '#f0fdf4',
-                      borderRadius: '12px',
-                      border: '1px solid #dcfce7'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <User size={20} style={{ color: '#10b981' }} />
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                          Faculty Members
-                        </span>
-                      </div>
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        padding: '4px 12px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        borderRadius: '8px'
-                      }}>
-                        {filteredLecturers.length}
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px 16px',
-                      backgroundColor: '#fffbeb',
-                      borderRadius: '12px',
-                      border: '1px solid #fde68a'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <BookOpen size={20} style={{ color: '#f59e0b' }} />
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                          Course Offerings
-                        </span>
-                      </div>
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        padding: '4px 12px',
-                        backgroundColor: '#f59e0b',
-                        color: 'white',
-                        borderRadius: '8px'
-                      }}>
-                        {filteredCourses.length}
-                      </div>
-                    </div>
-
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '12px 16px',
-                      backgroundColor: '#faf5ff',
-                      borderRadius: '12px',
-                      border: '1px solid #e9d5ff'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <GraduationCap size={20} style={{ color: '#8b5cf6' }} />
-                        <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                          Total Credits
-                        </span>
-                      </div>
-                      <div style={{
-                        fontSize: '18px',
-                        fontWeight: '700',
-                        padding: '4px 12px',
-                        backgroundColor: '#8b5cf6',
-                        color: 'white',
-                        borderRadius: '8px'
-                      }}>
-                        {totalCredits}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Division Distribution */}
-                <div style={{
-                  background: 'white',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <PieChart size={20} style={{ color: 'white' }} />
-                    </div>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
-                      Student Distribution
-                    </h3>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {divisionData.map((item, index) => {
-                      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
-                      return (
-                        <div key={item.division} style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px',
-                          padding: '12px',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: '12px'
-                        }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '8px',
-                            backgroundColor: colors[index % colors.length],
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontSize: '14px',
-                            fontWeight: '600'
-                          }}>
-                            {item.division}
-                          </div>
-                          
-                          <div style={{ flex: 1 }}>
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              marginBottom: '4px'
-                            }}>
-                              <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                                Division {item.division}
-                              </span>
-                              <span style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                                {item.students} ({item.percentage}%)
-                              </span>
-                            </div>
-                            
-                            <div style={{
-                              width: '100%',
-                              height: '6px',
-                              backgroundColor: '#e2e8f0',
-                              borderRadius: '3px',
-                              overflow: 'hidden'
-                            }}>
-                              <div style={{
-                                width: `${item.percentage}%`,
-                                height: '100%',
-                                backgroundColor: colors[index % colors.length],
-                                borderRadius: '3px',
-                                transition: 'width 0.5s ease'
-                              }} />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Course Credits Visualization */}
-              {courseCreditsData.length > 0 && (
-                <div style={{
-                  background: 'white',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                  border: '1px solid #e5e7eb',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '20px'
-                  }}>
-                    <div style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <TrendingUp size={20} style={{ color: 'white' }} />
-                    </div>
-                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
-                      Course Credit Distribution
-                    </h3>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '16px'
-                  }}>
-                    {courseCreditsData.map((course, index) => {
-                      const maxCredits = Math.max(...courseCreditsData.map(c => c.credits));
-                      const percentage = (course.credits / maxCredits) * 100;
-                      
-                      return (
-                        <div key={index} style={{
-                          padding: '16px',
-                          backgroundColor: '#f8fafc',
-                          borderRadius: '12px',
-                          border: '1px solid #e2e8f0'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '8px'
-                          }}>
-                            <span style={{ fontSize: '14px', fontWeight: '500', color: '#475569' }}>
-                              {course.name}
-                            </span>
-                            <span style={{
-                              fontSize: '12px',
-                              fontWeight: '600',
-                              color: 'white',
-                              backgroundColor: '#f59e0b',
-                              padding: '2px 8px',
-                              borderRadius: '6px'
-                            }}>
-                              {course.credits} cr
-                            </span>
-                          </div>
-                          
-                          <div style={{
-                            width: '100%',
-                            height: '8px',
-                            backgroundColor: '#e2e8f0',
-                            borderRadius: '4px',
-                            overflow: 'hidden'
-                          }}>
-                            <div style={{
-                              width: `${percentage}%`,
-                              height: '100%',
-                              background: 'linear-gradient(90deg, #f59e0b 0%, #d97706 100%)',
-                              borderRadius: '4px',
-                              transition: 'width 0.5s ease'
-                            }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Status Summary */}
-              <div style={{
-                background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                borderRadius: '16px',
-                padding: '24px',
-                border: '1px solid #bae6fd'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '16px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <CheckCircle2 size={24} style={{ color: '#0891b2' }} />
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#0c4a6e' }}>
-                        Configuration Status
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '14px', color: '#0369a1' }}>
-                        All required fields completed • Ready for semester generation
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div style={{
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'center',
-                    fontSize: '14px',
-                    color: '#0369a1'
-                  }}>
-                    {startDate && endDate && (
-                      <>
-                        <span>Duration: {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}</span>
-                        <div style={{ width: '1px', height: '16px', backgroundColor: '#0891b2' }} />
-                      </>
-                    )}
-                    <span>{activeStudents} Active Students</span>
-                    <div style={{ width: '1px', height: '16px', backgroundColor: '#0891b2' }} />
-                    <span>{activeLecturers} Active Faculty</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'students' && (
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <Users size={20} style={{ color: 'white' }} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1f2937' }}>
-                      Enrolled Students
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-                      {filteredStudents.length} students found for the selected criteria
-                    </p>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => setShowAddStudentForm(true)}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Plus size={16} />
-                  Add Student
-                </button>
-              </div>
-              
-              <DataTable
-                data={filteredStudents}
-                columns={studentColumns}
-                emptyMessage="No students found for the selected criteria"
-                onView={(student) => alert(`Viewing ${student.name}`)}
-                onEdit={(student) => alert(`Editing ${student.name}`)}
-                onDelete={(student) => alert(`Deleting ${student.name}`)}
-              />
-            </div>
-          )}
-
-          {activeTab === 'lecturers' && (
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <User size={20} style={{ color: 'white' }} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1f2937' }}>
-                      Faculty Members
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-                      {filteredLecturers.length} lecturers in {currentDepartment?.name} department
-                    </p>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => setShowAddLecturerForm(true)}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Plus size={16} />
-                  Add Lecturer
-                </button>
-              </div>
-              
-              <DataTable
-                data={filteredLecturers}
-                columns={lecturerColumns}
-                emptyMessage="No lecturers found for the selected department"
-                onView={(lecturer) => alert(`Viewing ${lecturer.name}`)}
-                onEdit={(lecturer) => alert(`Editing ${lecturer.name}`)}
-                onDelete={(lecturer) => alert(`Deleting ${lecturer.name}`)}
-              />
-            </div>
-          )}
-
-          {activeTab === 'courses' && (
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '20px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <BookOpen size={20} style={{ color: 'white' }} />
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '700', color: '#1f2937' }}>
-                      Course Offerings
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-                      {filteredCourses.length} courses available for {selectedSemester} semester
-                    </p>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => setShowAddCourseForm(true)}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#f59e0b',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Plus size={16} />
-                  Add Course
-                </button>
-              </div>
-              
-              <DataTable
-                data={filteredCourses}
-                columns={courseColumns}
-                emptyMessage="No courses found for the selected criteria"
-                onView={(course) => alert(`Viewing ${course.title}`)}
-                onEdit={(course) => alert(`Editing ${course.title}`)}
-                onDelete={(course) => alert(`Deleting ${course.title}`)}
-              />
-            </div>
-          )}
+          <strong>❌ Error:</strong> {error}
         </div>
       )}
 
-      {/* Form Modals */}
-      <PopUp 
-        isOpen={showAddStudentForm} 
-        onClose={() => setShowAddStudentForm(false)}
-        title=""
-        size="medium"
-        showCloseButton={false}
-      >
-        <DynamicForm
-          title="Add New Student"
-          subtitle="Enter student information for enrollment"
-          icon={Users}
-          fields={studentFormFields}
-          onSubmit={handleAddStudent}
-          onCancel={() => setShowAddStudentForm(false)}
-          submitText="Add Student"
-          cancelText="Cancel"
-        />
-      </PopUp>
+      {/* Data Creation Result */}
+      {dataResult && (
+        <div style={{
+          backgroundColor: '#d4edda',
+          color: '#155724',
+          padding: '20px',
+          borderRadius: '8px',
+          marginBottom: '20px',
+          border: '1px solid #c3e6cb'
+        }}>
+          <h3 style={{ margin: '0 0 15px 0' }}>✅ Test Data Created Successfully</h3>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: '10px',
+            fontSize: '14px'
+          }}>
+            <div><strong>Lecturers:</strong> {dataResult.lecturers}</div>
+            <div><strong>Students:</strong> {dataResult.students}</div>
+            <div><strong>Courses:</strong> {dataResult.courses}</div>
+            <div><strong>Schedules:</strong> {dataResult.schedules}</div>
+          </div>
+          <p style={{ margin: '15px 0 0 0', fontSize: '14px' }}>
+            {dataResult.message}
+          </p>
+        </div>
+      )}
 
-      <PopUp 
-        isOpen={showAddLecturerForm} 
-        onClose={() => setShowAddLecturerForm(false)}
-        title=""
-        size="medium"
-        showCloseButton={false}
-      >
-        <DynamicForm
-          title="Add New Lecturer"
-          subtitle="Enter lecturer information and specialization"
-          icon={User}
-          fields={lecturerFormFields}
-          onSubmit={handleAddLecturer}
-          onCancel={() => setShowAddLecturerForm(false)}
-          submitText="Add Lecturer"
-          cancelText="Cancel"
-        />
-      </PopUp>
+      {/* Test Result */}
+      {testResult && (
+        <div style={{
+          backgroundColor: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          border: '1px solid #ddd',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ 
+            margin: '0 0 15px 0', 
+            color: testResult.success ? '#27ae60' : '#e74c3c' 
+          }}>
+            {testResult.success ? '✅ Schedule Generated Successfully!' : '❌ Schedule Generation Failed'}
+          </h3>
+          
+          {testResult.success && (
+            <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '15px',
+                marginBottom: '20px',
+                padding: '15px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '6px'
+              }}>
+                <div>
+                  <strong>Total Events:</strong> {testResult.totalEvents}
+                </div>
+                <div>
+                  <strong>Expected:</strong> 12 events (4 courses × 3 groups)
+                </div>
+                <div>
+                  <strong>Status:</strong> {testResult.totalEvents === 12 ? '✅ Perfect!' : '⚠️ Check results'}
+                </div>
+              </div>
 
-      <PopUp 
-        isOpen={showAddCourseForm} 
-        onClose={() => setShowAddCourseForm(false)}
-        title=""
-        size="medium"
-        showCloseButton={false}
-      >
-        <DynamicForm
-          title="Add New Course"
-          subtitle="Create a new course offering for the semester"
-          icon={BookOpen}
-          fields={courseFormFields}
-          onSubmit={handleAddCourse}
-          onCancel={() => setShowAddCourseForm(false)}
-          submitText="Add Course"
-          cancelText="Cancel"
-        />
-      </PopUp>
+              {/* Events Display */}
+              {testResult.events && testResult.events.length > 0 && (
+                <div style={{
+                  maxHeight: '400px',
+                  overflowY: 'auto',
+                  border: '1px solid #ddd',
+                  borderRadius: '6px'
+                }}>
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '12px'
+                  }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#f1f3f4' }}>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Course</th>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Group</th>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Day</th>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Lecturer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {testResult.events.map((event, index) => (
+                        <tr key={event.id || index} style={{
+                          backgroundColor: index % 2 === 0 ? 'white' : '#f8f9fa'
+                        }}>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {event.title ? event.title.split(' - ')[0] : event.courseName || 'N/A'}
+                          </td>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {event.title ? event.title.split(' - ')[1] : 'N/A'}
+                          </td>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {event.dayOfWeek || 'N/A'}
+                          </td>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {event.startTime && event.endTime 
+                              ? `${event.startTime} - ${event.endTime}` 
+                              : 'N/A'}
+                          </td>
+                          <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                            {event.instructorId || 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          <div style={{
+            marginTop: '15px',
+            padding: '10px',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '4px',
+            fontSize: '12px'
+          }}>
+            <strong>Message:</strong> {testResult.message}
+          </div>
+        </div>
+      )}
+
+      {/* Progress Indicators */}
+      {(isCreatingData || isTesting) && (
+        <div style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          color: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          textAlign: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid rgba(255, 255, 255, 0.3)',
+            borderTop: '4px solid white',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 15px'
+          }}></div>
+          <p style={{ margin: 0, fontSize: '16px' }}>
+            {isCreatingData ? 'Creating test data...' : 'Running OptaPlanner...'}
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
+            {isTesting ? 'This may take up to 2 minutes' : 'Please wait...'}
+          </p>
+        </div>
+      )}
 
       <style>
         {`
@@ -1326,21 +593,10 @@ const SemesterGenerationPage = () => {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
           }
-          
-          @keyframes slideDown {
-            0% { 
-              opacity: 0;
-              transform: translateY(-20px);
-            }
-            100% { 
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
         `}
       </style>
     </div>
   );
 };
 
-export default SemesterGenerationPage;
+export default OptaPlannerTestPage;

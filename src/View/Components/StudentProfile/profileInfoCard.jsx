@@ -61,7 +61,7 @@ const ProfileInfoCard = ({ entity, entityType }) => {
       <div className="student-card-header">
         <div className="student-infoheader-content">
           <img
-            src={entity.photo || entity.avatar}
+            src={entity.profilePic || entity.avatar}
             alt={entity.name}
             className="student-avatar"
             onError={(e) => {

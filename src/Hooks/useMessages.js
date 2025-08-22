@@ -276,21 +276,31 @@ const useMessages = () => {
   };
 
   const handleUseTemplateSubmit = async (data) => {
-    try {
-      const { recipientIds, ...variableData } = data;
-      const templateData = {
-        recipientIds,
-        variableValues: Object.entries(variableData).map(([name, value]) => ({ name, value }))
-      };
-      await useTemplate(selectedTemplate.id, templateData);
-      alert("Template processed successfully! New announcements created.");
-      setUseTemplateModalOpen(false);
-      loadData();
-    } catch (err) {
-      console.error("Error using template:", err);
-      alert("Failed to process template. Please try again.");
-    }
-  };
+  try {
+    const { recipientIds, ...variableData } = data;
+    
+    // 🆕 FIXED: Ensure recipientIds is always an array
+    const normalizedRecipientIds = Array.isArray(recipientIds) 
+      ? recipientIds 
+      : [recipientIds]; // Convert single string to array
+    
+    const templateData = {
+      recipientIds: normalizedRecipientIds, // ← Now guaranteed to be an array
+      variableValues: Object.entries(variableData).map(([name, value]) => ({ name, value }))
+    };
+    
+    console.log("Template data being sent:", templateData); // Debug log
+    
+    await useTemplate(selectedTemplate.id, templateData);
+    alert("Template processed successfully! New announcements created.");
+    setUseTemplateModalOpen(false);
+    loadData();
+  } catch (err) {
+    console.error("Error using template:", err);
+    console.error("Response data:", err.response?.data);
+    alert(`Failed to process template: ${err.response?.data?.message || err.message}`);
+  }
+};
 
   const handleDeleteTemplate = async (row) => {
     try {

@@ -45,6 +45,90 @@
   line-height: 1.6;
 }
 
+/* Sample Queries Section Styles */
+.sampleQueriesCard {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f3f4f6;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+}
+
+.sampleQueriesSection {
+  padding: 1.5rem 2rem;
+}
+
+.sampleQueriesTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sampleQueriesTitle::before {
+  content: "💡";
+  font-size: 1.25rem;
+}
+
+.sampleQueriesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.sampleQueryButton {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.sampleQueryButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.sampleQueryButton:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-color: #0ea5e9;
+  color: #0c4a6e;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.25);
+}
+
+.sampleQueryButton:hover::before {
+  left: 100%;
+}
+
+.sampleQueryButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(14, 165, 233, 0.2);
+}
+
 .contentCard {
   background: white;
   border-radius: 1rem;
@@ -403,14 +487,29 @@
   background-color: #d97706;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .adminReportPage {
     padding: 1rem 0.5rem;
   }
 
-  .adminReportContainer .contentCard {
+  .adminReportContainer .contentCard,
+  .adminReportContainer .sampleQueriesCard {
     max-width: 100%;
     margin: 0 0 2rem 0;
+  }
+
+  .sampleQueriesSection {
+    padding: 1rem 1.5rem;
+  }
+
+  .sampleQueriesContainer {
+    gap: 0.5rem;
+  }
+
+  .sampleQueryButton {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 
   .recentReportsCard .recentReportsSection {
@@ -426,6 +525,18 @@
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
     margin-right: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sampleQueriesContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sampleQueryButton {
+    text-align: center;
+    justify-content: center;
   }
 }
 

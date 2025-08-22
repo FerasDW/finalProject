@@ -215,12 +215,12 @@ export const categoryFields = [
     label: "Color",
     type: "radio",
     options: [
-      "#3b82f6",
-      "#10b981",
-      "#f59e0b",
-      "#ef4444",
-      "#8b5cf6",
-      "#06b6d4",
+      { value: "#3b82f6", label: "Blue" },
+      { value: "#10b981", label: "Green" },
+      { value: "#f59e0b", label: "Orange" },
+      { value: "#ef4444", label: "Red" },
+      { value: "#8b5cf6", label: "Purple" },
+      { value: "#06b6d4", label: "Cyan" },
     ],
     required: true,
   },
@@ -232,7 +232,10 @@ export const uploadFileFields = (categories) => [
     label: "Select Category",
     type: "select",
     placeholder: "Choose a category...",
-    options: categories.map((cat) => cat.id),
+    options: categories.map((cat) => ({
+      value: cat.id,
+      label: cat.name
+    })),
     required: true,
   },
   {

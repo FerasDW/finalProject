@@ -6,10 +6,12 @@ import { useContext } from "react";
 import Loader from "./Loading.jsx";
 export default function Dashboard({ userRole }) {
   const { authData, loading } = useContext(AuthContext);
+  
+      
   if (loading) return <Loader />;
   return (
     <div className="dashboard">
-      <DashboardContent userRole={"1100"} />
+      <DashboardContent userRole={authData?.role || authData?.userType} />
     </div>
   );
 }

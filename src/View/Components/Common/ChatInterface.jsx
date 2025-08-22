@@ -1,4 +1,4 @@
-import '../../../CSS/Components/Global/ChatInterface.css';
+import styles from '../../../CSS/Components/Global/ChatInterface.module.css';
 import { useChat } from '../../../Context/ChatContext';
 import React, { useEffect, useState, useRef } from 'react';
 import { Send } from 'react-feather';
@@ -86,62 +86,62 @@ const ChatInterface = ({ contact, onClose, currentUserId, context = 'eduSphere' 
   // Minimize view
   if (isMinimized) {
     return (
-      <div className="chat-interface-minimized">
-        <div className="chat-header-minimized" onClick={() => setIsMinimized(false)}>
-          <div className="chat-contact-info">
-            <div className="chat-contact-avatar">
+      <div className={styles.chatInterfaceMinimized}>
+        <div className={styles.chatHeaderMinimized} onClick={() => setIsMinimized(false)}>
+          <div className={styles.chatContactInfo}>
+            <div className={styles.chatContactAvatar}>
               {contact?.title?.[0] || 'U'}
             </div>
-            <div className="chat-contact-details">
-              <span className="chat-contact-name">{contact?.title}</span>
-              <span className="chat-status-indicator">●</span>
+            <div className={styles.chatContactDetails}>
+              <span className={styles.chatContactName}>{contact?.title}</span>
+              <span className={styles.chatStatusIndicator}>●</span>
             </div>
           </div>
-          <button className="chat-close-button" onClick={(e) => { e.stopPropagation(); onClose(); }}>×</button>
+          <button className={styles.chatCloseButton} onClick={(e) => { e.stopPropagation(); onClose(); }}>×</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="chat-interface">
-      <div className="chat-header">
-        <div className="chat-contact-info">
-          <div className="chat-contact-avatar">
+    <div className={styles.chatInterface}>
+      <div className={styles.chatHeader}>
+        <div className={styles.chatContactInfo}>
+          <div className={styles.chatContactAvatar}>
             {contact?.title?.[0] || 'U'}
           </div>
-          <div className="chat-contact-details">
-            <span className="chat-contact-name">{contact?.title}</span>
-            <span className="chat-context">
+          <div className={styles.chatContactDetails}>
+            <span className={styles.chatContactName}>{contact?.title}</span>
+            <span className={`${styles.chatContext} ${isTyping ? styles.typing : ''}`}>
               {isTyping ? 'typing...' : getContextDisplay()}
             </span>
           </div>
         </div>
-        <div className="chat-header-buttons">
-          <button className="chat-minimize-button" onClick={() => setIsMinimized(true)}>−</button>
-          <button className="chat-close-button" onClick={onClose}>×</button>
+        <div className={styles.chatHeaderButtons}>
+          <button className={styles.chatMinimizeButton} onClick={() => setIsMinimized(true)}>−</button>
+          <button className={styles.chatCloseButton} onClick={onClose}>×</button>
         </div>
       </div>
 
-      <div className="chat-messages">
+      <div className={styles.chatMessages}>
         {messages.length === 0 ? (
-          <div className="no-messages">
-            <div className="no-messages-icon">💬</div>
+          <div className={styles.noMessages}>
+            <div className={styles.noMessagesIcon}>💬</div>
             <p>No messages yet. Start a conversation!</p>
           </div>
         ) : (
           messages.map((message, index) => (
             <div
               key={index}
-              className={`chat-message ${
-                message.senderId === currentUserId ? 'sent' : 'received'
+              className={`${styles.chatMessage} ${
+                message.senderId === currentUserId ? styles.sent : styles.received
               }`}
             >
-              <div className="message-content">{message.content}</div>
-              <div className="message-timestamp">
+              <div className={styles.messageContent}>{message.content}</div>
+              <div className={styles.messageTimestamp}>
                 {formatTimestamp(message.timestamp)}
                 {message.senderId === currentUserId && (
-                  <span className="message-status">
+                  <span className={styles.messageStatus}>
                     {message.status === 'read' ? '✓✓' : '✓'}
                   </span>
                 )}
@@ -152,7 +152,7 @@ const ChatInterface = ({ contact, onClose, currentUserId, context = 'eduSphere' 
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="chat-input-container">
+      <div className={styles.chatInputContainer}>
         <input
           ref={inputRef}
           type="text"
@@ -160,12 +160,12 @@ const ChatInterface = ({ contact, onClose, currentUserId, context = 'eduSphere' 
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder={`Type a message in ${getContextDisplay()}...`}
-          className="chat-input"
+          className={styles.chatInput}
         />
         <button 
           onClick={handleSendMessage}
           disabled={!newMessage.trim()}
-          className="chat-send-button"
+          className={styles.chatSendButton}
         >
           <Send size={20} />
         </button>

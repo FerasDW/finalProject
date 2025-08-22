@@ -66,10 +66,13 @@ export const useGenericProfile = (initialSection = "overview") => {
       // 1. Get core profile data
       const coreData = await profileAPI.getProfileData(entityType, id);
 
-      // 2. Get messages
+      // 2. Get grades separately using the grades API
+      const gradesData = await profileAPI.getGrades(entityType, id);
+
+      // 3. Get messages
       const messages = await profileAPI.getMessages(entityType, id);
 
-      // 3. Get enrollments (for students)
+      // 4. Get enrollments (for students)
       let enrollments = [];
       if (entityType === "student") {
         const studentEnrollments = await profileAPI.getStudentEnrollments(id);
@@ -83,7 +86,7 @@ export const useGenericProfile = (initialSection = "overview") => {
         }));
       }
 
-      // 4. ✅ Get schedules (for lecturers)
+      // 5. ✅ Get schedules (for lecturers)
       let schedules = [];
       if (entityType === "lecturer") {
         const scheduleData = await profileAPI.getSchedule(entityType, id);
@@ -97,7 +100,7 @@ export const useGenericProfile = (initialSection = "overview") => {
         }));
       }
 
-      // 5. ✅ Get resources (for lecturers)
+      // 6. ✅ Get resources (for lecturers)
       let resources = [];
       if (entityType === "lecturer") {
         const resourceData = await profileAPI.getResources(entityType, id);
@@ -118,7 +121,7 @@ export const useGenericProfile = (initialSection = "overview") => {
         }));
       }
 
-      // 6. ✅ Get courses (for lecturers)
+      // 7. ✅ Get courses (for lecturers)
       let courses = [];
       if (entityType === "lecturer") {
         const courseData = await profileAPI.getCourses(entityType, id);
@@ -135,9 +138,10 @@ export const useGenericProfile = (initialSection = "overview") => {
         }));
       }
 
-      // 6. Build complete profile data
+      // 8. Build complete profile data (including grades from separate API call)
       const completeProfileData = {
         ...coreData,
+        grades: gradesData, // ✅ Add grades from separate API call
         enrollments,
         courses,
         schedules,
@@ -147,23 +151,33 @@ export const useGenericProfile = (initialSection = "overview") => {
 
       setProfileData(completeProfileData);
 
-      // 7. Compute stats and generate cards
+      // 9. Compute stats and generate cards
       let computedStats = {};
-      const grades = completeProfileData.grades || [];
 
       // Compute basic stats
       if (entityType === "student") {
         computedStats = {
-          gpa: completeProfileData.gpa || 0,
-          completedCourses: grades.length,
-          totalCredits: grades.reduce((sum, g) => sum + (g.credits || 0), 0),
+          gpa: coreData.gpa || 0, // ✅ Use GPA from profile data
+          completedCourses: gradesData.length, // ✅ Use grades from API
+          totalCredits: gradesData.reduce((sum, g) => sum + (g.credits || 0), 0),
           currentEnrollments: enrollments.filter((e) => e.status === "enrolled")
             .length,
-          status: completeProfileData.status,
+          status: coreData.status,
         };
       } else {
-        // For lecturer, use default stats (if needed)
-        computedStats = stats || {};
+        // For lecturer, you might want to get stats from analytics API
+        try {
+          const lecturerStats = await profileAPI.getProfileStats(entityType, id);
+          computedStats = lecturerStats;
+        } catch (error) {
+          console.log("Could not fetch lecturer stats, using defaults");
+          computedStats = {
+            activeCourses: courses.length,
+            totalStudents: 0,
+            averageRating: 0,
+            totalPublications: resources.length,
+          };
+        }
       }
 
       setStats(computedStats);
@@ -222,7 +236,7 @@ export const useGenericProfile = (initialSection = "overview") => {
     setFormData({
       courseCode: row.courseCode,
       courseName: row.courseName,
-      grade: row.grade,
+      grade: row.finalGrade, // ✅ Use finalGrade field
     });
     setEditGradeModalOpen(true);
   }, []);
@@ -265,7 +279,6 @@ export const useGenericProfile = (initialSection = "overview") => {
   );
 
   // Course handlers
-
   const handleAddCourse = useCallback(() => {
     setSelectedRecord(null);
     setFormData({});
@@ -401,7 +414,6 @@ export const useGenericProfile = (initialSection = "overview") => {
     setFormData({});
     setAddResourceModalOpen(true);
   }, []);
-
 
   const handleDownloadResource = useCallback(
     async (row) => {
@@ -592,7 +604,7 @@ export const useGenericProfile = (initialSection = "overview") => {
           phone: profileData.phoneNumber,
           // Add student-specific fields
           ...(entityType === "student" && {
-            gpa: stats?.gpa || "N/A",
+            gpa: profileData.gpa || "N/A", // ✅ Use GPA from profile data
             major: profileData.department,
             academicYear: profileData.academicYear,
             status: profileData.status,
@@ -604,7 +616,8 @@ export const useGenericProfile = (initialSection = "overview") => {
               : 0,
           }),
         }
-      : null, // Add these for the other tables
+      : null,
+    // ✅ These now come from the profileData which includes grades from API
     grades: profileData ? profileData.grades : [],
     courses: profileData ? profileData.courses : [],
     enrollments: profileData ? profileData.enrollments : [],

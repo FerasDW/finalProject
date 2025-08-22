@@ -55,7 +55,8 @@ const CoursePageContent = ({ courseData, userRole, departments = [], onStudentEn
     'github',
     'createdAt',
     'updatedAt',
-    '_class'
+    '_class',
+    'authorities',
   ];
 
   // FIXED: Fetch enrolled students - now only shows students when the course year matches the selected year

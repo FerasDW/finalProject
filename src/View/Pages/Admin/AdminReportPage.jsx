@@ -484,37 +484,22 @@ const AdminReportPage = () => {
         </div>
 
         {/* Sample Queries Section */}
-        <div className={styles.contentCard} style={{ marginBottom: "20px" }}>
-          <h3 style={{ marginBottom: "15px", color: "#333" }}>
-            Sample Queries:
-          </h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {sampleQueries.map((query, index) => (
-              <button
-                key={index}
-                onClick={() => handleSampleQuery(query)}
-                style={{
-                  padding: "8px 12px",
-                  border: "1px solid #ddd",
-                  borderRadius: "20px",
-                  backgroundColor: "#f8f9fa",
-                  color: "#6c757d",
-                  cursor: "pointer",
-                  fontSize: "12px",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = "#e9ecef";
-                  e.target.style.borderColor = "#adb5bd";
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = "#f8f9fa";
-                  e.target.style.borderColor = "#ddd";
-                }}
-              >
-                {query}
-              </button>
-            ))}
+        <div className={styles.sampleQueriesCard}>
+          <div className={styles.sampleQueriesSection}>
+            <h3 className={styles.sampleQueriesTitle}>
+              Sample Queries:
+            </h3>
+            <div className={styles.sampleQueriesContainer}>
+              {sampleQueries.map((query, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSampleQuery(query)}
+                  className={styles.sampleQueryButton}
+                >
+                  {query}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 // src/View/Pages/GenericDashboard.jsx
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowRight, User, UserCheck, Edit } from "lucide-react";
+import { ArrowRight, User, UserCheck, Edit, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import * as genericDashboardAPI from "../../Api/GenericDashboardApi";
 
@@ -12,7 +12,6 @@ import styles from "./GenericDashboard.module.scss";
 import StudentTable from "../Components/Tables/Table";
 import StatCardsContainer from "../Components/Cards/StatCardsContainer";
 import DynamicFilter from "../Components/DynamicFilter";
-import PopUp from "../Components/Cards/PopUp";
 
 // Custom Hooks
 import useGenericDashboard from "../../Hooks/useGenericDashboard";
@@ -193,6 +192,33 @@ export default function GenericDashboard({ entityType = "students" }) {
     setAcademicYears([]);
     handleFormCancel();
   }, [handleFormCancel]);
+
+  // Handle modal overlay click
+  const handleOverlayClick = useCallback((e) => {
+    if (e.target === e.currentTarget) {
+      handleStaticFormCancel();
+    }
+  }, [handleStaticFormCancel]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' && isPopupOpen) {
+        handleStaticFormCancel();
+      }
+    };
+
+    if (isPopupOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+      // Prevent body scroll when modal is open
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isPopupOpen, handleStaticFormCancel]);
 
   return (
     <div className={styles.dashboardPage}>
@@ -417,85 +443,129 @@ export default function GenericDashboard({ entityType = "students" }) {
         </main>
       </div>
 
-      {/* Add Record Popup - now with a single dynamic form */}
-      <PopUp
-        isOpen={isPopupOpen}
-        onClose={handleStaticFormCancel}
-        size="large"
-        closeOnOverlay={true}
-      >
-        <div className={styles.formContainer}>
-          <div className={styles.formHeader}>
-            {entityType === "students" ? (
-              <User size={32} />
-            ) : (
-              <UserCheck size={32} />
-            )}
-            <h2>{formConfig?.title}</h2>
-            <p>{formConfig?.subtitle}</p>
-          </div>
-          <form onSubmit={handleStaticFormSubmit}>
-            {formConfig?.fields.map((field) => (
-              <div className={styles.formField} key={field.name}>
-                <label htmlFor={field.name}>{field.label}</label>
-                {field.type === "select" ? (
-                  <select
-                    id={field.name}
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleInputChange}
-                    required={field.required}
-                  >
-                    <option value="">{field.placeholder}</option>
-                    {(field.name === "department"
-                      ? departments
-                      : field.options
-                    ).map((option) => (
-                      <option
-                        key={option.id || option}
-                        value={option.name || option}
-                      >
-                        {option.name || option}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type={field.type}
-                    id={field.name}
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleInputChange}
-                    placeholder={field.placeholder}
-                    required={field.required}
-                  />
-                )}
+      {/* Direct Modal Implementation - No PopUp Component */}
+      {isPopupOpen && (
+        <div className={styles.formModalOverlay} onClick={handleOverlayClick}>
+          <div className={styles.formContainer} onClick={(e) => e.stopPropagation()}>
+            {/* Form Header - Fixed at top */}
+            <div className={styles.formHeader}>
+              {entityType === "students" ? (
+                <User size={32} />
+              ) : (
+                <UserCheck size={32} />
+              )}
+              <div className={styles.headerContent}>
+                <h2>{formConfig?.title}</h2>
+                <p>{formConfig?.subtitle}</p>
               </div>
-            ))}
+              <button
+                onClick={handleStaticFormCancel}
+                className={styles.closeButton}
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            
+            {/* Error Message - Fixed position */}
+            {formError && (
+              <div className={styles.formErrorMessage}>
+                <span className={styles.errorIcon}>⚠️</span>
+                <span>Error: {formError}</span>
+              </div>
+            )}
+
+            {/* Form Body - Scrollable Content */}
+            <div className={styles.formBody}>
+              <form onSubmit={handleStaticFormSubmit} className={styles.formContent}>
+                <div className={styles.fieldsContainer}>
+                  {formConfig?.fields.map((field, index) => (
+                    <div 
+                      className={styles.formField} 
+                      key={field.name}
+                      style={{
+                        animationDelay: `${index * 0.05}s`
+                      }}
+                    >
+                      <label htmlFor={field.name} className={styles.fieldLabel}>
+                        {field.label}
+                        {field.required && <span className={styles.requiredStar}>*</span>}
+                      </label>
+                      {field.type === "select" ? (
+                        <select
+                          id={field.name}
+                          name={field.name}
+                          value={formData[field.name] || ""}
+                          onChange={handleInputChange}
+                          required={field.required}
+                          className={styles.fieldSelect}
+                        >
+                          <option value="" disabled>{field.placeholder}</option>
+                          {(field.name === "department"
+                            ? departments
+                            : field.name === "academicYear"
+                            ? academicYears.map(year => ({ name: year, id: year }))
+                            : field.options
+                          ).map((option) => (
+                            <option
+                              key={option.id || option}
+                              value={option.name || option}
+                            >
+                              {option.name || option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          id={field.name}
+                          name={field.name}
+                          value={formData[field.name] || ""}
+                          onChange={handleInputChange}
+                          placeholder={field.placeholder}
+                          required={field.required}
+                          className={styles.fieldInput}
+                          autoComplete={field.type === "email" ? "email" : field.type === "tel" ? "tel" : "off"}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </form>
+            </div>
+            
+            {/* Form Footer - Fixed at bottom */}
             <div className={styles.formFooter}>
               <button
                 type="button"
                 onClick={handleStaticFormCancel}
                 className={styles.cancelButton}
+                disabled={isFormLoading}
               >
-                Cancel
+                <span>Cancel</span>
               </button>
               <button
                 type="submit"
+                onClick={handleStaticFormSubmit}
                 disabled={isFormLoading}
-                className={styles.submitButton}
+                className={`${styles.submitButton} ${isFormLoading ? styles.loading : ''}`}
               >
-                {isFormLoading ? "Adding..." : "Add Record"}
+                {isFormLoading ? (
+                  <>
+                    <div className={styles.loadingSpinner}></div>
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Add {entityType === "students" ? "Student" : "Lecturer"}</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
               </button>
             </div>
-          </form>
-          {formError && (
-            <div style={{ color: "red", padding: "1rem", textAlign: "center" }}>
-              Error: {formError}
-            </div>
-          )}
+          </div>
         </div>
-      </PopUp>
+      )}
     </div>
   );
 }
