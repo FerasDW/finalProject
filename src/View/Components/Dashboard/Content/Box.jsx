@@ -58,7 +58,7 @@ const Box = ({
         break;
       
       default:
-        console.log("No route defined for:", boxLink);
+
         // Optional: Navigate to a default route or show an error
         // navigate("/dashboard");
         break;

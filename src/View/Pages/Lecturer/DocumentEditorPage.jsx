@@ -883,27 +883,27 @@ const saveDocument = async () => {
     const htmlContent = editorRef.current.innerHTML;
     
     // Show progress
-    console.log('Starting document save...');
+
     
     try {
       // Try simple PDF first (much smaller and faster)
-      console.log('Generating simple PDF...');
+
       const data = await uploadDocumentAsSimplePDF(selectedCategoryId, htmlContent, fileName);
       setCourseFileId(data.id);
       alert('Document saved as PDF successfully!');
       
     } catch (pdfError) {
-      console.log('Simple PDF failed, trying HTML:', pdfError.message);
+
       
       try {
         // Try complex PDF
-        console.log('Trying complex PDF...');
+
         const data = await uploadDocumentAsPDF(selectedCategoryId, htmlContent, fileName);
         setCourseFileId(data.id);
         alert('Document saved as PDF successfully!');
         
       } catch (complexPdfError) {
-        console.log('Complex PDF failed, using HTML:', complexPdfError.message);
+
         
         // Fallback to HTML
         const htmlData = await uploadDocumentAsHTML(selectedCategoryId, htmlContent, fileName);

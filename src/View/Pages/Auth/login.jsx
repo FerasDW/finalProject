@@ -29,22 +29,38 @@ export default function Login() {
     setError("");
 
     try {
-      // ✅ Send login request (cookies will be handled automatically)
-      await axios.post(LOGIN, formData, { withCredentials: true });
+      // ✅ Send login request and get token from response body
+      const loginResponse = await axios.post(LOGIN, formData);
 
-      // ✅ Fetch user data after login
-      const response = await axios.get("http://localhost:8080/api/auth/user", {
-        withCredentials: true,
+
+      // ✅ Extract token from response
+      const { token } = loginResponse.data;
+
+      // ✅ Fetch user data using the token
+      const userResponse = await axios.get("http://13.61.114.153:8082/api/auth/user", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
-      console.log("User data:", response);
-      // ✅ Update authentication context
-      loginUser(response.data);
 
+
+
+      // ✅ Combine token with user data and update authentication context
+      const userData = {
+        token: token,
+        ...userResponse.data
+      };
+
+      loginUser(userData);
       navigate("/dashboard", { replace: true });
 
     } catch (err) {
       console.error("Login Error:", err);
-      setError("Invalid email or password");
+      if (err.response?.status === 401) {
+        setError("Invalid email or password");
+      } else {
+        setError("Login failed. Please try again.");
+      }
     }
     setLoading(false);
   }
@@ -56,6 +72,8 @@ export default function Login() {
           <div className="login-form form-splitter">
             <form className="form-group" onSubmit={handleLogin}>
               <img className="logo" src={Logo} alt="logo" />
+              
+              {error && <div className="error-message">{error}</div>}
               
               <Input
                 type="email"
@@ -79,7 +97,7 @@ export default function Login() {
                 onChange={handleChanges}
               />
 
-              <button type="submit" className="btn">
+              <button type="submit" className="btn" disabled={loading}>
                 {loading ? "Logging in..." : "Submit"}
               </button>
             </form>

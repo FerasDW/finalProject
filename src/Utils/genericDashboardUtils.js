@@ -444,11 +444,11 @@ export const handleGenericDashboardCardAction = (card, setPrimaryFilter, setFilt
         setFilterValues(prev => ({ ...prev, status: 'Graduated' }));
         break;
       case 'top-performers':
-        console.log('🏆 Show top performers filter');
+
         // Add specific filter logic here
         break;
       default:
-        console.log(`📊 Card action not defined for: ${card.id}`);
+
     }
   } catch (error) {
     console.error('Card action error:', error);

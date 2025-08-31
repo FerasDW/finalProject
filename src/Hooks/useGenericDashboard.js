@@ -221,11 +221,11 @@ const useGenericDashboard = (entityType) => {
           setFilterValues((prev) => ({ ...prev, status: "Graduated" }));
           break;
         case "top-performers":
-          console.log("🏆 Show top performers filter");
+
           // Add specific filter logic here if needed
           break;
         default:
-          console.log(`📊 Card action not defined for: ${card.id}`);
+
       }
     } catch (error) {
       console.error("Card click error:", error);

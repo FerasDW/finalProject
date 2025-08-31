@@ -93,8 +93,8 @@ export const getContentConfig = (courseId) => {
   try {
     const numericId = parseInt(courseId);
     if (courseSpecificData[numericId]) {
-      console.log(`Content config found for course ID: ${courseId}`);
-      console.log(courseSpecificData[numericId]);
+
+
       return courseSpecificData[numericId];
     }
     console.warn(`No course data found for ID: ${courseId}, using default configuration`);

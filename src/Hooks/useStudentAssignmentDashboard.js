@@ -362,7 +362,7 @@ export const useSubmitAssignment = () => {
       setError(null);
       setSuccess(false);
 
-      console.log('Submitting assignment:', assignmentId, submissionData);
+
 
       const result = await studentApi.submitAssignment(assignmentId, submissionData);
       setSuccess(true);
@@ -454,7 +454,7 @@ export const useDeleteSubmission = () => {
       await studentApi.deleteSubmission(submissionId);
       setSuccess(true);
 
-      console.log('✅ Submission deleted successfully');
+
 
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || 'Failed to delete submission';
@@ -836,8 +836,8 @@ export const useExamAttempt = () => {
   }, []);
 
   const prepareExamQuestions = useCallback((examData) => {
-    console.log('🔀 === PREPARING EXAM QUESTIONS ===');
-    console.log('Original exam data:', examData);
+
+
     
     let questions = [...(examData.questions || [])];
     const optionsMapping = {};
@@ -845,14 +845,14 @@ export const useExamAttempt = () => {
     // Shuffle questions if enabled
     if (examData.shuffleQuestions) {
       questions = shuffleArray(questions);
-      console.log('🔀 Questions shuffled');
+
     }
 
     // FIXED: Shuffle options with proper mapping
     if (examData.shuffleOptions) {
       questions.forEach(question => {
         if (question.type === 'multiple-choice' && question.options && question.options.length > 0) {
-          console.log(`🔀 Processing question ${question.id} options:`, question.options);
+
           
           // Create array of option objects with original indices
           const originalOptions = question.options.map((option, index) => ({
@@ -883,7 +883,7 @@ export const useExamAttempt = () => {
             originalCorrectIndex: question.correctAnswerIndex
           };
           
-          console.log(`🔀 Question ${question.id} shuffled mapping:`, optionsMapping[question.id]);
+
         }
       });
     }
@@ -891,7 +891,7 @@ export const useExamAttempt = () => {
     setShuffledQuestions(questions);
     setShuffledOptionsMap(optionsMapping);
     
-    console.log('✅ Questions prepared. Shuffled options map:', optionsMapping);
+
     return questions;
   }, [shuffleArray]);
 
@@ -904,7 +904,7 @@ export const useExamAttempt = () => {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);
-        console.log('📱 Entered fullscreen mode');
+
       }
     } catch (err) {
       console.warn('⚠️ Could not enter fullscreen:', err);
@@ -916,7 +916,7 @@ export const useExamAttempt = () => {
       if (document.fullscreenElement && document.exitFullscreen) {
         await document.exitFullscreen();
         setIsFullscreen(false);
-        console.log('📱 Exited fullscreen mode');
+
       }
     } catch (err) {
       console.warn('⚠️ Could not exit fullscreen:', err);
@@ -962,7 +962,7 @@ export const useExamAttempt = () => {
         if (mapping && typeof answer === 'number') {
           // Convert shuffled index back to original index
           answersToSave[questionId] = mapping.indexMapping[answer];
-          console.log(`💾 Converting answer for ${questionId}: shuffled ${answer} -> original ${mapping.indexMapping[answer]}`);
+
         } else {
           // For non-shuffled questions or text answers
           answersToSave[questionId] = answer;
@@ -976,7 +976,7 @@ export const useExamAttempt = () => {
       });
 
       lastSaveRef.current = now;
-      console.log('💾 Progress saved automatically with answers:', answersToSave);
+
     } catch (err) {
       console.error('❌ Auto-save failed:', err);
     }
@@ -1006,7 +1006,7 @@ export const useExamAttempt = () => {
       setLoading(true);
       setError(null);
 
-      console.log('🎯 Starting exam:', examId);
+
 
       // Get exam details first
       const examData = await studentApi.getExam(examId);
@@ -1039,7 +1039,7 @@ export const useExamAttempt = () => {
         startTimer(examFromResponse.duration);
       }
 
-      console.log('✅ Exam started successfully');
+
 
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Failed to start exam');
@@ -1071,14 +1071,14 @@ export const useExamAttempt = () => {
         if (mapping && typeof answer === 'number') {
           // Convert shuffled index back to original index
           answersToSubmit[questionId] = mapping.indexMapping[answer];
-          console.log(`📤 Converting final answer for ${questionId}: shuffled ${answer} -> original ${mapping.indexMapping[answer]}`);
+
         } else {
           // For non-shuffled questions or text answers
           answersToSubmit[questionId] = answer;
         }
       });
 
-      console.log('📤 Submitting exam with converted answers:', answersToSubmit);
+
 
       const result = await studentApi.submitExam({
         examId: exam.id,
@@ -1098,10 +1098,10 @@ export const useExamAttempt = () => {
       if (exam.showResults && result.graded && result.results) {
         setExamResults(result.results);
         setShowResults(true);
-        console.log('📊 Showing exam results immediately');
+
       }
 
-      console.log('✅ Exam submitted successfully');
+
       return result;
 
     } catch (err) {
@@ -1116,7 +1116,7 @@ export const useExamAttempt = () => {
   const handleAutoSubmit = useCallback(async () => {
     if (!exam?.autoSubmit || !examInProgress) return;
 
-    console.log('⏰ Auto-submitting exam due to time expiry');
+
     try {
       await submitExam(false); // Don't show confirmation for auto-submit
     } catch (err) {
@@ -1131,12 +1131,12 @@ export const useExamAttempt = () => {
   const updateAnswer = useCallback((questionId, answer) => {
     setAnswers(prev => {
       const updated = { ...prev, [questionId]: answer };
-      console.log(`✏️ Updated answer for question ${questionId}:`, answer);
+
       
       // Log shuffling info for debugging
       const mapping = shuffledOptionsMap[questionId];
       if (mapping && typeof answer === 'number') {
-        console.log(`🔀 Shuffled answer ${answer} maps to original ${mapping.indexMapping[answer]}`);
+
       }
 
       // Trigger auto-save after answer change
@@ -1527,7 +1527,7 @@ export const useGrades = (courseId) => {
       setLoading(true);
       setError(null);
 
-      console.log('🎯 Fetching grades for course:', courseId);
+
 
       const [gradesData, columnsData] = await Promise.all([
         studentApi.getCourseGrades(courseId).catch((err) => {
@@ -1540,8 +1540,8 @@ export const useGrades = (courseId) => {
         })
       ]);
 
-      console.log('📊 Fetched grades:', gradesData?.length || 0);
-      console.log('📋 Fetched grade columns:', columnsData?.length || 0);
+
+
 
       setGrades(gradesData || []);
       setGradeColumns(columnsData || []);
@@ -1629,7 +1629,7 @@ export const useGradeCalculations = (studentId, grades, gradeColumns) => {
     // FIXED: Calculate total percentage and normalize if > 100%
     const totalPercentageOfAllColumns = courseColumns.reduce((sum, col) => sum + col.percentage, 0);
     
-    console.log(`📐 Course ${courseId} total percentage: ${totalPercentageOfAllColumns}%`);
+
 
     let totalWeightedScore = 0;
     let totalPercentageOfGradedItems = 0;
@@ -1662,7 +1662,7 @@ export const useGradeCalculations = (studentId, grades, gradeColumns) => {
     const boundedGrade = Math.max(0, Math.min(100, finalGrade));
     const roundedGrade = Math.round(boundedGrade * 100) / 100;
 
-    console.log(`🎯 Course ${courseId} final grade: ${roundedGrade}%`);
+
     return roundedGrade;
   }, [studentId, grades, gradeColumns]);
 
@@ -2095,9 +2095,9 @@ export const useEnrolledCourses = (studentId) => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🎓 Fetching enrolled courses for student:', studentId);
+
         const data = await studentApi.getEnrolledCourses(studentId);
-        console.log('✅ Enrolled courses fetched:', data?.length || 0);
+
         setCourses(data || []);
       } catch (err) {
         setError(err.response?.data?.error || err.message || 'Failed to fetch enrolled courses');

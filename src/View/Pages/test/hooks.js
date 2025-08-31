@@ -137,7 +137,7 @@ export const useLecturerDashboard = () => {
     }
     
     if (courseIdProcessed !== selectedCourse) {
-      console.log(`🎯 Course selection changed from "${selectedCourse}" to "${courseIdProcessed}"`);
+
       setSelectedCourseState(courseIdProcessed);
       
       // Reset dependent selections when course changes
@@ -159,7 +159,7 @@ export const useLecturerDashboard = () => {
       return [];
     }
     
-    console.log(`👥 Returning ${students.length} students for course ${selectedCourse}`);
+
     return students;
   }, [students, selectedCourse]);
 
@@ -172,7 +172,7 @@ export const useLecturerDashboard = () => {
     const result = assignments.filter(assignment => 
       assignment.courseId === selectedCourse || assignment.course === selectedCourse
     );
-    console.log(`📋 Filtered ${result.length} assignments for course ${selectedCourse}`);
+
     return result;
   }, [assignments, selectedCourse]);
 
@@ -183,7 +183,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = gradeColumns.filter(col => col.courseId === selectedCourse);
-    console.log(`📊 Filtered ${result.length} grade columns for course ${selectedCourse}`);
+
     return result;
   }, [gradeColumns, selectedCourse]);
 
@@ -194,7 +194,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = exams.filter(exam => exam.courseId === selectedCourse);
-    console.log(`📝 Filtered ${result.length} exams for course ${selectedCourse}`);
+
     return result;
   }, [exams, selectedCourse]);
 
@@ -205,7 +205,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = examResponses.filter(response => response.courseId === selectedCourse);
-    console.log(`📊 Filtered ${result.length} exam responses for course ${selectedCourse}`);
+
     return result;
   }, [examResponses, selectedCourse]);
 
@@ -216,7 +216,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = courses.find(course => course.id === selectedCourse);
-    console.log(`🎯 Selected course data:`, result);
+
     return result;
   }, [courses, selectedCourse]);
 
@@ -275,15 +275,15 @@ export const useLecturerDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🚀 Starting initial data fetch...');
+
       
       const coursesData = await api.fetchCourses();
-      console.log('✅ Courses loaded:', coursesData);
+
       setCourses(coursesData);
       
       if (coursesData.length > 0) {
         const firstCourseId = coursesData[0].id;
-        console.log(`🎯 Setting initial course to: ${firstCourseId}`);
+
         setSelectedCourseState(firstCourseId);
       }
       
@@ -300,7 +300,7 @@ export const useLecturerDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log(`🔄 Fetching data for course ${courseId}...`);
+
       
       // Fetch all data for the selected course including exams
       const [studentsData, assignmentsData, submissionsData, examsData, examResponsesData, gradeColumnsData] = 
@@ -315,7 +315,7 @@ export const useLecturerDashboard = () => {
       
       // Handle results and update state
       if (studentsData.status === 'fulfilled') {
-        console.log(`✅ Students loaded: ${studentsData.value.length} students`);
+
         setStudents(studentsData.value);
       } else {
         console.error('❌ Failed to fetch students:', studentsData.reason);
@@ -327,7 +327,7 @@ export const useLecturerDashboard = () => {
       
       // Handle assignments - ENHANCED WITH BACKEND FILE HANDLING
       if (assignmentsData.status === 'fulfilled') {
-        console.log(`✅ Assignments loaded: ${assignmentsData.value.length} assignments`);
+
         setAssignments(assignmentsData.value);
       } else {
         console.error('❌ Failed to fetch assignments:', assignmentsData.reason);
@@ -338,7 +338,7 @@ export const useLecturerDashboard = () => {
       }
       
       if (submissionsData.status === 'fulfilled') {
-        console.log(`✅ Submissions loaded: ${submissionsData.value.length} submissions`);
+
         setSubmissions(submissionsData.value);
       } else {
         console.error('❌ Failed to fetch submissions:', submissionsData.reason);
@@ -347,7 +347,7 @@ export const useLecturerDashboard = () => {
       
       // Handle exams - NOW USING REAL EXAM API
       if (examsData.status === 'fulfilled') {
-        console.log(`✅ Exams loaded: ${examsData.value.length} exams`);
+
         setExams(examsData.value);
       } else {
         console.error('❌ Failed to fetch exams:', examsData.reason);
@@ -359,7 +359,7 @@ export const useLecturerDashboard = () => {
       
       // Handle exam responses - NOW USING REAL EXAM RESPONSES API
       if (examResponsesData.status === 'fulfilled') {
-        console.log(`✅ Exam responses loaded: ${examResponsesData.value.length} responses`);
+
         setExamResponses(examResponsesData.value);
       } else {
         console.error('❌ Failed to fetch exam responses:', examResponsesData.reason);
@@ -370,7 +370,7 @@ export const useLecturerDashboard = () => {
       }
       
       if (gradeColumnsData.status === 'fulfilled') {
-        console.log(`✅ Grade columns loaded: ${gradeColumnsData.value.length} columns`);
+
         setGradeColumns(gradeColumnsData.value);
       } else {
         console.error('❌ Failed to fetch grade columns:', gradeColumnsData.reason);
@@ -380,7 +380,7 @@ export const useLecturerDashboard = () => {
         }
       }
       
-      console.log('✅ Course data fetched successfully');
+
       
     } catch (err) {
       console.error('❌ Error fetching course data:', err);
@@ -408,7 +408,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setLoading(true);
       
-      console.log('📁 Processing file upload to backend:', file.name, 'Size:', file.size);
+
       
       if (assignmentId) {
         // Upload file for existing assignment
@@ -418,7 +418,7 @@ export const useLecturerDashboard = () => {
           description: `Attachment for assignment ${assignmentId}`
         });
         
-        console.log('📁 File upload successful for assignment:', fileData);
+
         
         // Update assignment in state with file information
         setAssignments(prev => prev.map(assignment => 
@@ -459,7 +459,7 @@ export const useLecturerDashboard = () => {
   // ENHANCED FILE VIEWING HANDLER
   const handleViewFile = useCallback(async (fileUrl, fileName) => {
     try {
-      console.log('👁️ Viewing file:', fileName, 'URL:', fileUrl);
+
       
       if (!fileUrl) {
         throw new Error('No file URL provided');
@@ -468,7 +468,7 @@ export const useLecturerDashboard = () => {
       const result = await api.viewFile(fileUrl, fileName);
       
       if (result.success) {
-        console.log('✅ File viewed successfully using method:', result.method);
+
       }
     } catch (error) {
       console.error('❌ Error viewing file:', error);
@@ -479,7 +479,7 @@ export const useLecturerDashboard = () => {
   // ENHANCED FILE REMOVAL HANDLER
   const handleRemoveFile = useCallback(async (fileUrl) => {
     try {
-      console.log('🗑️ Removing file:', fileUrl);
+
       
       if (fileUrl) {
         await api.deleteFile(fileUrl);
@@ -505,7 +505,7 @@ export const useLecturerDashboard = () => {
   // AUTO-CREATE GRADE COLUMN FUNCTION
   const autoCreateGradeColumnForAssignment = useCallback(async (assignment) => {
     try {
-      console.log('🎯 Auto-creating grade column for assignment:', assignment.title);
+
       
       // Check if grade column already exists for this assignment
       const existingColumn = gradeColumns.find(col => 
@@ -514,7 +514,7 @@ export const useLecturerDashboard = () => {
       );
       
       if (existingColumn) {
-        console.log('📊 Grade column already exists for this assignment');
+
         return existingColumn;
       }
       
@@ -556,7 +556,7 @@ export const useLecturerDashboard = () => {
       const createdColumn = await api.createGradeColumn(columnData);
       setGradeColumns(prev => [...prev, createdColumn]);
       
-      console.log('✅ Auto-created grade column:', createdColumn);
+
       return createdColumn;
       
     } catch (error) {
@@ -594,7 +594,7 @@ export const useLecturerDashboard = () => {
         hasAttachment: !!newAssignment.file
       };
 
-      console.log('📝 Creating assignment with data:', assignmentData);
+
 
       const createdAssignment = await api.createAssignment(assignmentData);
       setAssignments(prev => [...prev, createdAssignment]);
@@ -632,7 +632,7 @@ export const useLecturerDashboard = () => {
       
       setShowAssignmentForm(false);
       setSuccess('Assignment created successfully with grade column!');
-      console.log('✅ Assignment created successfully:', createdAssignment);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating assignment:', err);
@@ -675,7 +675,7 @@ export const useLecturerDashboard = () => {
                   : col
               ));
               
-              console.log('✅ Updated corresponding grade column');
+
             } catch (error) {
               console.warn('⚠️ Could not update corresponding grade column:', error);
             }
@@ -729,7 +729,7 @@ export const useLecturerDashboard = () => {
               return { ...student, grades: newGrades };
             }));
             
-            console.log('✅ Deleted corresponding grade column');
+
           } catch (error) {
             console.warn('⚠️ Could not delete corresponding grade column:', error);
           }
@@ -737,7 +737,7 @@ export const useLecturerDashboard = () => {
       }
       
       setSuccess('Assignment and grade column deleted successfully!');
-      console.log('✅ Assignment deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting assignment:', err);
@@ -852,7 +852,7 @@ export const useLecturerDashboard = () => {
       setNewColumn({ name: '', type: 'assignment', percentage: '' });
       setShowColumnForm(false);
       setSuccess('Grade column created successfully!');
-      console.log('✅ Grade column created successfully:', createdColumn);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating grade column:', err);
@@ -893,7 +893,7 @@ export const useLecturerDashboard = () => {
       if (field === 'percentage') {
         setSuccess('Grade percentage updated successfully!');
       }
-      console.log('✅ Grade column updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating grade column:', err);
@@ -919,7 +919,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Grade column deleted successfully!');
-      console.log('✅ Grade column deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting grade column:', err);
@@ -953,7 +953,7 @@ export const useLecturerDashboard = () => {
       }));
 
       await api.updateGrade(studentId, columnId, gradeValue);
-      console.log('✅ Grade updated successfully');
+
       
     } catch (err) {
       // Rollback on error
@@ -983,7 +983,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Submission graded successfully!');
-      console.log('✅ Submission grade updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating submission grade:', err);
@@ -1101,7 +1101,7 @@ export const useLecturerDashboard = () => {
       
       setShowExamForm(false);
       setSuccess('Exam created successfully! Now add questions.');
-      console.log('✅ Exam created successfully:', createdExam);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating exam:', err);
@@ -1122,7 +1122,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Exam updated successfully!');
-      console.log('✅ Exam updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating exam:', err);
@@ -1150,7 +1150,7 @@ export const useLecturerDashboard = () => {
       }
       
       setSuccess('Exam deleted successfully!');
-      console.log('✅ Exam deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting exam:', err);
@@ -1171,7 +1171,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Exam published successfully!');
-      console.log('✅ Exam published successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error publishing exam:', err);
@@ -1192,7 +1192,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Exam unpublished successfully!');
-      console.log('✅ Exam unpublished successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error unpublishing exam:', err);
@@ -1213,7 +1213,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess(`Exam ${status} successfully!`);
-      console.log(`✅ Exam status updated to: ${status}`);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating exam status:', err);
@@ -1300,7 +1300,7 @@ export const useLecturerDashboard = () => {
       });
       
       setSuccess('Question added successfully!');
-      console.log('✅ Question added successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error adding question:', err);
@@ -1330,7 +1330,7 @@ export const useLecturerDashboard = () => {
       
       setEditingQuestion(null);
       setSuccess('Question updated successfully!');
-      console.log('✅ Question updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating question:', err);
@@ -1361,7 +1361,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Question deleted successfully!');
-      console.log('✅ Question deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting question:', err);
@@ -1390,7 +1390,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Questions reordered successfully!');
-      console.log('✅ Questions reordered successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error reordering questions:', err);
@@ -1412,7 +1412,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Response score updated successfully!');
-      console.log('✅ Exam response score updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating exam response score:', err);
@@ -1431,7 +1431,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Response auto-graded successfully!');
-      console.log('✅ Response auto-graded successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error auto-grading response:', err);
@@ -1456,7 +1456,7 @@ export const useLecturerDashboard = () => {
       }
       
       setSuccess(`Auto-graded ${result.gradedCount || 0} responses successfully!`);
-      console.log('✅ All responses auto-graded successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error auto-grading all responses:', err);
@@ -1522,7 +1522,7 @@ export const useLecturerDashboard = () => {
   const getExamResponses = useCallback((examId) => {
     try {
       const result = examResponses.filter(response => response.examId === examId) || [];
-      console.log(`📊 Found ${result.length} responses for exam ${examId}`);
+
       return result;
     } catch (err) {
       console.error('Error getting exam responses:', err);
@@ -1533,7 +1533,7 @@ export const useLecturerDashboard = () => {
   const getResponsesForExam = useCallback((examId) => {
     try {
       const result = examResponses.filter(response => response.examId === examId) || [];
-      console.log(`📊 Found ${result.length} responses for exam ${examId}`);
+
       return result;
     } catch (err) {
       console.error('Error getting responses for exam:', err);

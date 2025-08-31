@@ -1,8 +1,15 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/dashboard';
-const COURSES_URL = 'http://localhost:8080/api/courses';
-const USERS_URL = 'http://localhost:8080/api/users';
+// const API_BASE_URL = 'http://13.61.114.153:8082/api';
+
+
+// const BASE_URL = 'http://localhost:8080/api/dashboard';
+// const COURSES_URL = 'http://localhost:8080/api/courses';
+// const USERS_URL = 'http://localhost:8080/api/users';
+
+const BASE_URL = 'http://13.61.114.153:8082/api/dashboard';
+const COURSES_URL = 'http://13.61.114.153:8082/api/courses';
+const USERS_URL = 'http://13.61.114.153:8082/api/users';
 
 // Set default axios configuration to send cookies with requests
 axios.defaults.withCredentials = true;

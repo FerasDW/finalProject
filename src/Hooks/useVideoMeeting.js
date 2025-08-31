@@ -34,7 +34,7 @@ export const useVideoMeeting = () => {
   // Fetch user's meetings
   const fetchMeetings = useCallback(async (filters = {}) => {
     if (!userId) {
-      console.log('DEBUG: No userId, skipping fetchMeetings');
+
       return;
     }
     
@@ -42,11 +42,11 @@ export const useVideoMeeting = () => {
       setLoading(true);
       setError(null);
       
-      console.log('DEBUG: Fetching meetings for user:', userId, 'with filters:', filters);
+
       
       const fetchedMeetings = await meetingApi.getUserMeetings(filters);
       
-      console.log('DEBUG: Raw meetings from API:', fetchedMeetings);
+
       
       setMeetings(fetchedMeetings || []);
       console.log('DEBUG: Set', (fetchedMeetings || []).length, 'meetings for user', userId);
@@ -62,7 +62,7 @@ export const useVideoMeeting = () => {
   // Fetch user's courses
   const fetchCourses = useCallback(async () => {
     if (!userId) {
-      console.log('DEBUG: No userId, skipping fetchCourses');
+
       return;
     }
     
@@ -70,7 +70,7 @@ export const useVideoMeeting = () => {
       setLoading(true);
       setError(null);
       
-      console.log('DEBUG: Fetching courses for user:', userId, 'role:', userRole);
+
       
       let fetchedCourses;
       if (userRole === 'lecturer' || userRole === '1200') {
@@ -79,7 +79,7 @@ export const useVideoMeeting = () => {
         fetchedCourses = await courseApi.getStudentCourses();
       }
       
-      console.log('DEBUG: Raw courses from API:', fetchedCourses);
+
       
       setCourses(fetchedCourses || []);
       console.log('DEBUG: Set', (fetchedCourses || []).length, 'courses for user', userId);
@@ -100,7 +100,7 @@ export const useVideoMeeting = () => {
       setLoading(true);
       setError(null);
       
-      console.log('DEBUG: Creating meeting with data:', meetingData);
+
       
       // Ensure we have a room ID
       if (!meetingData.roomId) {
@@ -116,7 +116,7 @@ export const useVideoMeeting = () => {
         status: meetingData.status || 'scheduled'
       });
       
-      console.log('DEBUG: Created meeting:', newMeeting);
+
       
       // Update local state - add to beginning of array
       setMeetings(prev => [newMeeting, ...prev]);
@@ -136,7 +136,7 @@ export const useVideoMeeting = () => {
     if (!userId) throw new Error('User not authenticated');
     
     try {
-      console.log('DEBUG: Joining meeting:', meetingId, 'with data:', joinData);
+
       
       const joinResponse = await meetingApi.joinMeeting(meetingId, {
         ...joinData,
@@ -144,7 +144,7 @@ export const useVideoMeeting = () => {
         userName: userName
       });
       
-      console.log('DEBUG: Join meeting response:', joinResponse);
+
       
       return joinResponse;
     } catch (err) {
@@ -158,7 +158,7 @@ export const useVideoMeeting = () => {
     if (!userId) return;
     
     try {
-      console.log('DEBUG: Leaving meeting:', meetingId, 'session:', sessionId);
+
       await meetingApi.leaveMeeting(meetingId, sessionId);
     } catch (err) {
       console.error('ERROR: Failed to record meeting leave:', err);
@@ -172,7 +172,7 @@ export const useVideoMeeting = () => {
     const roomId = generateRoomId({ type: 'instant' });
     const finalUserName = userName || 'User';
     
-    console.log('DEBUG: Creating instant meeting with roomId:', roomId);
+
     
     openMeetingInNewTab({
       roomId,
@@ -188,14 +188,14 @@ export const useVideoMeeting = () => {
   const joinMeetingFromLink = useCallback((invitationLink, providedUserName) => {
     if (!userId) throw new Error('User not authenticated');
     
-    console.log('DEBUG: Parsing invitation link:', invitationLink);
+
     
     const meetingInfo = parseInvitationLink(invitationLink);
     if (!meetingInfo) {
       throw new Error('Invalid invitation link');
     }
     
-    console.log('DEBUG: Parsed meeting info:', meetingInfo);
+
     
     const finalUserName = providedUserName || userName || 'User';
     
@@ -216,7 +216,7 @@ export const useVideoMeeting = () => {
 
   // Initialize data on mount and when userId changes
   useEffect(() => {
-    console.log('DEBUG: useVideoMeeting effect triggered. UserId:', userId);
+
     if (userId) {
       fetchMeetings();
       fetchCourses();
@@ -270,7 +270,7 @@ export const useMeetingForm = (initialData = {}, validationRules = {}) => {
 
   // Update form field
   const updateField = useCallback((name, value) => {
-    console.log('DEBUG: Form field updated:', name, '=', value);
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -293,20 +293,20 @@ export const useMeetingForm = (initialData = {}, validationRules = {}) => {
       field => validationRulesRef.current[field]?.required
     );
     
-    console.log('DEBUG: Validating form with required fields:', requiredFields);
-    console.log('DEBUG: Current form data:', formData);
+
+
     
     const validation = validateMeetingForm(formData, requiredFields);
     setErrors(validation.errors);
     
-    console.log('DEBUG: Validation result:', validation);
+
     
     return validation.isValid;
   }, [formData]);
 
   // Reset form
   const resetForm = useCallback(() => {
-    console.log('DEBUG: Resetting form to initial data:', initialDataRef.current);
+
     setFormData(initialDataRef.current);
     setErrors({});
     setLoading(false);
@@ -315,17 +315,17 @@ export const useMeetingForm = (initialData = {}, validationRules = {}) => {
   // Submit form
   const submitForm = useCallback((onSubmit) => {
     return async () => {
-      console.log('DEBUG: Submitting form with data:', formData);
+
       
       if (!validateForm()) {
-        console.log('DEBUG: Form validation failed');
+
         return false;
       }
       
       setLoading(true);
       try {
         await onSubmit(formData);
-        console.log('DEBUG: Form submission successful');
+
         return true;
       } catch (error) {
         console.error('ERROR: Form submission failed:', error);
@@ -364,24 +364,24 @@ export const useMeetingAttendance = (meetingId) => {
   const hasJoinedRef = useRef(false);
   const mountedRef = useRef(true);
 
-  console.log('DEBUG: useMeetingAttendance hook - meetingId:', meetingId, 'userId:', authData?.id);
+
 
   // Fetch attendance data
   const fetchAttendance = useCallback(async () => {
     if (!meetingId || !mountedRef.current) {
-      console.log('DEBUG: No meetingId or unmounted, skipping fetchAttendance');
+
       return;
     }
     
     try {
       setLoading(true);
-      console.log('DEBUG: Fetching attendance for meeting:', meetingId);
+
       
       const attendance = await meetingApi.getMeetingAttendance(meetingId);
       
       if (mountedRef.current) {
         setAttendanceData(attendance);
-        console.log('DEBUG: Fetched attendance data:', attendance?.length || 0, 'sessions');
+
       }
     } catch (error) {
       console.error('ERROR: Failed to fetch attendance:', error);
@@ -399,12 +399,12 @@ export const useMeetingAttendance = (meetingId) => {
   const startAttendanceSession = useCallback(async () => {
     // Prevent multiple simultaneous join attempts
     if (!meetingId || !authData?.id || currentSession || isJoiningRef.current || hasJoinedRef.current || !mountedRef.current) {
-      console.log('DEBUG: Skipping session start - conditions not met');
+
       return currentSession || sessionRef.current;
     }
     
     try {
-      console.log('DEBUG: Starting attendance session for meetingId:', meetingId, 'userId:', authData.id);
+
       isJoiningRef.current = true;
       
       // FIXED: Check for recent sessions to resume
@@ -415,24 +415,24 @@ export const useMeetingAttendance = (meetingId) => {
         if (recentSessionCheck && recentSessionCheck.canResume && mountedRef.current) {
           // Resume existing session
           session = await meetingApi.resumeSession(meetingId, recentSessionCheck.sessionId);
-          console.log('DEBUG: Resumed existing session:', session);
+
         } else if (mountedRef.current) {
           // Create new session
           session = await meetingApi.joinMeeting(meetingId, {
             userId: authData.id,
             userName: authData.name || authData.username || 'User'
           });
-          console.log('DEBUG: Created new session:', session);
+
         }
       } catch (resumeError) {
         // If resume logic fails, fall back to creating new session
         if (mountedRef.current) {
-          console.log('DEBUG: Resume logic failed, creating new session:', resumeError.message);
+
           session = await meetingApi.joinMeeting(meetingId, {
             userId: authData.id,
             userName: authData.name || authData.username || 'User'
           });
-          console.log('DEBUG: Created fallback session:', session);
+
         }
       }
       
@@ -455,12 +455,12 @@ export const useMeetingAttendance = (meetingId) => {
   const endAttendanceSession = useCallback(async () => {
     const session = currentSession || sessionRef.current;
     if (!meetingId || !session?.id || !mountedRef.current) {
-      console.log('DEBUG: No session to end or component unmounted');
+
       return;
     }
     
     try {
-      console.log('DEBUG: Ending attendance session:', session.id);
+
       await meetingApi.leaveMeeting(meetingId, session.id);
       
       if (mountedRef.current) {
@@ -470,7 +470,7 @@ export const useMeetingAttendance = (meetingId) => {
         
         // Refresh attendance data
         await fetchAttendance();
-        console.log('DEBUG: Session ended successfully');
+
       }
     } catch (error) {
       console.error('ERROR: Failed to end attendance session:', error);
@@ -504,7 +504,7 @@ export const useMeetingAttendance = (meetingId) => {
       mountedRef.current = false;
       
       if (sessionRef.current && hasJoinedRef.current && meetingId) {
-        console.log('DEBUG: Attendance hook unmounting - sending beacon');
+
         const session = sessionRef.current;
         
         try {
@@ -575,12 +575,12 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
   // FIXED: Initialize ZegoCloud with better error handling and timeout
   const initializeZego = useCallback(async () => {
     if (!roomId || !userId || !userName || !meetingRef.current || initializingRef.current || !mountedRef.current) {
-      console.log('DEBUG: Skipping ZegoCloud init - missing requirements or already initializing');
+
       return;
     }
 
     try {
-      console.log('DEBUG: Initializing ZegoCloud...');
+
       initializingRef.current = true;
       joinAttemptRef.current += 1;
       
@@ -632,7 +632,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
         userName
       );
 
-      console.log('DEBUG: Generated ZegoCloud token');
+
 
       const zp = ZegoUIKitPrebuilt.create(kitToken);
       
@@ -678,7 +678,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
         ],
         
         onJoinRoom: () => {
-          console.log('✅ Successfully joined ZegoCloud room');
+
           if (mountedRef.current) {
             setIsConnected(true);
             setConnectionState('CONNECTED');
@@ -688,7 +688,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
         },
         
         onLeaveRoom: () => {
-          console.log('🚪 User left ZegoCloud room');
+
           if (mountedRef.current) {
             setIsConnected(false);
             setConnectionState('DISCONNECTED');
@@ -713,7 +713,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
         
         // FIXED: Better connection state handling
         onConnectionStateChanged: (state) => {
-          console.log('🔗 Connection state changed:', state);
+
           if (mountedRef.current) {
             setConnectionState(state);
             
@@ -723,9 +723,9 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
               setLoading(false);
             } else if (state === 'DISCONNECTED') {
               setIsConnected(false);
-              console.log('⚠️ Disconnected - waiting for reconnection');
+
             } else if (state === 'RECONNECTING') {
-              console.log('🔄 Attempting to reconnect...');
+
             }
           }
         },
@@ -742,7 +742,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
             
             if (error.code === 'NETWORK_ERROR') {
               setConnectionState('RECONNECTING');
-              console.log('🔄 Network error - attempting reconnection');
+
             }
           }
         },
@@ -751,7 +751,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
         timeout: 30000 // 30 second timeout
       };
 
-      console.log('DEBUG: Joining ZegoCloud room with config');
+
       
       // FIXED: Add timeout to joinRoom operation
       const joinPromise = zp.joinRoom(config);
@@ -761,7 +761,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
       
       await Promise.race([joinPromise, timeoutPromise]);
 
-      console.log('DEBUG: ZegoCloud join room completed');
+
 
     } catch (err) {
       console.error('❌ Failed to initialize ZegoCloud:', err);
@@ -790,7 +790,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
 
   // Cleanup function
   const cleanup = useCallback(() => {
-    console.log('DEBUG: Cleaning up ZegoCloud instance');
+
     if (instanceRef.current) {
       try {
         if (typeof instanceRef.current.leaveRoom === 'function') {
@@ -823,7 +823,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
 
   // Leave meeting function
   const leaveMeeting = useCallback(() => {
-    console.log('DEBUG: Leaving meeting manually');
+
     if (mountedRef.current) {
       setIsConnected(false);
       setConnectionState('DISCONNECTING');
@@ -841,7 +841,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
 
   // Initialize effect
   useEffect(() => {
-    console.log('DEBUG: ZegoMeeting initialization effect triggered');
+
     if (roomId && userId && userName && meetingRef.current && mountedRef.current) {
       // Small delay to ensure DOM is ready
       const timeoutId = setTimeout(() => {
@@ -860,7 +860,7 @@ export const useZegoMeeting = (roomId, userId, userName, meetingTitle, courseId,
     
     return () => {
       mountedRef.current = false;
-      console.log('DEBUG: ZegoMeeting hook unmounting');
+
       
       if (instanceRef.current) {
         try {

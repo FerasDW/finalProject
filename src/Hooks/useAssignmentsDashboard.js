@@ -187,7 +187,7 @@ export const useLecturerDashboard = () => {
     }
     
     if (courseIdProcessed !== selectedCourse) {
-      console.log(`🎯 Course selection changed from "${selectedCourse}" to "${courseIdProcessed}"`);
+
       setSelectedCourseState(courseIdProcessed);
       
       // Reset dependent selections when course changes
@@ -210,23 +210,23 @@ export const useLecturerDashboard = () => {
   // ENHANCED: Fetch course data with improved error handling
   const fetchCourseData = useCallback(async (courseId) => {
     if (!courseId) {
-      console.log('❌ No courseId provided to fetchCourseData');
+
       return;
     }
 
     try {
       setLoading(true);
       setError(null);
-      console.log(`🔄 Fetching data for course ${courseId}...`);
+
       
       // Fetch submissions with detailed logging and courseId validation
-      console.log('📄 === FETCHING SUBMISSIONS SPECIFICALLY ===');
+
       try {
-        console.log('📄 About to call fetchSubmissions with courseId:', courseId);
+
         setSubmissionsLoading(true);
         const submissionsResult = await api.fetchSubmissions(courseId);
-        console.log('📄 fetchSubmissions returned:', submissionsResult);
-        console.log('📄 Submissions count:', submissionsResult?.length || 0);
+
+
         
         // Enhanced logging for debugging
         if (submissionsResult && submissionsResult.length > 0) {
@@ -243,8 +243,8 @@ export const useLecturerDashboard = () => {
           const submissionsWithCourseId = submissionsResult.filter(sub => sub.courseId === courseId);
           const submissionsWithoutCourseId = submissionsResult.filter(sub => !sub.courseId);
           
-          console.log(`📄 Submissions with correct courseId: ${submissionsWithCourseId.length}`);
-          console.log(`📄 Submissions without courseId: ${submissionsWithoutCourseId.length}`);
+
+
           
           if (submissionsWithoutCourseId.length > 0) {
             console.warn('⚠️ Found submissions without courseId - backend should fix these');
@@ -260,13 +260,13 @@ export const useLecturerDashboard = () => {
       }
 
       // ENHANCED: Fetch exam responses
-      console.log('📊 === FETCHING EXAM RESPONSES SPECIFICALLY ===');
+
       try {
-        console.log('📊 About to call fetchExamResponses with courseId:', courseId);
+
         setExamResponsesLoading(true);
         const examResponsesResult = await api.fetchExamResponses(courseId);
-        console.log('📊 fetchExamResponses returned:', examResponsesResult);
-        console.log('📊 Exam responses count:', examResponsesResult?.length || 0);
+
+
         
         // Enhanced logging for exam responses
         if (examResponsesResult && examResponsesResult.length > 0) {
@@ -300,7 +300,7 @@ export const useLecturerDashboard = () => {
       
       // Handle students
       if (studentsData.status === 'fulfilled') {
-        console.log(`✅ Students loaded: ${studentsData.value.length} students`);
+
         setStudents(studentsData.value);
       } else {
         console.error('❌ Failed to fetch students:', studentsData.reason);
@@ -309,7 +309,7 @@ export const useLecturerDashboard = () => {
       
       // Handle assignments
       if (assignmentsData.status === 'fulfilled') {
-        console.log(`✅ Assignments loaded: ${assignmentsData.value.length} assignments`);
+
         setAssignments(assignmentsData.value);
       } else {
         console.error('❌ Failed to fetch assignments:', assignmentsData.reason);
@@ -318,7 +318,7 @@ export const useLecturerDashboard = () => {
       
       // Handle exams
       if (examsData.status === 'fulfilled') {
-        console.log(`✅ Exams loaded: ${examsData.value.length} exams`);
+
         setExams(examsData.value);
       } else {
         console.error('❌ Failed to fetch exams:', examsData.reason);
@@ -327,14 +327,14 @@ export const useLecturerDashboard = () => {
       
       // Handle grade columns
       if (gradeColumnsData.status === 'fulfilled') {
-        console.log(`✅ Grade columns loaded: ${gradeColumnsData.value.length} columns`);
+
         setGradeColumns(gradeColumnsData.value);
       } else {
         console.error('❌ Failed to fetch grade columns:', gradeColumnsData.reason);
         setGradeColumns([]);
       }
       
-      console.log('✅ Course data fetched successfully');
+
       
     } catch (err) {
       console.error('❌ Error fetching course data:', err);
@@ -347,22 +347,22 @@ export const useLecturerDashboard = () => {
   // Refetch functions
   const refetchSubmissions = useCallback(async () => {
     if (!selectedCourse) {
-      console.log('❌ Cannot refetch submissions: no course selected');
+
       return;
     }
     
     try {
       setSubmissionsLoading(true);
       setError(null);
-      console.log(`🔄 Refetching submissions for course ${selectedCourse}...`);
+
       
       const submissionsData = await api.fetchSubmissions(selectedCourse);
       setSubmissions(submissionsData);
-      console.log(`✅ Refetched ${submissionsData.length} submissions`);
+
       
       // Log course ID validation after refetch
       const withCourseId = submissionsData.filter(sub => sub.courseId === selectedCourse);
-      console.log(`✅ Submissions with matching courseId after refetch: ${withCourseId.length}`);
+
       
     } catch (error) {
       console.error('❌ Error refetching submissions:', error);
@@ -374,18 +374,18 @@ export const useLecturerDashboard = () => {
 
   const refetchExamResponses = useCallback(async () => {
     if (!selectedCourse) {
-      console.log('❌ Cannot refetch exam responses: no course selected');
+
       return;
     }
     
     try {
       setExamResponsesLoading(true);
       setError(null);
-      console.log(`🔄 Refetching exam responses for course ${selectedCourse}...`);
+
       
       const examResponsesData = await api.fetchExamResponses(selectedCourse);
       setExamResponses(examResponsesData);
-      console.log(`✅ Refetched ${examResponsesData.length} exam responses`);
+
     } catch (error) {
       console.error('❌ Error refetching exam responses:', error);
       handleApiErrorCallback(error);
@@ -396,7 +396,7 @@ export const useLecturerDashboard = () => {
 
   const refetchAssignments = useCallback(async () => {
     if (!selectedCourse) {
-      console.log('❌ Cannot refetch assignments: no course selected');
+
       return;
     }
     
@@ -404,7 +404,7 @@ export const useLecturerDashboard = () => {
       setLoading(true);
       const assignmentsData = await api.fetchAssignments(selectedCourse);
       setAssignments(assignmentsData);
-      console.log(`✅ Refetched ${assignmentsData.length} assignments`);
+
     } catch (error) {
       console.error('❌ Error refetching assignments:', error);
       handleApiErrorCallback(error);
@@ -415,7 +415,7 @@ export const useLecturerDashboard = () => {
 
   const refetchExams = useCallback(async () => {
     if (!selectedCourse) {
-      console.log('❌ Cannot refetch exams: no course selected');
+
       return;
     }
     
@@ -423,7 +423,7 @@ export const useLecturerDashboard = () => {
       setExamLoading(true);
       const examsData = await api.fetchExams(selectedCourse);
       setExams(examsData);
-      console.log(`✅ Refetched ${examsData.length} exams`);
+
     } catch (error) {
       console.error('❌ Error refetching exams:', error);
       handleApiErrorCallback(error);
@@ -434,7 +434,7 @@ export const useLecturerDashboard = () => {
 
   const refetchStudentsAndGrades = useCallback(async () => {
     if (!selectedCourse) {
-      console.log('❌ Cannot refetch students: no course selected');
+
       return;
     }
     
@@ -442,7 +442,7 @@ export const useLecturerDashboard = () => {
       setLoading(true);
       const studentsData = await api.fetchStudents(selectedCourse);
       setStudents(studentsData);
-      console.log(`✅ Refetched ${studentsData.length} students with updated grades`);
+
     } catch (error) {
       console.error('❌ Error refetching students:', error);
       handleApiErrorCallback(error);
@@ -458,7 +458,7 @@ export const useLecturerDashboard = () => {
       return [];
     }
     
-    console.log(`👥 Returning ${students.length} students for course ${selectedCourse}`);
+
     return students;
   }, [students, selectedCourse]);
 
@@ -471,7 +471,7 @@ export const useLecturerDashboard = () => {
     const result = assignments.filter(assignment => 
       assignment.courseId === selectedCourse || assignment.course === selectedCourse
     );
-    console.log(`📋 Filtered ${result.length} assignments for course ${selectedCourse}`);
+
     return result;
   }, [assignments, selectedCourse]);
 
@@ -482,7 +482,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = gradeColumns.filter(col => col.courseId === selectedCourse);
-    console.log(`📊 Filtered ${result.length} grade columns for course ${selectedCourse}`);
+
     return result;
   }, [gradeColumns, selectedCourse]);
 
@@ -493,7 +493,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = exams.filter(exam => exam.courseId === selectedCourse);
-    console.log(`📝 Filtered ${result.length} exams for course ${selectedCourse}`);
+
     return result;
   }, [exams, selectedCourse]);
 
@@ -504,7 +504,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = examResponses.filter(response => response.courseId === selectedCourse);
-    console.log(`📊 Filtered ${result.length} exam responses for course ${selectedCourse}`);
+
     return result;
   }, [examResponses, selectedCourse]);
 
@@ -515,7 +515,7 @@ export const useLecturerDashboard = () => {
       return [];
     }
     
-    console.log(`📄 Processing ${submissions.length} total submissions for course filter`);
+
     
     const result = submissions.filter(submission => {
       // Primary filter: Direct courseId match
@@ -533,13 +533,13 @@ export const useLecturerDashboard = () => {
       
       // Debug logging for first few submissions
       if (submissions.indexOf(submission) < 3) {
-        console.log(`📄 Submission ${submission.id}: courseId="${submission.courseId}", taskId="${submission.taskId}", selectedCourse="${selectedCourse}", directMatch=${directMatch}, fallbackMatch=${fallbackMatch}, finalMatch=${courseMatches}`);
+
       }
       
       return courseMatches;
     });
     
-    console.log(`📄 Filtered ${result.length} submissions for course ${selectedCourse} from total ${submissions.length}`);
+
     
     if (result.length > 0) {
       console.log('📄 Sample filtered submission:', {
@@ -551,7 +551,7 @@ export const useLecturerDashboard = () => {
         hasFiles: result[0].hasFiles
       });
     } else if (submissions.length > 0) {
-      console.log('📄 ⚠️ No submissions matched - debug info:');
+
       console.log('📄 Available courseIds in submissions:', [...new Set(submissions.map(s => s.courseId))]);
       console.log('📄 Available taskIds in submissions:', [...new Set(submissions.map(s => s.taskId))]);
       console.log('📄 Available assignmentIds in filteredAssignments:', filteredAssignments.map(a => a.id));
@@ -567,7 +567,7 @@ export const useLecturerDashboard = () => {
     }
     
     const result = courses.find(course => course.id === selectedCourse);
-    console.log(`🎯 Selected course data:`, result);
+
     return result;
   }, [courses, selectedCourse]);
 
@@ -592,15 +592,15 @@ export const useLecturerDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🚀 Starting initial data fetch...');
+
         
         const coursesData = await api.fetchCourses();
-        console.log('✅ Courses loaded:', coursesData);
+
         setCourses(coursesData);
         
         if (coursesData.length > 0) {
           const firstCourseId = coursesData[0].id;
-          console.log(`🎯 Setting initial course to: ${firstCourseId}`);
+
           setSelectedCourseState(firstCourseId);
         }
         
@@ -619,7 +619,7 @@ export const useLecturerDashboard = () => {
   // Fetch data when course changes with proper dependencies
   useEffect(() => {
     if (selectedCourse && courses.length > 0) {
-      console.log(`🔄 Course changed to ${selectedCourse}, fetching data...`);
+
       fetchCourseData(selectedCourse);
     }
   }, [selectedCourse, courses.length, fetchCourseData]);
@@ -655,7 +655,7 @@ export const useLecturerDashboard = () => {
       setFileOperationInProgress(true);
       setFileUploadProgress(prev => ({ ...prev, [operationId]: 0 }));
       
-      console.log('📁 Processing file upload:', file.name, 'Size:', file.size, 'Type:', file.type);
+
       
       // Validate file before upload
       if (file.size > 10 * 1024 * 1024) { // 10MB
@@ -683,7 +683,7 @@ export const useLecturerDashboard = () => {
       clearInterval(progressInterval);
       setFileUploadProgress(prev => ({ ...prev, [operationId]: 100 }));
       
-      console.log('📁 File upload successful:', fileData);
+
       
       if (assignmentId) {
         // Update existing assignment in state
@@ -746,7 +746,7 @@ export const useLecturerDashboard = () => {
   const handleViewFile = useCallback(async (fileUrl, fileName) => {
     try {
       setFileOperationInProgress(true);
-      console.log('👁️ Viewing file:', fileName, 'URL:', fileUrl);
+
       
       if (!fileUrl) {
         throw new Error('No file URL provided');
@@ -755,7 +755,7 @@ export const useLecturerDashboard = () => {
       const result = await api.viewFile(fileUrl, fileName);
       
       if (result.success) {
-        console.log('✅ File viewed successfully using method:', result.method);
+
         setSuccess(`File "${fileName || 'Unknown'}" opened successfully`);
       }
     } catch (error) {
@@ -770,7 +770,7 @@ export const useLecturerDashboard = () => {
   const handleRemoveFile = useCallback(async (fileUrl) => {
     try {
       setFileOperationInProgress(true);
-      console.log('🗑️ Removing file:', fileUrl);
+
       
       if (fileUrl) {
         await api.deleteFile(fileUrl);
@@ -827,7 +827,7 @@ export const useLecturerDashboard = () => {
         hasAttachment: !!newAssignment.file || !!newAssignment.fileUrl
       };
 
-      console.log('📝 Creating assignment with data:', assignmentData);
+
 
       const createdAssignment = await api.createAssignment(assignmentData);
       setAssignments(prev => [...prev, createdAssignment]);
@@ -865,7 +865,7 @@ export const useLecturerDashboard = () => {
       
       setShowAssignmentForm(false);
       setSuccess('Assignment created successfully!');
-      console.log('✅ Assignment created successfully:', createdAssignment);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating assignment:', err);
@@ -879,7 +879,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setLoading(true);
       
-      console.log('🔄 Updating assignment with data:', updates);
+
       
       const updatedAssignment = await api.updateAssignment(assignmentId, updates);
       
@@ -912,7 +912,7 @@ export const useLecturerDashboard = () => {
       setSubmissions(prev => prev.filter(sub => sub.assignmentId !== assignmentId && sub.taskId !== assignmentId));
       
       setSuccess('Assignment deleted successfully!');
-      console.log('✅ Assignment deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting assignment:', err);
@@ -945,7 +945,7 @@ export const useLecturerDashboard = () => {
         courseId: selectedCourse
       };
 
-      console.log('📝 Creating exam with data:', examData);
+
 
       const createdExam = await api.createExam(examData);
       setExams(prev => [...prev, createdExam]);
@@ -974,7 +974,7 @@ export const useLecturerDashboard = () => {
       
       setShowExamForm(false);
       setSuccess('Exam created successfully!');
-      console.log('✅ Exam created successfully:', createdExam);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating exam:', err);
@@ -988,7 +988,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setExamLoading(true);
       
-      console.log('🔄 Updating exam with data:', updates);
+
       
       const updatedExam = await api.updateExam(examId, updates);
       
@@ -1021,7 +1021,7 @@ export const useLecturerDashboard = () => {
       setExamResponses(prev => prev.filter(resp => resp.examId !== examId));
       
       setSuccess('Exam deleted successfully!');
-      console.log('✅ Exam deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting exam:', err);
@@ -1042,7 +1042,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Exam published successfully!');
-      console.log('✅ Exam published successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error publishing exam:', err);
@@ -1063,7 +1063,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Exam unpublished successfully!');
-      console.log('✅ Exam unpublished successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error unpublishing exam:', err);
@@ -1081,7 +1081,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setExamLoading(true);
       
-      console.log('➕ Adding question to exam:', examId, questionData);
+
       
       const createdQuestion = await api.addQuestionToExam(examId, questionData);
       
@@ -1098,7 +1098,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Question added successfully!');
-      console.log('✅ Question added successfully:', createdQuestion);
+
       return createdQuestion;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1114,7 +1114,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setExamLoading(true);
       
-      console.log('🔄 Updating question:', examId, questionId, updates);
+
       
       const updatedQuestion = await api.updateQuestion(examId, questionId, updates);
       
@@ -1132,7 +1132,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Question updated successfully!');
-      console.log('✅ Question updated successfully');
+
       return updatedQuestion;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1168,7 +1168,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Question deleted successfully!');
-      console.log('✅ Question deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting question:', err);
@@ -1199,7 +1199,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Questions reordered successfully!');
-      console.log('✅ Questions reordered successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error reordering questions:', err);
@@ -1215,7 +1215,7 @@ export const useLecturerDashboard = () => {
       setGradingLoading(true);
       setError(null);
       
-      console.log('🤖 Auto-grading response:', responseId);
+
       
       const gradedResponse = await api.autoGradeResponse(responseId);
       
@@ -1237,7 +1237,7 @@ export const useLecturerDashboard = () => {
       await refetchStudentsAndGrades();
       
       setSuccess('Response auto-graded successfully!');
-      console.log('✅ Response auto-graded successfully');
+
       return gradedResponse;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1253,7 +1253,7 @@ export const useLecturerDashboard = () => {
       setGradingLoading(true);
       setError(null);
       
-      console.log('🤖 Auto-grading all responses for exam:', examId);
+
       
       const result = await api.autoGradeAllResponses(examId);
       
@@ -1262,7 +1262,7 @@ export const useLecturerDashboard = () => {
       await refetchStudentsAndGrades();
       
       setSuccess(`Auto-graded ${result.gradedCount || 0} responses successfully!`);
-      console.log('✅ Auto-graded all responses successfully');
+
       return result;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1278,9 +1278,9 @@ export const useLecturerDashboard = () => {
     setGradingLoading(true);
     setError(null);
     
-    console.log('📝 Manual grading response:', gradeData.responseId);
-    console.log('📝 Question scores:', gradeData.questionScores);
-    console.log('📝 Feedback:', gradeData.instructorFeedback);
+
+
+
     
     // FIXED: Call the API function with the correctly structured data
     const gradedResponse = await api.manualGradeExamResponse(
@@ -1316,7 +1316,7 @@ export const useLecturerDashboard = () => {
     setSelectedExamForGrading(null);
     
     setSuccess('Response graded manually successfully!');
-    console.log('✅ Response graded manually successfully');
+
     return gradedResponse;
   } catch (err) {
     handleApiErrorCallback(err);
@@ -1345,7 +1345,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Response flagged for review successfully!');
-      console.log('✅ Response flagged for review');
+
       return flaggedResponse;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1372,7 +1372,7 @@ export const useLecturerDashboard = () => {
       ));
       
       setSuccess('Response unflagged successfully!');
-      console.log('✅ Response unflagged');
+
       return unflaggedResponse;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1391,7 +1391,7 @@ export const useLecturerDashboard = () => {
       setError(null);
       setGradingLoading(true);
       
-      console.log('📦 Batch grading exam responses:', responseIds.length, 'responses');
+
       
       const result = await api.batchGradeExamResponses(responseIds, instructorFeedback, flagForReview);
       
@@ -1401,7 +1401,7 @@ export const useLecturerDashboard = () => {
       
       setSelectedExamResponses(new Set());
       setSuccess(`${result.gradedCount || responseIds.length} responses graded successfully!`);
-      console.log('✅ Batch grading completed');
+
       return result;
     } catch (err) {
       handleApiErrorCallback(err);
@@ -1445,7 +1445,7 @@ export const useLecturerDashboard = () => {
       setNewColumn({ name: '', type: 'assignment', percentage: '', maxPoints: 100 });
       setShowColumnForm(false);
       setSuccess('Grade column created successfully!');
-      console.log('✅ Grade column created successfully:', createdColumn);
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error creating grade column:', err);
@@ -1486,7 +1486,7 @@ export const useLecturerDashboard = () => {
       if (field === 'percentage') {
         setSuccess('Grade percentage updated successfully!');
       }
-      console.log('✅ Grade column updated successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating grade column:', err);
@@ -1512,7 +1512,7 @@ export const useLecturerDashboard = () => {
       }));
       
       setSuccess('Grade column deleted successfully!');
-      console.log('✅ Grade column deleted successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error deleting grade column:', err);
@@ -1546,7 +1546,7 @@ export const useLecturerDashboard = () => {
       }));
 
       await api.updateGrade(studentId, columnId, gradeValue);
-      console.log('✅ Grade updated successfully');
+
       
       // Refresh students to get updated final grades
       await refetchStudentsAndGrades();
@@ -1575,7 +1575,7 @@ export const useLecturerDashboard = () => {
         return;
       }
       
-      console.log('📊 Updating submission grade with sync:', submissionId, 'Grade:', gradeValue);
+
       
       const updatedSubmission = await api.updateSubmissionGrade(submissionId, gradeValue, feedback);
       
@@ -1599,7 +1599,7 @@ export const useLecturerDashboard = () => {
       await refetchStudentsAndGrades();
       
       setSuccess('Submission graded and synced to grade column successfully!');
-      console.log('✅ Submission grade updated and synced successfully');
+
     } catch (err) {
       handleApiErrorCallback(err);
       console.error('Error updating submission grade:', err);
@@ -1775,7 +1775,7 @@ export const useLecturerDashboard = () => {
 
   const openGradingModal = useCallback(async (response, exam, mode = 'view') => {
     try {
-      console.log('🔓 Opening grading modal:', { responseId: response.id, examId: exam.id, mode });
+
       setSelectedResponseForGrading(response);
       setSelectedExamForGrading(exam);
       setGradingModalMode(mode);
@@ -1787,7 +1787,7 @@ export const useLecturerDashboard = () => {
   }, []);
 
   const closeGradingModal = useCallback(() => {
-    console.log('🔒 Closing grading modal');
+
     setShowGradingModal(false);
     setSelectedResponseForGrading(null);
     setSelectedExamForGrading(null);
@@ -1829,9 +1829,9 @@ export const useLecturerDashboard = () => {
   // Enhanced getSubmissionsForAssignment with improved matching logic
   const getSubmissionsForAssignment = useCallback((assignmentId) => {
     try {
-      console.log(`📄 === GETTING SUBMISSIONS FOR ASSIGNMENT ===`);
-      console.log(`📄 Looking for assignmentId/taskId: ${assignmentId}`);
-      console.log(`📄 Total filteredSubmissions: ${filteredSubmissions.length}`);
+
+
+
       
       // Enhanced debugging
       if (filteredSubmissions.length > 0) {
@@ -1859,16 +1859,16 @@ export const useLecturerDashboard = () => {
         return matches;
       });
       
-      console.log(`📄 Final result: Found ${result.length} submissions for assignment ${assignmentId}`);
+
       
       if (result.length === 0 && filteredSubmissions.length > 0) {
-        console.log('📄 ⚠️ No matches found. Assignment ID might not match any taskId/assignmentId');
+
         console.log('📄 Available taskIds:', [...new Set(filteredSubmissions.map(s => s.taskId))]);
-        console.log('📄 Looking for assignmentId:', assignmentId);
+
         
         // Double-check if this assignment exists in our filtered assignments
         const assignmentExists = filteredAssignments.some(a => a.id === assignmentId);
-        console.log('📄 Assignment exists in filteredAssignments:', assignmentExists);
+
       }
       
       return result;
@@ -1881,7 +1881,7 @@ export const useLecturerDashboard = () => {
   const getExamResponses = useCallback((examId) => {
     try {
       const result = filteredExamResponses.filter(response => response.examId === examId) || [];
-      console.log(`📊 Found ${result.length} responses for exam ${examId}`);
+
       return result;
     } catch (err) {
       console.error('Error getting exam responses:', err);
@@ -1892,7 +1892,7 @@ export const useLecturerDashboard = () => {
   const getResponsesForExam = useCallback((examId) => {
     try {
       const result = filteredExamResponses.filter(response => response.examId === examId) || [];
-      console.log(`📊 Found ${result.length} responses for exam ${examId}`);
+
       return result;
     } catch (err) {
       console.error('Error getting responses for exam:', err);
@@ -1929,20 +1929,20 @@ export const useLecturerDashboard = () => {
   // Enhanced debug logging for submissions
   useEffect(() => {
     if (filteredSubmissions.length > 0 && selectedAssignmentForSubmissions) {
-      console.log('🔍 === DEBUGGING SUBMISSIONS FLOW ===');
-      console.log('🔍 Selected assignment for submissions:', selectedAssignmentForSubmissions);
-      console.log('🔍 Total filtered submissions:', filteredSubmissions.length);
+
+
+
       console.log('🔍 Sample submission taskIds:', filteredSubmissions.slice(0, 5).map(s => ({ id: s.id, taskId: s.taskId, assignmentId: s.assignmentId, courseId: s.courseId })));
       
       const matchingSubmissions = getSubmissionsForAssignment(selectedAssignmentForSubmissions);
-      console.log('🔍 Matching submissions count:', matchingSubmissions.length);
+
       
       if (matchingSubmissions.length === 0) {
-        console.log('🔍 ❌ No submissions found for selected assignment');
+
         console.log('🔍 All available taskIds:', [...new Set(filteredSubmissions.map(s => s.taskId))]);
-        console.log('🔍 Selected assignment ID:', selectedAssignmentForSubmissions);
+
         console.log('🔍 All filtered submissions courseIds:', [...new Set(filteredSubmissions.map(s => s.courseId))]);
-        console.log('🔍 Current selected course:', selectedCourse);
+
       }
     }
   }, [filteredSubmissions, selectedAssignmentForSubmissions, getSubmissionsForAssignment, selectedCourse]);

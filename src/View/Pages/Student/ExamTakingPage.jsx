@@ -21,14 +21,14 @@ export default function ExamTakingPage() {
   const getExamIdFromUrl = () => {
     // Method 1: URL parameters from React Router (e.g., /exam-taking/:examId)
     if (params.examId && params.examId !== 'undefined' && params.examId !== 'null') {
-      console.log('📍 Exam ID from URL params:', params.examId);
+
       return params.examId;
     }
 
     // Method 2: Search parameters (e.g., ?examId=123)
     const examIdFromSearch = searchParams.get('examId');
     if (examIdFromSearch && examIdFromSearch !== 'undefined' && examIdFromSearch !== 'null') {
-      console.log('📍 Exam ID from search params:', examIdFromSearch);
+
       return examIdFromSearch;
     }
 
@@ -40,7 +40,7 @@ export default function ExamTakingPage() {
         examIdFromPath !== 'undefined' && 
         examIdFromPath !== 'null' &&
         !isNaN(examIdFromPath)) {
-      console.log('📍 Exam ID from path:', examIdFromPath);
+
       return examIdFromPath;
     }
 
@@ -48,11 +48,11 @@ export default function ExamTakingPage() {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const examIdFromHash = hashParams.get('examId');
     if (examIdFromHash && examIdFromHash !== 'undefined' && examIdFromHash !== 'null') {
-      console.log('📍 Exam ID from hash:', examIdFromHash);
+
       return examIdFromHash;
     }
 
-    console.log('❌ No valid exam ID found in URL');
+
     return null;
   };
 
@@ -85,7 +85,7 @@ export default function ExamTakingPage() {
         setExamId(extractedExamId);
         setLoading(false);
 
-        console.log('✅ Exam page initialized with ID:', extractedExamId);
+
         
       } catch (err) {
         console.error('❌ Failed to initialize exam page:', err);

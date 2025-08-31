@@ -309,12 +309,12 @@ const ExamQuestionManager = ({
         questionData.correctAnswer = questionData.acceptableAnswers.length > 0 ? questionData.acceptableAnswers[0] : '';
       }
 
-      console.log('📝 Adding question with data:', questionData);
+
 
       // Call the backend API through the parent component
       const result = await onAddQuestion(exam.id, questionData);
       
-      console.log('✅ Question added successfully:', result);
+
       
       // Reset form and close
       resetNewQuestionForm();
@@ -383,12 +383,12 @@ const ExamQuestionManager = ({
         updateData.correctAnswer = updateData.acceptableAnswers.length > 0 ? updateData.acceptableAnswers[0] : '';
       }
 
-      console.log('🔄 Updating question with data:', updateData);
+
 
       // Call the backend API through the parent component
       await onUpdateQuestion(exam.id, questionId, updateData);
       
-      console.log('✅ Question updated successfully');
+
       
       // Close edit form
       setEditingQuestion(null);
@@ -408,12 +408,12 @@ const ExamQuestionManager = ({
       try {
         setSubmitLoading(true);
         
-        console.log('🗑️ Deleting question:', questionId);
+
         
         // Call the backend API through the parent component
         await onDeleteQuestion(exam.id, questionId);
         
-        console.log('✅ Question deleted successfully');
+
         
         // Clear selection if this question was selected
         setSelectedQuestions(prev => {

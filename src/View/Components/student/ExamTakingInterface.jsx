@@ -90,7 +90,7 @@ export default function ExamTakingInterface({ examId }) {
   useEffect(() => {
     const initializeExam = async () => {
       if (examId && !isInitialized && !examInProgress && !examSubmitted && !examLoading) {
-        console.log('🎯 Initializing exam:', examId);
+
         try {
           setIsInitialized(true);
           await startExam(examId);
@@ -129,7 +129,7 @@ export default function ExamTakingInterface({ examId }) {
     }
 
     try {
-      console.log('📤 Submitting exam...');
+
       const result = await submitExam();
       
       // Show results immediately if exam allows it

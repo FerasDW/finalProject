@@ -23,7 +23,7 @@ const Portfolio = () => { // Renamed from Settings
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+
     // Handle form submission here
   };
 

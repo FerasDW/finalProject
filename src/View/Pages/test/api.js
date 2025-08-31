@@ -142,7 +142,7 @@ const apiClient = new ApiClient();
  */
 export const uploadFile = async (file, context = 'assignment', additionalData = {}) => {
   try {
-    console.log('📁 Starting backend file upload:', file.name);
+
     
     // Validate file
     validateFileForUpload(file);
@@ -157,7 +157,7 @@ export const uploadFile = async (file, context = 'assignment', additionalData = 
 
     const response = await apiClient.postFormData('/assignment-files/upload', formData);
     
-    console.log('✅ File uploaded to backend successfully:', response);
+
     return {
       id: response.id,
       url: response.fileUrl,
@@ -175,7 +175,7 @@ export const uploadFile = async (file, context = 'assignment', additionalData = 
 
 export const viewFile = async (fileUrl, fileName = null) => {
   try {
-    console.log('👁️ Viewing file:', fileName, 'URL:', fileUrl);
+
     
     if (!fileUrl) {
       throw new Error('No file URL provided');
@@ -201,7 +201,7 @@ export const viewFile = async (fileUrl, fileName = null) => {
 
 export const downloadFile = async (fileUrl, fileName = null) => {
   try {
-    console.log('📥 Downloading file:', fileName);
+
     
     if (!fileUrl) {
       throw new Error('No file URL provided');
@@ -245,12 +245,12 @@ export const downloadFile = async (fileUrl, fileName = null) => {
 
 export const deleteFile = async (fileUrl) => {
   try {
-    console.log('🗑️ Deleting file:', fileUrl);
+
     
     const fileId = extractFileIdFromUrl(fileUrl);
     if (fileId) {
       await apiClient.delete(`/assignment-files/${fileId}`);
-      console.log('✅ File deleted from backend successfully');
+
       return { success: true };
     }
     
@@ -365,7 +365,7 @@ export const getFileTypeIcon = (fileName) => {
 // Courses
 export const fetchCourses = async (params = {}) => {
   try {
-    console.log('🔍 Fetching courses...');
+
     const courses = await apiClient.get('/courses', params);
     
     const transformedCourses = Array.isArray(courses) ? courses.map(course => ({
@@ -387,7 +387,7 @@ export const fetchCourses = async (params = {}) => {
       finalExam: course.finalExam
     })) : [];
     
-    console.log(`✅ Transformed ${transformedCourses.length} courses`);
+
     return transformedCourses;
   } catch (error) {
     console.error('❌ Error fetching courses:', error);
@@ -398,12 +398,12 @@ export const fetchCourses = async (params = {}) => {
 // Students
 export const fetchStudents = async (courseId, params = {}) => {
   try {
-    console.log(`🔍 Fetching students for course: ${courseId}`);
+
     
     const course = await apiClient.get(`/courses/${courseId}`);
     
     if (!course.enrollments || course.enrollments.length === 0) {
-      console.log('📭 No enrollments found for this course');
+
       return [];
     }
     
@@ -411,7 +411,7 @@ export const fetchStudents = async (courseId, params = {}) => {
     const currentEnrollment = course.enrollments.find(e => e.academicYear === currentYear);
     
     if (!currentEnrollment || !currentEnrollment.studentIds || currentEnrollment.studentIds.length === 0) {
-      console.log(`📭 No student enrollments found for year ${currentYear}`);
+
       return [];
     }
     
@@ -440,7 +440,7 @@ export const fetchStudents = async (courseId, params = {}) => {
       };
     });
     
-    console.log(`✅ Successfully processed ${studentsWithGrades.length} students`);
+
     return studentsWithGrades;
     
   } catch (error) {
@@ -458,7 +458,7 @@ export const fetchStudents = async (courseId, params = {}) => {
 // Assignments with Enhanced File Handling
 export const fetchAssignments = async (courseId, params = {}) => {
   try {
-    console.log(`🔍 Fetching assignments for course: ${courseId}`);
+
     const assignments = await apiClient.get(`/tasks/course/${courseId}`, params);
     
     const transformedAssignments = Array.isArray(assignments) ? await Promise.all(
@@ -526,7 +526,7 @@ export const fetchAssignments = async (courseId, params = {}) => {
       })
     ) : [];
     
-    console.log(`✅ Transformed ${transformedAssignments.length} assignments`);
+
     return transformedAssignments;
   } catch (error) {
     console.error('❌ Error fetching assignments:', error);
@@ -536,7 +536,7 @@ export const fetchAssignments = async (courseId, params = {}) => {
 
 export const createAssignment = async (assignmentData) => {
   try {
-    console.log('➕ Creating assignment with data:', assignmentData);
+
     
     const taskCreateRequest = {
       title: assignmentData.title,
@@ -562,19 +562,19 @@ export const createAssignment = async (assignmentData) => {
     };
     
     const createdTask = await apiClient.post('/tasks', taskCreateRequest);
-    console.log('✅ Assignment created successfully:', createdTask);
+
     
     // Upload file if provided
     if (assignmentData.file) {
       try {
-        console.log('📁 Uploading file for assignment:', createdTask.id);
+
         const fileResponse = await uploadFile(assignmentData.file, 'assignment', {
           assignmentId: createdTask.id,
           courseId: assignmentData.courseId,
           description: `Attachment for ${createdTask.title}`
         });
         
-        console.log('✅ File uploaded for assignment:', fileResponse);
+
         
         // Return assignment with file info
         return {
@@ -600,7 +600,7 @@ export const createAssignment = async (assignmentData) => {
 
 export const updateAssignment = async (assignmentId, updates) => {
   try {
-    console.log('🔄 Updating assignment:', assignmentId, updates);
+
     
     const taskUpdateRequest = {
       title: updates.title,
@@ -626,7 +626,7 @@ export const updateAssignment = async (assignmentId, updates) => {
     };
     
     const updatedTask = await apiClient.put(`/tasks/${assignmentId}`, taskUpdateRequest);
-    console.log('✅ Assignment updated successfully:', updatedTask);
+
     
     return convertTaskToAssignment(updatedTask);
   } catch (error) {
@@ -637,7 +637,7 @@ export const updateAssignment = async (assignmentId, updates) => {
 
 export const deleteAssignment = async (assignmentId) => {
   try {
-    console.log('🗑️ Deleting assignment:', assignmentId);
+
     
     // Delete assignment files first
     try {
@@ -645,13 +645,13 @@ export const deleteAssignment = async (assignmentId) => {
       for (const file of assignmentFiles) {
         await deleteFile(file.fileUrl);
       }
-      console.log('✅ Assignment files deleted');
+
     } catch (error) {
       console.warn('⚠️ Could not delete assignment files:', error.message);
     }
     
     await apiClient.delete(`/tasks/${assignmentId}`);
-    console.log('✅ Assignment deleted successfully');
+
     return { success: true };
   } catch (error) {
     console.error('❌ Error deleting assignment:', error);
@@ -688,7 +688,7 @@ const convertTaskToAssignment = (task) => {
 // FULL EXAM API IMPLEMENTATION
 export const fetchExams = async (courseId, params = {}) => {
   try {
-    console.log(`🔍 Fetching exams for course: ${courseId}`);
+
     const exams = await apiClient.get(`/courses/${courseId}/exams`, params);
     
     const transformedExams = Array.isArray(exams) ? exams.map(exam => ({
@@ -722,7 +722,7 @@ export const fetchExams = async (courseId, params = {}) => {
       updatedAt: exam.updatedAt
     })) : [];
     
-    console.log(`✅ Transformed ${transformedExams.length} exams`);
+
     return transformedExams;
   } catch (error) {
     console.error('❌ Error fetching exams:', error);
@@ -732,7 +732,7 @@ export const fetchExams = async (courseId, params = {}) => {
 
 export const createExam = async (examData) => {
   try {
-    console.log('➕ Creating exam with data:', examData);
+
     
     const examCreateRequest = {
       title: examData.title,
@@ -756,7 +756,7 @@ export const createExam = async (examData) => {
     };
     
     const createdExam = await apiClient.post('/exams', examCreateRequest);
-    console.log('✅ Exam created successfully:', createdExam);
+
     return createdExam;
   } catch (error) {
     console.error('❌ Error creating exam:', error);
@@ -766,7 +766,7 @@ export const createExam = async (examData) => {
 
 export const updateExam = async (examId, updates) => {
   try {
-    console.log('🔄 Updating exam:', examId, updates);
+
     
     const examUpdateRequest = {
       title: updates.title,
@@ -790,7 +790,7 @@ export const updateExam = async (examId, updates) => {
     };
     
     const updatedExam = await apiClient.put(`/exams/${examId}`, examUpdateRequest);
-    console.log('✅ Exam updated successfully:', updatedExam);
+
     return updatedExam;
   } catch (error) {
     console.error('❌ Error updating exam:', error);
@@ -800,9 +800,9 @@ export const updateExam = async (examId, updates) => {
 
 export const deleteExam = async (examId) => {
   try {
-    console.log('🗑️ Deleting exam:', examId);
+
     await apiClient.delete(`/exams/${examId}`);
-    console.log('✅ Exam deleted successfully');
+
     return { success: true };
   } catch (error) {
     console.error('❌ Error deleting exam:', error);
@@ -812,9 +812,9 @@ export const deleteExam = async (examId) => {
 
 export const publishExam = async (examId) => {
   try {
-    console.log('📢 Publishing exam:', examId);
+
     const publishedExam = await apiClient.post(`/exams/${examId}/publish`);
-    console.log('✅ Exam published successfully:', publishedExam);
+
     return publishedExam;
   } catch (error) {
     console.error('❌ Error publishing exam:', error);
@@ -824,9 +824,9 @@ export const publishExam = async (examId) => {
 
 export const unpublishExam = async (examId) => {
   try {
-    console.log('📝 Unpublishing exam:', examId);
+
     const unpublishedExam = await apiClient.post(`/exams/${examId}/unpublish`);
-    console.log('✅ Exam unpublished successfully:', unpublishedExam);
+
     return unpublishedExam;
   } catch (error) {
     console.error('❌ Error unpublishing exam:', error);
@@ -836,9 +836,9 @@ export const unpublishExam = async (examId) => {
 
 export const updateExamStatus = async (examId, status) => {
   try {
-    console.log('🔄 Updating exam status:', examId, status);
+
     const updatedExam = await apiClient.put(`/exams/${examId}/status`, { status });
-    console.log('✅ Exam status updated successfully:', updatedExam);
+
     return updatedExam;
   } catch (error) {
     console.error('❌ Error updating exam status:', error);
@@ -848,7 +848,7 @@ export const updateExamStatus = async (examId, status) => {
 
 export const addQuestionToExam = async (examId, questionData) => {
   try {
-    console.log('➕ Adding question to exam:', examId, questionData);
+
     
     const questionRequest = {
       type: questionData.type,
@@ -866,7 +866,7 @@ export const addQuestionToExam = async (examId, questionData) => {
     };
     
     const result = await apiClient.post(`/exams/${examId}/questions`, questionRequest);
-    console.log('✅ Question added successfully:', result);
+
     return result;
   } catch (error) {
     console.error('❌ Error adding question:', error);
@@ -876,7 +876,7 @@ export const addQuestionToExam = async (examId, questionData) => {
 
 export const updateQuestion = async (examId, questionId, updates) => {
   try {
-    console.log('🔄 Updating question:', examId, questionId, updates);
+
     
     const questionRequest = {
       type: updates.type,
@@ -894,7 +894,7 @@ export const updateQuestion = async (examId, questionId, updates) => {
     };
     
     const updatedQuestion = await apiClient.put(`/exams/${examId}/questions/${questionId}`, questionRequest);
-    console.log('✅ Question updated successfully:', updatedQuestion);
+
     return updatedQuestion;
   } catch (error) {
     console.error('❌ Error updating question:', error);
@@ -904,9 +904,9 @@ export const updateQuestion = async (examId, questionId, updates) => {
 
 export const deleteQuestionFromExam = async (examId, questionId) => {
   try {
-    console.log('🗑️ Deleting question:', examId, questionId);
+
     await apiClient.delete(`/exams/${examId}/questions/${questionId}`);
-    console.log('✅ Question deleted successfully');
+
     return { success: true };
   } catch (error) {
     console.error('❌ Error deleting question:', error);
@@ -916,9 +916,9 @@ export const deleteQuestionFromExam = async (examId, questionId) => {
 
 export const reorderQuestions = async (examId, questionIds) => {
   try {
-    console.log('🔄 Reordering questions:', examId, questionIds);
+
     await apiClient.put(`/exams/${examId}/questions/reorder`, { questionIds });
-    console.log('✅ Questions reordered successfully');
+
     return { success: true };
   } catch (error) {
     console.error('❌ Error reordering questions:', error);
@@ -928,7 +928,7 @@ export const reorderQuestions = async (examId, questionIds) => {
 
 export const fetchExamResponses = async (courseId, params = {}) => {
   try {
-    console.log(`🔍 Fetching exam responses for course: ${courseId}`);
+
     
     // First get all exams for the course
     const exams = await fetchExams(courseId);
@@ -974,7 +974,7 @@ export const fetchExamResponses = async (courseId, params = {}) => {
       }
     }
     
-    console.log(`✅ Fetched ${allResponses.length} exam responses`);
+
     return allResponses;
   } catch (error) {
     console.error('❌ Error fetching exam responses:', error);
@@ -984,9 +984,9 @@ export const fetchExamResponses = async (courseId, params = {}) => {
 
 export const getExamResponse = async (responseId) => {
   try {
-    console.log('🔍 Fetching exam response:', responseId);
+
     const response = await apiClient.get(`/exam-responses/${responseId}`);
-    console.log('✅ Exam response fetched successfully:', response);
+
     return response;
   } catch (error) {
     console.error('❌ Error fetching exam response:', error);
@@ -996,7 +996,7 @@ export const getExamResponse = async (responseId) => {
 
 export const updateExamResponseScore = async (responseId, questionId, points) => {
   try {
-    console.log('🔄 Updating exam response score:', responseId, questionId, points);
+
     
     // Get current response to build complete grade request
     const currentResponse = await getExamResponse(responseId);
@@ -1012,7 +1012,7 @@ export const updateExamResponseScore = async (responseId, questionId, points) =>
     };
     
     const gradedResponse = await apiClient.put('/exam-responses/grade', gradeRequest);
-    console.log('✅ Exam response score updated successfully:', gradedResponse);
+
     return gradedResponse;
   } catch (error) {
     console.error('❌ Error updating exam response score:', error);
@@ -1022,9 +1022,9 @@ export const updateExamResponseScore = async (responseId, questionId, points) =>
 
 export const autoGradeExamResponse = async (responseId) => {
   try {
-    console.log('🤖 Auto-grading exam response:', responseId);
+
     const gradedResponse = await apiClient.post(`/exam-responses/${responseId}/auto-grade`);
-    console.log('✅ Exam response auto-graded successfully:', gradedResponse);
+
     return gradedResponse;
   } catch (error) {
     console.error('❌ Error auto-grading exam response:', error);
@@ -1034,9 +1034,9 @@ export const autoGradeExamResponse = async (responseId) => {
 
 export const autoGradeAllExamResponses = async (examId) => {
   try {
-    console.log('🤖 Auto-grading all responses for exam:', examId);
+
     const result = await apiClient.post(`/exams/${examId}/auto-grade-all`);
-    console.log('✅ All exam responses auto-graded successfully:', result);
+
     return result;
   } catch (error) {
     console.error('❌ Error auto-grading all exam responses:', error);
@@ -1046,9 +1046,9 @@ export const autoGradeAllExamResponses = async (examId) => {
 
 export const getExamStats = async (examId) => {
   try {
-    console.log('📊 Fetching exam statistics:', examId);
+
     const stats = await apiClient.get(`/exams/${examId}/stats`);
-    console.log('✅ Exam statistics fetched successfully:', stats);
+
     return stats;
   } catch (error) {
     console.error('❌ Error fetching exam statistics:', error);
@@ -1058,9 +1058,9 @@ export const getExamStats = async (examId) => {
 
 export const getCourseExamStats = async (courseId) => {
   try {
-    console.log('📊 Fetching course exam statistics:', courseId);
+
     const stats = await apiClient.get(`/courses/${courseId}/exam-stats`);
-    console.log('✅ Course exam statistics fetched successfully:', stats);
+
     return stats;
   } catch (error) {
     console.error('❌ Error fetching course exam statistics:', error);
@@ -1070,9 +1070,9 @@ export const getCourseExamStats = async (courseId) => {
 
 export const canStudentTakeExam = async (examId) => {
   try {
-    console.log('🔍 Checking if student can take exam:', examId);
+
     const result = await apiClient.get(`/exams/${examId}/can-take`);
-    console.log('✅ Exam eligibility checked:', result);
+
     return result;
   } catch (error) {
     console.error('❌ Error checking exam eligibility:', error);
@@ -1082,9 +1082,9 @@ export const canStudentTakeExam = async (examId) => {
 
 export const getStudentAttemptCount = async (examId, studentId) => {
   try {
-    console.log('🔍 Getting student attempt count:', examId, studentId);
+
     const result = await apiClient.get(`/exams/${examId}/attempt-count/${studentId}`);
-    console.log('✅ Student attempt count fetched:', result);
+
     return result;
   } catch (error) {
     console.error('❌ Error getting student attempt count:', error);

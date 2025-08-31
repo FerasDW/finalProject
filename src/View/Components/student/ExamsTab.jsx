@@ -340,7 +340,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
                   checked={isSelected}
                   onChange={(e) => {
                     const selectedIndex = parseInt(e.target.value);
-                    console.log(`✏️ Selected option ${selectedIndex} for question ${questionId}`);
+
                     updateAnswer(questionId, selectedIndex);
                   }}
                   className={styles.optionRadio}
@@ -546,30 +546,30 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
 
     // FIXED: Helper function to get display answer for shuffled options
     const getDisplayAnswer = (question, studentAnswer, questionResults) => {
-      console.log('🔍 Getting display answer for question:', question.id, 'Answer:', studentAnswer);
+
       
       if (question.type === 'multiple-choice') {
         // Check if options were shuffled for this question during the exam
         const shuffleData = shuffledOptions[question.id];
         
         if (shuffleData && shuffleData.shuffledOptions) {
-          console.log('🔀 Options were shuffled, using shuffled data');
+
           // Options were shuffled - get the display text from shuffled options
           if (typeof studentAnswer === 'number') {
             // Student answer is an index into shuffled options
             const displayText = shuffleData.shuffledOptions[studentAnswer];
-            console.log('📝 Shuffled answer display:', displayText);
+
             return displayText || 'No answer';
           } else if (typeof studentAnswer === 'string') {
             // Student answer is already the text
             return studentAnswer;
           }
         } else {
-          console.log('📋 Options were not shuffled, using original');
+
           // Options were not shuffled - use original options
           if (typeof studentAnswer === 'number') {
             const displayText = question.options?.[studentAnswer];
-            console.log('📝 Original answer display:', displayText);
+
             return displayText || 'No answer';
           } else if (typeof studentAnswer === 'string') {
             return studentAnswer;
@@ -583,11 +583,11 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
 
     // FIXED: Helper function to get correct answer display for shuffled options
     const getCorrectAnswerDisplay = (question, questionResult) => {
-      console.log('✅ Getting correct answer for question:', question.id, 'Type:', question.type, 'Result:', questionResult);
+
       
       // First try to get correct answer from the question result (backend response)
       if (questionResult && questionResult.correctAnswer) {
-        console.log('✅ Using correct answer from result:', questionResult.correctAnswer);
+
         return questionResult.correctAnswer;
       }
       
@@ -596,33 +596,33 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
         // Always show the original correct answer text, regardless of shuffling
         if (question.correctAnswerIndex !== undefined && question.options) {
           const correctAnswer = question.options[question.correctAnswerIndex];
-          console.log('✅ Correct answer from question options:', correctAnswer);
+
           return correctAnswer;
         } else if (question.correctAnswer) {
-          console.log('✅ Correct answer from question.correctAnswer:', question.correctAnswer);
+
           return question.correctAnswer;
         }
       } else if (question.type === 'true-false') {
         if (question.correctAnswer) {
-          console.log('✅ True/False correct answer:', question.correctAnswer);
+
           return question.correctAnswer;
         }
       } else if (question.type === 'short-answer' || question.type === 'text' || question.type === 'essay') {
         // For text questions, check multiple possible sources
         if (question.acceptableAnswers && question.acceptableAnswers.length > 0) {
-          console.log('✅ Using first acceptable answer:', question.acceptableAnswers[0]);
+
           return question.acceptableAnswers[0];
         } else if (question.correctAnswer) {
-          console.log('✅ Using question correct answer:', question.correctAnswer);
+
           return question.correctAnswer;
         } else {
-          console.log('✅ Multiple answers accepted for text question');
+
           return 'Multiple answers accepted';
         }
       }
       
       // If no correct answer found, check if this question type should show answers
-      console.log('⚠️ No correct answer available for question type:', question.type);
+
       return 'Answer not disclosed';
     };
 
@@ -636,7 +636,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
       
       // If backend provides correctness, use that first
       if (questionResult && questionResult.isCorrect !== undefined) {
-        console.log('✅ Using backend correctness:', questionResult.isCorrect);
+
         return questionResult.isCorrect;
       }
 
@@ -644,7 +644,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
         const shuffleData = shuffledOptions[question.id];
         
         if (shuffleData && shuffleData.indexMapping) {
-          console.log('🔀 Checking shuffled answer correctness');
+
           // Options were shuffled - convert back to original index
           if (typeof studentAnswer === 'number') {
             const originalIndex = shuffleData.indexMapping[studentAnswer];
@@ -658,23 +658,23 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
             return isCorrect;
           }
         } else {
-          console.log('📋 Checking original answer correctness');
+
           // Options were not shuffled
           if (typeof studentAnswer === 'number') {
             const isCorrect = studentAnswer === question.correctAnswerIndex;
-            console.log('📋 Original correctness check:', isCorrect);
+
             return isCorrect;
           }
         }
       } else if (question.type === 'true-false') {
         const isCorrect = studentAnswer?.toLowerCase() === question.correctAnswer?.toLowerCase();
-        console.log('✅ True/False correctness:', isCorrect);
+
         return isCorrect;
       }
       
       // For other types, assume correct if there's a score > 0
       const hasPoints = (questionResult?.earnedPoints || questionResult?.points || 0) > 0;
-      console.log('📊 Points-based correctness:', hasPoints);
+
       return hasPoints;
     };
     

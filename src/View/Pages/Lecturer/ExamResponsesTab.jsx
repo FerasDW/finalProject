@@ -90,14 +90,14 @@ export default function ExamResponsesTab({
     // Fallback: search in filteredExams array
     const exam = filteredExams?.find(e => e.id === examId);
     if (exam) {
-      console.log('✅ Found exam using fallback method:', exam.title);
+
       return exam;
     }
     
     // Last resort: search in exams array
     const examInAll = exams?.find(e => e.id === examId);
     if (examInAll) {
-      console.log('✅ Found exam in all exams array:', examInAll.title);
+
       return examInAll;
     }
     
@@ -164,7 +164,7 @@ export default function ExamResponsesTab({
   // FIXED: Enhanced response actions with better error handling
   const handleViewResponse = async (response) => {
     try {
-      console.log('👁️ Opening response for viewing:', response.id);
+
       
       // Use the fixed findExamById function
       const exam = findExamById(response.examId);
@@ -174,7 +174,7 @@ export default function ExamResponsesTab({
         return;
       }
       
-      console.log('✅ Found exam for viewing:', exam.title);
+
       await openGradingModal(response, exam, 'view');
     } catch (error) {
       console.error('❌ Error opening response view:', error);
@@ -184,7 +184,7 @@ export default function ExamResponsesTab({
 
   const handleGradeResponse = async (response) => {
     try {
-      console.log('📝 Opening response for grading:', response.id);
+
       
       // Use the fixed findExamById function
       const exam = findExamById(response.examId);
@@ -194,7 +194,7 @@ export default function ExamResponsesTab({
         return;
       }
       
-      console.log('✅ Found exam for grading:', exam.title);
+
       await openGradingModal(response, exam, 'grade');
     } catch (error) {
       console.error('❌ Error opening grading modal:', error);
@@ -319,7 +319,7 @@ export default function ExamResponsesTab({
     try {
       switch (bulkResponseAction) {
         case "auto-grade":
-          console.log('🤖 Auto-grading selected responses:', responseIds);
+
           for (const responseId of responseIds) {
             await autoGradeResponse(responseId);
           }
@@ -327,7 +327,7 @@ export default function ExamResponsesTab({
           break;
         case "bulk-grade":
           if (bulkGradeValue) {
-            console.log('📊 Bulk grading responses:', responseIds, 'with grade:', bulkGradeValue);
+
             // For bulk grading, we'd need to implement a batch endpoint
             // For now, auto-grade each one
             for (const responseId of responseIds) {
@@ -337,11 +337,11 @@ export default function ExamResponsesTab({
           }
           break;
         case "export":
-          console.log('📤 Exporting selected responses:', responseIds);
+
           await exportSelectedResponses(responseIds);
           break;
         case "flag":
-          console.log('🚩 Flagging selected responses:', responseIds);
+
           const flagReason = prompt('Reason for flagging these responses:') || 'Bulk flagged for review';
           for (const responseId of responseIds) {
             await flagResponseForReview(responseId, flagReason);
@@ -390,7 +390,7 @@ export default function ExamResponsesTab({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      console.log('✅ Responses exported successfully');
+
     } catch (error) {
       console.error('❌ Error exporting responses:', error);
       alert('Error exporting responses: ' + error.message);

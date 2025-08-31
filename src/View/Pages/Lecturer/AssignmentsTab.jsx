@@ -69,7 +69,7 @@ export default function AssignmentsTab({
       if (!file) return;
 
       try {
-        console.log('📁 Starting file upload for assignment:', assignmentId || 'new');
+
         
         // Call the parent's file upload handler
         await handleFileUpload(event, assignmentId);
@@ -85,7 +85,7 @@ export default function AssignmentsTab({
           }));
         }
         
-        console.log('✅ File upload completed successfully');
+
       } catch (err) {
         console.error("File validation error:", err);
         event.target.value = "";
@@ -121,7 +121,7 @@ export default function AssignmentsTab({
       if (!file) return;
 
       try {
-        console.log('📁 Starting file upload for editing assignment:', editingAssignmentData?.id);
+
         
         // Upload the new file
         await handleFileUpload(event, editingAssignmentData?.id);
@@ -135,7 +135,7 @@ export default function AssignmentsTab({
           hasAttachment: true,
         }));
         
-        console.log('✅ Edit file upload completed successfully');
+
       } catch (err) {
         console.error("Edit file validation error:", err);
         event.target.value = "";

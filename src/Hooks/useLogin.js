@@ -29,7 +29,7 @@ export const useLogin = () => {
       const response = await axios.get('http://localhost:8080/api/auth/user', {
         withCredentials: true,
       });
-      console.log('User data:', response);
+
       // Update authentication context
       loginUser(response.data);
 

@@ -162,7 +162,7 @@ export default function LecturerDashboard() {
     setSubmissionsLoading(true);
     try {
       // This would be handled by the hook's refetchSubmissions
-      console.log('📄 Triggering submissions refresh from dashboard component');
+
       // The actual refetch is handled in the hook
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
     } catch (error) {
@@ -198,12 +198,12 @@ export default function LecturerDashboard() {
   }
 
   // Debug logging
-  console.log('🎯 === LECTURER DASHBOARD RENDER ===');
-  console.log('🎯 selectedCourse:', selectedCourse);
-  console.log('🎯 filteredAssignments:', filteredAssignments.length);
-  console.log('🎯 filteredSubmissions:', filteredSubmissions.length);
-  console.log('🎯 selectedAssignmentForSubmissions:', selectedAssignmentForSubmissions);
-  console.log('🎯 getExamById function available:', typeof getExamById === 'function');
+
+
+
+
+
+
 
   return (
     <div className={styles.dashboard}>
@@ -313,7 +313,7 @@ export default function LecturerDashboard() {
               value={selectedCourse || ""}
               onChange={(e) => {
                 const value = e.target.value;
-                console.log('🎯 Course selector changed to:', value);
+
                 setSelectedCourse(value);
               }}
               className={styles.courseSelectorSelect}

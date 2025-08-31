@@ -1,7 +1,11 @@
 // src/Api/coursePageApi.js
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+// const API_BASE_URL = 'http://localhost:8080/api';
+// export const baseUrl= 'http://13.61.114.153:8082/api';
+
+const API_BASE_URL = 'http://13.61.114.153:8082/api';
+
 const COURSES_URL = `${API_BASE_URL}/courses`;
 const DEPARTMENTS_URL = `${API_BASE_URL}/departments`;
 const ANALYTICS_URL = `${API_BASE_URL}/analytics`;
@@ -179,7 +183,7 @@ export const getCategoriesByCourse = async (courseId, year) => {
 
 export const createCategory = async (courseId, year, categoryData) => {
     try {
-        console.log(`Creating category for course: ${courseId}, year: ${year}`, categoryData);
+
         const response = await axios.post(CATEGORIES_URL, categoryData, {
             params: { courseId, year },
             withCredentials: true
@@ -265,8 +269,8 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
             formData.append('description', metadata.description);
         }
         
-        console.log(`Uploading file to category: ${categoryId}`);
-        console.log(`Upload URL: ${FILES_URL}/upload/${categoryId}`);
+
+
         
         const response = await axios.post(`${FILES_URL}/upload/${categoryId}`, formData, {
             headers: {
@@ -296,15 +300,15 @@ export const uploadFile = async (categoryId, file, metadata = {}) => {
 
 export const deleteFile = async (fileId) => {
     try {
-        console.log(`🗑️ Attempting to delete file: ${fileId}`);
-        console.log(`🔗 DELETE URL: ${FILES_URL}/${fileId}`);
+
+
         
         // FIXED: Updated endpoint to match your backend: /{fileId}
         await axios.delete(`${FILES_URL}/${fileId}`, {
             withCredentials: true
         });
         
-        console.log("✅ Delete successful");
+
         return true;
     } catch (error) {
         console.error("❌ Delete failed:", error);
@@ -386,8 +390,8 @@ export const getFilesByCategoryPaginated = async (categoryId, page = 0, size = 2
 // FIXED: Download file with proper error handling
 export const downloadFile = async (fileId, fileName) => {
     try {
-        console.log(`⬇️ Downloading file: ${fileId} - ${fileName}`);
-        console.log(`🔗 Download URL: ${FILES_URL}/${fileId}/download`);
+
+
         
         const response = await axios.get(`${FILES_URL}/${fileId}/download`, {
             responseType: 'blob',
@@ -404,7 +408,7 @@ export const downloadFile = async (fileId, fileName) => {
         link.remove();
         window.URL.revokeObjectURL(url);
         
-        console.log("✅ Download successful");
+
         return true;
     } catch (error) {
         console.error("❌ Download failed:", error);

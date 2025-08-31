@@ -89,8 +89,8 @@ const useCourses = () => {
                 lecturer: filteredLecturers.find(l => l.name === course.lecturerName)
             })) || [];
 
-            console.log("📚 Fetched courses:", enhancedCourses.length);
-            console.log("🏢 Sample course data:", enhancedCourses[0]);
+
+
 
             setCourses(enhancedCourses);
             setDepartments(backendDepartments || []);
@@ -136,7 +136,7 @@ const useCourses = () => {
         setDisplayedCourses(firstPage);
         setHasMore(filtered.length > COURSES_PER_PAGE);
         
-        console.log(`📊 Filter results: ${filtered.length} courses found`);
+
     }, [courses, filters, searchInput]);
 
     useEffect(() => {
@@ -150,14 +150,14 @@ const useCourses = () => {
 
     useEffect(() => {
         if (courses.length > 0 && departments.length > 0) {
-            console.log("🔧 Updating filter fields for department:", filters.department);
+
             
             const options = getFilterOptions(courses, departments);
 
             let academicYearOptions = [];
             if (filters.department && filters.department !== "all") {
                 academicYearOptions = getAcademicYearOptionsForDepartment(filters.department, departments);
-                console.log(`📚 Academic year options for ${filters.department}:`, academicYearOptions);
+
             } else {
                 academicYearOptions = options.academicYears || [];
             }
@@ -179,7 +179,7 @@ const useCourses = () => {
                 ];
             }
             
-            console.log("🔧 Generated filter fields:", newFilterFields);
+
             setFilterFields(newFilterFields);
         }
     }, [courses, departments, filters.department, userRole]);
@@ -195,7 +195,7 @@ const useCourses = () => {
 
     // FIXED: Enhanced filter change handler with proper state management
     const handleFilterChange = useCallback((name, value) => {
-        console.log(`🔄 Filter changing: ${name} = "${value}"`);
+
         
         setFilters(prev => {
             const newFilters = { 
@@ -206,16 +206,16 @@ const useCourses = () => {
             // FIXED: Reset academic year when department changes
             if (name === 'department') {
                 newFilters.academicYear = 'all';
-                console.log("🔄 Department changed, resetting academic year to 'all'");
+
             }
             
-            console.log("🔄 New filters state:", newFilters);
+
             return newFilters;
         });
     }, []);
 
     const handleSearch = useCallback(() => {
-        console.log("🔍 Manual search triggered with input:", searchInput);
+
         // The search is already applied via useEffect, this can be an explicit trigger if needed
         // Or can be removed if search is real-time via the useEffect watching searchInput
     }, [searchInput]);

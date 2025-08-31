@@ -179,9 +179,9 @@ export const studentApi = {
   // Delete submission by student
   deleteSubmission: async (submissionId) => {
     try {
-      console.log('🗑️ Deleting submission:', submissionId);
+
       const response = await apiClient.delete(`/tasksubmissions/${submissionId}`);
-      console.log('✅ Submission deleted successfully');
+
       return response.data;
     } catch (error) {
       console.error('❌ Delete submission error:', error);
@@ -275,9 +275,9 @@ export const studentApi = {
   // Get student grades for a course
   getCourseGrades: async (courseId) => {
     try {
-      console.log('📊 Fetching course grades for:', courseId);
+
       const response = await apiClient.get(`/courses/${courseId}/grades`);
-      console.log('✅ Course grades fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching course grades:', err);
@@ -288,9 +288,9 @@ export const studentApi = {
   // Get grade columns for a course
   getGradeColumns: async (courseId) => {
     try {
-      console.log('📋 Fetching grade columns for:', courseId);
+
       const response = await apiClient.get(`/courses/${courseId}/grade-columns`);
-      console.log('✅ Grade columns fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching grade columns:', err);
@@ -301,9 +301,9 @@ export const studentApi = {
   // Get student's final grade for a course
   getFinalGrade: async (studentId, courseId) => {
     try {
-      console.log('🎯 Fetching final grade for student:', studentId, 'course:', courseId);
+
       const response = await apiClient.get(`/students/${studentId}/final-grade/${courseId}`);
-      console.log('✅ Final grade fetched:', response.data);
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching final grade:', err);
@@ -315,9 +315,9 @@ export const studentApi = {
   getMyGrades: async (courseId = null) => {
     try {
       const url = courseId ? `/grades/course/${courseId}` : '/grades';
-      console.log('📊 Fetching my grades from:', url);
+
       const response = await apiClient.get(url);
-      console.log('✅ My grades fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching my grades:', err);
@@ -328,9 +328,9 @@ export const studentApi = {
   // Get my grade columns for a course
   getMyGradeColumns: async (courseId) => {
     try {
-      console.log('📋 Fetching my grade columns for:', courseId);
+
       const response = await apiClient.get(`/gradecolumns/course/${courseId}`);
-      console.log('✅ My grade columns fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching my grade columns:', err);
@@ -345,9 +345,9 @@ export const studentApi = {
   // Get available exams for student in a course
   getExamsByCourse: async (courseId) => {
     try {
-      console.log('📚 Fetching exams for course:', courseId);
+
       const response = await apiClient.get(`/student/courses/${courseId}/exams`);
-      console.log('✅ Exams fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching exams:', err);
@@ -358,9 +358,9 @@ export const studentApi = {
   // Get exam details for student (student-specific view)
   getExam: async (examId) => {
     try {
-      console.log('📄 Fetching exam details:', examId);
+
       const response = await apiClient.get(`/student/exams/${examId}`);
-      console.log('✅ Exam details fetched');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam:', err);
@@ -371,9 +371,9 @@ export const studentApi = {
   // Check exam eligibility for student
   checkExamEligibility: async (examId) => {
     try {
-      console.log('🔍 Checking exam eligibility:', examId);
+
       const response = await apiClient.get(`/student/exams/${examId}/eligibility`);
-      console.log('✅ Eligibility check completed:', response.data);
+
       return response.data;
     } catch (err) {
       console.error('❌ Error checking exam eligibility:', err);
@@ -384,9 +384,9 @@ export const studentApi = {
   // Start exam attempt
   startExam: async (examId) => {
     try {
-      console.log('🎯 Starting exam attempt:', examId);
+
       const response = await apiClient.post(`/student/exams/${examId}/start`);
-      console.log('✅ Exam attempt started:', response.data?.responseId);
+
       return response.data;
     } catch (err) {
       console.error('❌ Error starting exam:', err);
@@ -397,9 +397,9 @@ export const studentApi = {
   // Save exam progress (auto-save and manual save)
   saveExamProgress: async (progressData) => {
     try {
-      console.log('💾 Saving exam progress for exam:', progressData.examId);
+
       const response = await apiClient.put(`/student/exams/${progressData.examId}/save-progress`, progressData);
-      console.log('✅ Progress saved successfully');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error saving progress:', err);
@@ -410,9 +410,9 @@ export const studentApi = {
   // Submit exam (final submission)
   submitExam: async (submissionData) => {
     try {
-      console.log('📤 Submitting exam:', submissionData.examId);
+
       const response = await apiClient.post(`/student/exams/${submissionData.examId}/submit`, submissionData);
-      console.log('✅ Exam submitted successfully');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error submitting exam:', err);
@@ -423,9 +423,9 @@ export const studentApi = {
   // Resume exam attempt
   resumeExamAttempt: async (examId) => {
     try {
-      console.log('🔄 Resuming exam attempt:', examId);
+
       const response = await apiClient.post(`/student/exams/${examId}/resume`);
-      console.log('✅ Exam attempt resumed');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error resuming exam:', err);
@@ -436,9 +436,9 @@ export const studentApi = {
   // Get exam attempt history for student
   getExamAttemptHistory: async (examId) => {
     try {
-      console.log('📚 Fetching exam attempt history:', examId);
+
       const response = await apiClient.get(`/student/exams/${examId}/attempts`);
-      console.log('✅ Attempt history fetched:', response.data?.length || 0);
+
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching attempt history:', err);
@@ -449,9 +449,9 @@ export const studentApi = {
   // Check for active exam attempt
   checkActiveAttempt: async (examId) => {
     try {
-      console.log('🔍 Checking active attempt for exam:', examId);
+
       const response = await apiClient.get(`/student/exams/${examId}/active-attempt`);
-      console.log('✅ Active attempt check completed');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error checking active attempt:', err);
@@ -462,9 +462,9 @@ export const studentApi = {
   // Get exam results for student
   getStudentExamResults: async (responseId) => {
     try {
-      console.log('📊 Fetching exam results:', responseId);
+
       const response = await apiClient.get(`/student/exam-responses/${responseId}/results`);
-      console.log('✅ Exam results fetched');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam results:', err);
@@ -475,9 +475,9 @@ export const studentApi = {
   // Get detailed exam results for student
   getDetailedExamResults: async (responseId) => {
     try {
-      console.log('📊 Fetching detailed exam results:', responseId);
+
       const response = await apiClient.get(`/student/exam-responses/${responseId}/detailed`);
-      console.log('✅ Detailed exam results fetched');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching detailed exam results:', err);
@@ -488,9 +488,9 @@ export const studentApi = {
   // Get student exam statistics for course
   getStudentExamStats: async (courseId) => {
     try {
-      console.log('📈 Fetching student exam stats for course:', courseId);
+
       const response = await apiClient.get(`/student/courses/${courseId}/exam-stats`);
-      console.log('✅ Exam stats fetched');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam stats:', err);
@@ -501,9 +501,9 @@ export const studentApi = {
   // Get exam dashboard summary for student
   getExamDashboardSummary: async () => {
     try {
-      console.log('📊 Fetching exam dashboard summary');
+
       const response = await apiClient.get('/student/dashboard/exam-summary');
-      console.log('✅ Dashboard summary fetched');
+
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching dashboard summary:', err);

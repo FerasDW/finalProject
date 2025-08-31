@@ -233,7 +233,7 @@ export const filterCourses = (courses, filters, searchInput) => {
       const filterSemester = String(filters.semester);
       const matches = courseSemester === filterSemester;
       
-      console.log(`📅 Semester comparison: course.semester="${courseSemester}" vs filter="${filterSemester}" → ${matches}`);
+
       return matches;
     });
     console.log(`📅 Semester filter (${filters.semester}): ${beforeCount} → ${filtered.length}`);
@@ -247,7 +247,7 @@ export const filterCourses = (courses, filters, searchInput) => {
       const filterYear = parseInt(filters.year);
       const matches = courseYear === filterYear;
       
-      console.log(`📆 Year comparison: course.year=${courseYear} vs filter=${filterYear} → ${matches}`);
+
       return matches;
     });
     console.log(`📆 Year filter (${filters.year}): ${beforeCount} → ${filtered.length}`);
@@ -279,7 +279,7 @@ export const filterCourses = (courses, filters, searchInput) => {
     console.log(`🔍 Search filter (${searchInput}): ${beforeCount} → ${filtered.length}`);
   }
   
-  console.log(`✅ Final filtered courses: ${filtered.length}`);
+
   return filtered;
 };
 

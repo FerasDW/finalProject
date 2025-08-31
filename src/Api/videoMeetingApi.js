@@ -58,14 +58,14 @@ export const meetingApi = {
    */
   createMeeting: async (meetingData) => {
     try {
-      console.log('DEBUG: Creating meeting with data:', meetingData);
+
       
       const response = await apiClient.post('/meetings', {
         ...meetingData,
         createdAt: new Date().toISOString()
       });
       
-      console.log('DEBUG: Meeting created successfully:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to create meeting:', error);
@@ -90,11 +90,11 @@ export const meetingApi = {
       });
       
       const endpoint = `/meetings/user${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-      console.log('DEBUG: API endpoint:', endpoint);
+
       
       const response = await apiClient.get(endpoint);
       
-      console.log('DEBUG: User meetings response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -117,11 +117,11 @@ export const meetingApi = {
    */
   getMeetingById: async (meetingId) => {
     try {
-      console.log('DEBUG: Fetching meeting by ID:', meetingId);
+
       
       const response = await apiClient.get(`/meetings/${meetingId}`);
       
-      console.log('DEBUG: Meeting by ID response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to fetch meeting:', error);
@@ -136,11 +136,11 @@ export const meetingApi = {
    */
   getMeetingInvitation: async (meetingId) => {
     try {
-      console.log('DEBUG: Fetching meeting invitation for:', meetingId);
+
       
       const response = await apiClient.get(`/meetings/${meetingId}/invitation`);
       
-      console.log('DEBUG: Meeting invitation response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to fetch meeting invitation:', error);
@@ -156,14 +156,14 @@ export const meetingApi = {
    */
   updateMeeting: async (meetingId, updateData) => {
     try {
-      console.log('DEBUG: Updating meeting:', meetingId, 'with data:', updateData);
+
       
       const response = await apiClient.put(`/meetings/${meetingId}`, {
         ...updateData,
         updatedAt: new Date().toISOString()
       });
       
-      console.log('DEBUG: Meeting update response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to update meeting:', error);
@@ -178,11 +178,11 @@ export const meetingApi = {
    */
   deleteMeeting: async (meetingId) => {
     try {
-      console.log('DEBUG: Deleting meeting:', meetingId);
+
       
       await apiClient.delete(`/meetings/${meetingId}`);
       
-      console.log('DEBUG: Meeting deleted successfully');
+
     } catch (error) {
       console.error('ERROR: Failed to delete meeting:', error);
       throw new Error(`Failed to delete meeting: ${error.message}`);
@@ -197,14 +197,14 @@ export const meetingApi = {
    */
   checkRecentSession: async (meetingId, userId) => {
     try {
-      console.log('DEBUG: Checking recent session for meeting:', meetingId, 'user:', userId);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/check-recent-session`, {
         userId,
         checkTime: new Date().toISOString()
       });
       
-      console.log('DEBUG: Recent session check response:', response);
+
       return response;
     } catch (error) {
       console.warn('WARN: Recent session check failed:', error.message);
@@ -221,14 +221,14 @@ export const meetingApi = {
    */
   resumeSession: async (meetingId, sessionId) => {
     try {
-      console.log('DEBUG: Resuming session:', sessionId, 'for meeting:', meetingId);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/resume-session`, {
         sessionId,
         resumeTime: new Date().toISOString()
       });
       
-      console.log('DEBUG: Resume session response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to resume session:', error);
@@ -244,14 +244,14 @@ export const meetingApi = {
    */
   joinMeeting: async (meetingId, joinData = {}) => {
     try {
-      console.log('DEBUG: Joining meeting:', meetingId, 'with data:', joinData);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/join`, {
         ...joinData,
         joinTime: new Date().toISOString()
       });
       
-      console.log('DEBUG: Join meeting response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to join meeting:', error);
@@ -271,7 +271,7 @@ export const meetingApi = {
       leaveTime: new Date().toISOString()
     };
 
-    console.log('DEBUG: Leaving meeting:', meetingId, 'session:', sessionId);
+
 
     // Try main API call first
     try {
@@ -283,7 +283,7 @@ export const meetingApi = {
       
       // Fallback: try with fetch
       try {
-        console.log('DEBUG: Trying fallback fetch method');
+
         
         const fallbackResponse = await fetch(`${API_BASE_URL}/meetings/${meetingId}/leave`, {
           method: 'POST',
@@ -305,7 +305,7 @@ export const meetingApi = {
         
         // Final fallback: beacon (fire-and-forget)
         try {
-          console.log('DEBUG: Trying beacon fallback');
+
           
           const beaconData = new Blob([JSON.stringify({
             ...leaveData,
@@ -317,7 +317,7 @@ export const meetingApi = {
             beaconData
           );
           
-          console.log('DEBUG: Beacon fallback sent:', beaconSent ? 'success' : 'failed');
+
           
           if (beaconSent) {
             return { status: 'left', method: 'beacon' };
@@ -338,11 +338,11 @@ export const meetingApi = {
    */
   getMeetingAttendance: async (meetingId) => {
     try {
-      console.log('DEBUG: Fetching meeting attendance for:', meetingId);
+
       
       const response = await apiClient.get(`/meetings/${meetingId}/attendance`);
       
-      console.log('DEBUG: Meeting attendance response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -364,13 +364,13 @@ export const meetingApi = {
    */
   startMeeting: async (meetingId) => {
     try {
-      console.log('DEBUG: Starting meeting:', meetingId);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/start`, {
         startTime: new Date().toISOString()
       });
       
-      console.log('DEBUG: Start meeting response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to start meeting:', error);
@@ -385,13 +385,13 @@ export const meetingApi = {
    */
   endMeeting: async (meetingId) => {
     try {
-      console.log('DEBUG: Ending meeting:', meetingId);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/end`, {
         endTime: new Date().toISOString()
       });
       
-      console.log('DEBUG: End meeting response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to end meeting:', error);
@@ -406,11 +406,11 @@ export const meetingApi = {
    */
   getActiveSessions: async (meetingId) => {
     try {
-      console.log('DEBUG: Fetching active sessions for meeting:', meetingId);
+
       
       const response = await apiClient.get(`/meetings/${meetingId}/active-sessions`);
       
-      console.log('DEBUG: Active sessions response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -433,14 +433,14 @@ export const meetingApi = {
    */
   sendHeartbeat: async (meetingId, sessionId) => {
     try {
-      console.log('DEBUG: Sending heartbeat for meeting:', meetingId, 'session:', sessionId);
+
       
       const response = await apiClient.post(`/meetings/${meetingId}/heartbeat`, {
         sessionId,
         timestamp: new Date().toISOString()
       });
       
-      console.log('DEBUG: Heartbeat response:', response);
+
       return response;
     } catch (error) {
       console.warn('WARN: Heartbeat failed:', error.message);
@@ -460,11 +460,11 @@ export const courseApi = {
    */
   getLecturerCourses: async () => {
     try {
-      console.log('DEBUG: Fetching lecturer courses');
+
       
       const response = await apiClient.get('/courses/lecturer');
       
-      console.log('DEBUG: Lecturer courses response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -485,11 +485,11 @@ export const courseApi = {
    */
   getStudentCourses: async () => {
     try {
-      console.log('DEBUG: Fetching student courses');
+
       
       const response = await apiClient.get('/courses/student');
       
-      console.log('DEBUG: Student courses response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -511,11 +511,11 @@ export const courseApi = {
    */
   getCourseMeetings: async (courseId) => {
     try {
-      console.log('DEBUG: Fetching course meetings for:', courseId);
+
       
       const response = await apiClient.get(`/courses/${courseId}/meetings`);
       
-      console.log('DEBUG: Course meetings response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -537,11 +537,11 @@ export const courseApi = {
    */
   getCourseStudents: async (courseId) => {
     try {
-      console.log('DEBUG: Fetching course students for:', courseId);
+
       
       const response = await apiClient.get(`/courses/${courseId}/students`);
       
-      console.log('DEBUG: Course students response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -564,7 +564,7 @@ export const courseApi = {
    */
   getCourseAnalytics: async (courseId, filters = {}) => {
     try {
-      console.log('DEBUG: Fetching course analytics for:', courseId, 'with filters:', filters);
+
       
       const queryParams = new URLSearchParams();
       
@@ -577,7 +577,7 @@ export const courseApi = {
       const endpoint = `/analytics/course/${courseId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await apiClient.get(endpoint);
       
-      console.log('DEBUG: Course analytics response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to fetch course analytics:', error);
@@ -597,7 +597,7 @@ export const attendanceApi = {
    */
   getAttendanceSummary: async (filters = {}) => {
     try {
-      console.log('DEBUG: Fetching attendance summary with filters:', filters);
+
       
       const queryParams = new URLSearchParams();
       
@@ -610,7 +610,7 @@ export const attendanceApi = {
       const endpoint = `/attendance/summary${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await apiClient.get(endpoint);
       
-      console.log('DEBUG: Attendance summary response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to fetch attendance summary:', error);
@@ -626,7 +626,7 @@ export const attendanceApi = {
    */
   getCourseAttendance: async (courseId, filters = {}) => {
     try {
-      console.log('DEBUG: Fetching course attendance for:', courseId, 'with filters:', filters);
+
       
       const queryParams = new URLSearchParams();
       
@@ -639,7 +639,7 @@ export const attendanceApi = {
       const endpoint = `/attendance/course/${courseId}${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       const response = await apiClient.get(endpoint);
       
-      console.log('DEBUG: Course attendance response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -662,11 +662,11 @@ export const attendanceApi = {
    */
   getStudentCourseAttendance: async (courseId, studentId) => {
     try {
-      console.log('DEBUG: Fetching student course attendance for course:', courseId, 'student:', studentId);
+
       
       const response = await apiClient.get(`/attendance/course/${courseId}/student/${studentId}`);
       
-      console.log('DEBUG: Student course attendance response:', response);
+
       
       // Ensure we return an array
       if (!Array.isArray(response)) {
@@ -689,11 +689,11 @@ export const attendanceApi = {
    */
   updateAttendance: async (attendanceId, updateData) => {
     try {
-      console.log('DEBUG: Updating attendance:', attendanceId, 'with data:', updateData);
+
       
       const response = await apiClient.put(`/attendance/${attendanceId}`, updateData);
       
-      console.log('DEBUG: Update attendance response:', response);
+
       return response;
     } catch (error) {
       console.error('ERROR: Failed to update attendance:', error);
@@ -707,11 +707,11 @@ export const attendanceApi = {
  */
 export const testConnection = async () => {
   try {
-    console.log('DEBUG: Testing API connection');
+
     
     const response = await apiClient.get('/health', { timeout: 5000 });
     
-    console.log('DEBUG: Connection test successful:', response);
+
     return true;
   } catch (error) {
     console.warn('WARN: Connection test failed:', error.message);

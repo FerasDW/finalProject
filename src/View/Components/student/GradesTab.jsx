@@ -58,22 +58,22 @@ export default function GradesTab({ selectedCourse, setSelectedCourse, studentId
 
   // FIXED: Transform backend data to match component expectations
   const transformGradesData = () => {
-    console.log('🎯 === TRANSFORMING GRADES DATA ===');
-    console.log('Grades:', grades);
-    console.log('Grade Columns:', gradeColumns);
-    console.log('Student ID:', studentId);
+
+
+
+
     
     if (!grades || !gradeColumns || !studentId) {
-      console.log('❌ Missing required data for transformation');
+
       return [];
     }
 
     // Find the current student's grade record
     const studentGradeRecord = grades.find(grade => grade.studentId === studentId);
-    console.log('👤 Student grade record:', studentGradeRecord);
+
     
     if (!studentGradeRecord) {
-      console.log('❌ No grade record found for student:', studentId);
+
       return [];
     }
 
@@ -117,7 +117,7 @@ export default function GradesTab({ selectedCourse, setSelectedCourse, studentId
       })
       .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)); // Sort by display order
 
-    console.log('✅ Final transformed grades:', transformedGrades);
+
     return transformedGrades;
   };
 
@@ -125,28 +125,28 @@ export default function GradesTab({ selectedCourse, setSelectedCourse, studentId
   const getCourseGPA = (courseId) => {
     // Use the properly calculated GPA from the hook that matches backend logic
     const gpa = gradeCalculations.courseGPAs[courseId];
-    console.log(`🎯 Course ${courseId} GPA:`, gpa);
+
     return gpa || 0;
   };
 
   // FIXED: Use backend-calculated overall GPA
   const getOverallGPA = () => {
     const overallGPA = gradeCalculations.overallGPA;
-    console.log('🎯 Overall GPA:', overallGPA);
+
     return overallGPA || 0;
   };
 
   // FIXED: Calculate course letter grade from percentage
   const getCourseLetterGrade = (courseId) => {
     const letterGrade = gradeCalculations.letterGrades[courseId];
-    console.log(`🎯 Course ${courseId} Letter Grade:`, letterGrade);
+
     return letterGrade || 'F';
   };
 
   // FIXED: Get course completion rate
   const getCourseCompletionRate = (courseId) => {
     const completionRate = gradeCalculations.completionRates[courseId];
-    console.log(`🎯 Course ${courseId} Completion Rate:`, completionRate);
+
     return completionRate || 0;
   };
 

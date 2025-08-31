@@ -94,9 +94,9 @@ export default function SubmissionsTab({
 
   // FIXED: Enhanced handleSaveGrade
   const handleSaveGrade = useCallback(async (submissionId) => {
-    console.log('💾 handleSaveGrade called for submission:', submissionId);
-    console.log('💾 tempGrade:', tempGrade);
-    console.log('💾 tempFeedback:', tempFeedback);
+
+
+
     
     const gradeValue = tempGrade === '' ? null : parseInt(tempGrade);
     
@@ -127,7 +127,7 @@ export default function SubmissionsTab({
 
   // FIXED: Enhanced handleCancelEdit
   const handleCancelEdit = useCallback(() => {
-    console.log('❌ handleCancelEdit called');
+
     setEditingGrade(null);
     setTempGrade('');
     setTempFeedback('');
@@ -194,9 +194,9 @@ export default function SubmissionsTab({
       ? getSubmissionsForAssignment(selectedAssignmentForSubmissions)
       : filteredSubmissions;
 
-    console.log('📄 getCurrentSubmissions called');
-    console.log('📄 selectedAssignmentForSubmissions:', selectedAssignmentForSubmissions);
-    console.log('📄 Raw currentSubmissions length:', currentSubmissions.length);
+
+
+
 
     // Apply status filter
     if (statusFilter !== 'all') {
@@ -234,7 +234,7 @@ export default function SubmissionsTab({
       return 0;
     });
 
-    console.log('📄 Final filtered currentSubmissions length:', currentSubmissions.length);
+
     return currentSubmissions;
   }, [
     selectedAssignmentForSubmissions,
@@ -256,11 +256,11 @@ export default function SubmissionsTab({
     late: currentSubmissions.filter(sub => sub.isLate).length
   };
 
-  console.log('📄 === SUBMISSIONS TAB RENDER ===');
-  console.log('📄 selectedAssignmentForSubmissions:', selectedAssignmentForSubmissions);
-  console.log('📄 filteredSubmissions length:', filteredSubmissions.length);
-  console.log('📄 currentSubmissions length:', currentSubmissions.length);
-  console.log('📄 submissionStats:', submissionStats);
+
+
+
+
+
 
   return (
     <div className={styles.tabContent}>
@@ -288,7 +288,7 @@ export default function SubmissionsTab({
                 value={selectedAssignmentForSubmissions || ""}
                 onChange={(e) => {
                   const value = e.target.value || null;
-                  console.log('📄 Assignment filter changed to:', value);
+
                   setSelectedAssignmentForSubmissions(value);
                 }}
                 className={styles.formSelect}
@@ -858,7 +858,7 @@ export default function SubmissionsTab({
                                   <button
                                     onClick={() => {
                                       // Simulate download - replace with actual download logic
-                                      console.log('📥 Download submission:', submission.id);
+
                                     }}
                                     disabled={loading}
                                     className={`${styles.submissionActionBtn} ${styles.submissionActionBtnDownload}`}

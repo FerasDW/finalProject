@@ -57,7 +57,7 @@ export const generateRoomId = (options = {}) => {
     roomId = `${prefix}_${courseId.substring(0, 8)}_${timestamp}_${random}`;
   }
   
-  console.log('DEBUG: Generated room ID:', roomId);
+
   return roomId;
 };
 
@@ -66,7 +66,7 @@ export const generateRoomId = (options = {}) => {
  */
 export const parseInvitationLink = (invitationLink) => {
   try {
-    console.log('DEBUG: Parsing invitation link:', invitationLink);
+
     
     if (!invitationLink || typeof invitationLink !== 'string') {
       throw new Error('Invalid invitation link');
@@ -83,7 +83,7 @@ export const parseInvitationLink = (invitationLink) => {
       userName: params.get('name') || 'Guest User'
     };
     
-    console.log('DEBUG: Parsed meeting info:', meetingInfo);
+
     
     if (!meetingInfo.roomId) {
       throw new Error('Room ID not found in invitation link');
@@ -127,7 +127,7 @@ export const generateInvitationLink = (options = {}) => {
     url.searchParams.set('name', 'Guest User');
     
     const invitationLink = url.toString();
-    console.log('DEBUG: Generated invitation link:', invitationLink);
+
     
     return invitationLink;
   } catch (error) {
@@ -166,7 +166,7 @@ export const openMeetingInNewTab = (options = {}) => {
     }
     
     const meetingUrl = url.toString();
-    console.log('DEBUG: Opening meeting in new tab:', meetingUrl);
+
     
     window.open(
       meetingUrl,
@@ -317,8 +317,8 @@ export const validateMeetingForm = (formData, requiredFields = []) => {
   const errors = {};
   let isValid = true;
   
-  console.log('DEBUG: Validating form data:', formData);
-  console.log('DEBUG: Required fields:', requiredFields);
+
+
   
   // Check required fields
   requiredFields.forEach(field => {
@@ -366,7 +366,7 @@ export const validateMeetingForm = (formData, requiredFields = []) => {
     isValid = false;
   }
   
-  console.log('DEBUG: Validation result:', { isValid, errors });
+
   
   return { isValid, errors };
 };

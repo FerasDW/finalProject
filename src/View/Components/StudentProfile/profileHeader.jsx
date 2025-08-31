@@ -30,7 +30,7 @@ const ProfileHeader = ({ entity, entityType, onActionsToggle }) => {
   };
 
   const handleExport = () => {
-    console.log(`Exporting ${entityType} data for:`, entity?.name);
+
     // Add export logic here
   };
 

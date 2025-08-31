@@ -151,7 +151,7 @@ const ExamResponseGradingModal = ({
       percentage: Math.round(percentage * 100) / 100
     };
 
-    console.log('📝 Sending grade data to backend:', gradeData);
+
     
     await onSaveGrade(gradeData);
     setHasUnsavedChanges(false);

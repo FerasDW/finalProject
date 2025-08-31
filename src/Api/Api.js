@@ -1,4 +1,6 @@
-export const baseUrl='http://localhost:8080/api';
+// src/Api/Api.js
+// export const baseUrl='http://localhost:8082/api';
+export const baseUrl= 'http://13.61.114.153:8082/api';
 
 
 // login Api's

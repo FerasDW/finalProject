@@ -72,7 +72,7 @@ export default function GenericDashboard({ entityType = "students" }) {
     const entityRoute = entityType === "students" ? "student" : "lecturer";
     const profileRoute = `/profile/${entityRoute}/${item.id}`;
     
-    console.log(`Navigating to: ${profileRoute}`);
+
     navigate(profileRoute);
   }, [navigate, entityType]);
 

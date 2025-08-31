@@ -228,7 +228,7 @@ export default function AssignmentsTab({ selectedCourse, setSelectedCourse, stud
         files: selectedFiles
       };
 
-      console.log('Submitting assignment data:', submissionData);
+
       await submitAssignment(assignmentId, submissionData);
     } catch (err) {
       console.error('Submission failed:', err);
@@ -246,7 +246,7 @@ export default function AssignmentsTab({ selectedCourse, setSelectedCourse, stud
   // FIXED DOWNLOAD HANDLER
   const handleDownloadFile = async (assignment) => {
     try {
-      console.log('Downloading file for assignment:', assignment.id);
+
       
       const response = await studentApi.downloadAssignmentFile(assignment.id);
       

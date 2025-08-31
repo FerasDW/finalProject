@@ -157,12 +157,12 @@ const StudentProfile = () => {
 
   // Action button handlers
   const handleEdit = (row) => {
-    console.log("Edit", row);
+
   };
 
   const handleDelete = (row) => {
     if (window.confirm("Delete this record?")) {
-      console.log("Delete", row);
+
     }
   };
 
