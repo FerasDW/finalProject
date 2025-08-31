@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/communityUserApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/users';
+const BASE_URL = 'http://13.61.114.153:8081/api/users';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get user profile by user ID
@@ -12,12 +30,12 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Object>} User profile data
  */
 export const getUserProfile = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/profile/${userId}`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/profile/${userId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -26,12 +44,12 @@ export const getUserProfile = async (userId) => {
  * @returns {Promise<Object>} Updated profile response
  */
 export const updateUserProfile = async (profileData) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/profile`, profileData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/profile`, profileData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -41,19 +59,19 @@ export const updateUserProfile = async (profileData) => {
  * @returns {Promise<Array>} Array of users matching the search
  */
 export const searchUsers = async (query, filters = {}) => {
-  try {
-    const params = new URLSearchParams();
-    
-    if (query) params.append('q', query);
-    if (filters.page) params.append('page', filters.page);
-    if (filters.size) params.append('size', filters.size);
-    if (filters.sortBy) params.append('sortBy', filters.sortBy);
-    
-    const response = await axios.get(`${BASE_URL}/search?${params.toString()}`);
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const params = new URLSearchParams();
+        
+        if (query) params.append('q', query);
+        if (filters.page) params.append('page', filters.page);
+        if (filters.size) params.append('size', filters.size);
+        if (filters.sortBy) params.append('sortBy', filters.sortBy);
+        
+        const response = await axios.get(`${BASE_URL}/search?${params.toString()}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -62,20 +80,20 @@ export const searchUsers = async (query, filters = {}) => {
  * @returns {Promise<Object>} Upload response with avatar URL
  */
 export const uploadAvatar = async (avatarFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('avatar', avatarFile);
-    
-    const response = await axios.post(`${BASE_URL}/upload-avatar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const formData = new FormData();
+        formData.append('avatar', avatarFile);
+        
+        const response = await axios.post(`${BASE_URL}/upload-avatar`, formData, createAuthConfig({
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }));
+        
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -85,12 +103,12 @@ export const uploadAvatar = async (avatarFile) => {
  * @returns {Promise<Object>} Report submission response
  */
 export const reportUser = async (userId, reportData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/report/${userId}`, reportData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/report/${userId}`, reportData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -98,12 +116,12 @@ export const reportUser = async (userId, reportData) => {
  * @returns {Promise<Object>} Current user's profile data
  */
 export const getCurrentUserProfile = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/profile`);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/profile`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -111,12 +129,12 @@ export const getCurrentUserProfile = async () => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testUserApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`);
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -125,28 +143,28 @@ export const testUserApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleUserApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('User not found');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('User not found');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 /**
@@ -155,24 +173,24 @@ export const handleUserApiError = (error, operation) => {
  * @returns {string} Query string
  */
 export const buildUserSearchParams = (params) => {
-  const urlParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== '') {
-      urlParams.append(key, value);
-    }
-  });
-  return urlParams.toString();
+    const urlParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            urlParams.append(key, value);
+        }
+    });
+    return urlParams.toString();
 };
 
 // Export all functions as default for easy importing
 export default {
-  getUserProfile,
-  updateUserProfile,
-  searchUsers,
-  uploadAvatar,
-  reportUser,
-  getCurrentUserProfile,
-  testUserApiConnection,
-  handleUserApiError,
-  buildUserSearchParams
+    getUserProfile,
+    updateUserProfile,
+    searchUsers,
+    uploadAvatar,
+    reportUser,
+    getCurrentUserProfile,
+    testUserApiConnection,
+    handleUserApiError,
+    buildUserSearchParams
 };

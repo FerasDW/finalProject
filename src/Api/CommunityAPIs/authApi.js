@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/authApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = 'http://13.61.114.153:8082/api';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * User login
@@ -12,12 +30,12 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Object>} Login response with user data and token
  */
 export const login = async (credentials) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/login`, credentials, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/login`, credentials);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -25,12 +43,12 @@ export const login = async (credentials) => {
  * @returns {Promise<Object>} Logout response
  */
 export const logout = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/logout`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/logout`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -39,12 +57,12 @@ export const logout = async () => {
  * @returns {Promise<Object>} Registration response
  */
 export const register = async (userData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/register`, userData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/register`, userData);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -52,12 +70,12 @@ export const register = async (userData) => {
  * @returns {Promise<Object>} Current user data if authenticated
  */
 export const verifyAuth = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/auth/verify`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/auth/verify`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -65,12 +83,12 @@ export const verifyAuth = async () => {
  * @returns {Promise<Object>} Refreshed token response
  */
 export const refreshToken = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -79,12 +97,12 @@ export const refreshToken = async () => {
  * @returns {Promise<Object>} Password reset request response
  */
 export const requestPasswordReset = async (email) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/forgot-password`, { email });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/forgot-password`, { email });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -93,12 +111,12 @@ export const requestPasswordReset = async (email) => {
  * @returns {Promise<Object>} Password reset response
  */
 export const resetPassword = async (resetData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/reset-password`, resetData);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/reset-password`, resetData);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -107,12 +125,12 @@ export const resetPassword = async (resetData) => {
  * @returns {Promise<Object>} Password change response
  */
 export const changePassword = async (passwordData) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/auth/change-password`, passwordData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/auth/change-password`, passwordData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -121,12 +139,12 @@ export const changePassword = async (passwordData) => {
  * @returns {Promise<Object>} Email verification response
  */
 export const verifyEmail = async (verificationToken) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/verify-email`, { token: verificationToken });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/verify-email`, { token: verificationToken });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -134,12 +152,12 @@ export const verifyEmail = async (verificationToken) => {
  * @returns {Promise<Object>} Resend verification response
  */
 export const resendEmailVerification = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/resend-verification`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/resend-verification`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -147,12 +165,12 @@ export const resendEmailVerification = async () => {
  * @returns {Promise<Object>} Current user profile data
  */
 export const getCurrentUser = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/auth/me`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/auth/me`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -161,12 +179,12 @@ export const getCurrentUser = async () => {
  * @returns {Promise<Object>} Updated profile response
  */
 export const updateCurrentUser = async (profileData) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/auth/me`, profileData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/auth/me`, profileData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -175,15 +193,14 @@ export const updateCurrentUser = async (profileData) => {
  * @returns {Promise<Object>} Account deletion response
  */
 export const deleteAccount = async (confirmationData) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/auth/delete-account`, {
-      data: confirmationData,
-      withCredentials: true
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/auth/delete-account`, createAuthConfig({
+            data: confirmationData
+        }));
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -192,12 +209,12 @@ export const deleteAccount = async (confirmationData) => {
  * @returns {Promise<Object>} Email availability response
  */
 export const checkEmailAvailability = async (email) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/check-email`, { email });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/check-email`, { email });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -205,12 +222,12 @@ export const checkEmailAvailability = async (email) => {
  * @returns {Promise<Object>} 2FA setup response with QR code
  */
 export const enableTwoFactorAuth = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/2fa/enable`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/2fa/enable`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -219,12 +236,12 @@ export const enableTwoFactorAuth = async () => {
  * @returns {Promise<Object>} 2FA verification response
  */
 export const verifyTwoFactorAuth = async (code) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/2fa/verify`, { code }, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/2fa/verify`, { code }, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -233,12 +250,12 @@ export const verifyTwoFactorAuth = async (code) => {
  * @returns {Promise<Object>} 2FA disable response
  */
 export const disableTwoFactorAuth = async (code) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/auth/2fa/disable`, { code }, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/auth/2fa/disable`, { code }, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -246,12 +263,12 @@ export const disableTwoFactorAuth = async (code) => {
  * @returns {Promise<Array>} Array of active sessions
  */
 export const getUserSessions = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/auth/sessions`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/auth/sessions`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -260,12 +277,12 @@ export const getUserSessions = async () => {
  * @returns {Promise<Object>} Session revoke response
  */
 export const revokeSession = async (sessionId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/auth/sessions/${sessionId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/auth/sessions/${sessionId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -273,12 +290,12 @@ export const revokeSession = async (sessionId) => {
  * @returns {Promise<Object>} Revoke all sessions response
  */
 export const revokeAllSessions = async () => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/auth/sessions/all`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/auth/sessions/all`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -286,12 +303,12 @@ export const revokeAllSessions = async () => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testAuthApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/auth/test`);
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/auth/test`);
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -300,34 +317,34 @@ export const testAuthApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleAuthApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error(data.message || 'Invalid credentials - please check your email and password');
-      case 403:
-        throw new Error('Account access denied - your account may be suspended');
-      case 404:
-        throw new Error('Account not found');
-      case 409:
-        throw new Error('Email already exists - please use a different email');
-      case 422:
-        throw new Error('Validation failed - please check your information');
-      case 429:
-        throw new Error('Too many attempts - please wait and try again');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error(data.message || 'Invalid credentials - please check your email and password');
+            case 403:
+                throw new Error('Account access denied - your account may be suspended');
+            case 404:
+                throw new Error('Account not found');
+            case 409:
+                throw new Error('Email already exists - please use a different email');
+            case 422:
+                throw new Error('Validation failed - please check your information');
+            case 429:
+                throw new Error('Too many attempts - please wait and try again');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 /**
@@ -336,8 +353,8 @@ export const handleAuthApiError = (error, operation) => {
  * @returns {boolean} True if email is valid
  */
 export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 };
 
 /**
@@ -346,49 +363,49 @@ export const isValidEmail = (email) => {
  * @returns {Object} Validation result with strength score and requirements
  */
 export const validatePasswordStrength = (password) => {
-  const requirements = {
-    minLength: password.length >= 8,
-    hasUpperCase: /[A-Z]/.test(password),
-    hasLowerCase: /[a-z]/.test(password),
-    hasNumbers: /\d/.test(password),
-    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-  };
-  
-  const score = Object.values(requirements).filter(Boolean).length;
-  const strength = score < 2 ? 'weak' : score < 4 ? 'medium' : 'strong';
-  
-  return {
-    score,
-    strength,
-    requirements,
-    isValid: score >= 3
-  };
+    const requirements = {
+        minLength: password.length >= 8,
+        hasUpperCase: /[A-Z]/.test(password),
+        hasLowerCase: /[a-z]/.test(password),
+        hasNumbers: /\d/.test(password),
+        hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    const score = Object.values(requirements).filter(Boolean).length;
+    const strength = score < 2 ? 'weak' : score < 4 ? 'medium' : 'strong';
+    
+    return {
+        score,
+        strength,
+        requirements,
+        isValid: score >= 3
+    };
 };
 
 // Export all functions as default for easy importing
 export default {
-  login,
-  logout,
-  register,
-  verifyAuth,
-  refreshToken,
-  requestPasswordReset,
-  resetPassword,
-  changePassword,
-  verifyEmail,
-  resendEmailVerification,
-  getCurrentUser,
-  updateCurrentUser,
-  deleteAccount,
-  checkEmailAvailability,
-  enableTwoFactorAuth,
-  verifyTwoFactorAuth,
-  disableTwoFactorAuth,
-  getUserSessions,
-  revokeSession,
-  revokeAllSessions,
-  testAuthApiConnection,
-  handleAuthApiError,
-  isValidEmail,
-  validatePasswordStrength
+    login,
+    logout,
+    register,
+    verifyAuth,
+    refreshToken,
+    requestPasswordReset,
+    resetPassword,
+    changePassword,
+    verifyEmail,
+    resendEmailVerification,
+    getCurrentUser,
+    updateCurrentUser,
+    deleteAccount,
+    checkEmailAvailability,
+    enableTwoFactorAuth,
+    verifyTwoFactorAuth,
+    disableTwoFactorAuth,
+    getUserSessions,
+    revokeSession,
+    revokeAllSessions,
+    testAuthApiConnection,
+    handleAuthApiError,
+    isValidEmail,
+    validatePasswordStrength
 };

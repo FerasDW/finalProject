@@ -1,27 +1,45 @@
-// src/Api/CommunityAPIs/cvApi.js - Updated for unified backend
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/cv';
-const AI_BASE_URL = 'http://localhost:8080/api/cv/ai';
+const BASE_URL = 'http://13.61.114.153:8081/api/cv';
+const AI_BASE_URL = 'http://13.61.114.153:8081/api/cv/ai';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get user's CV data
  * @returns {Promise<Object>} CV data
  */
 export const getCV = async () => {
-  try {
-    const response = await axios.get(BASE_URL, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching CV:', error);
-    if (error.response?.status === 404) {
-      return null;
+    try {
+        const response = await axios.get(BASE_URL, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching CV:', error);
+        if (error.response?.status === 404) {
+            return null;
+        }
+        throw error;
     }
-    throw error;
-  }
 };
 
 /**
@@ -30,13 +48,13 @@ export const getCV = async () => {
  * @returns {Promise<Object>} Saved CV data
  */
 export const saveCV = async (cvData) => {
-  try {
-    const response = await axios.post(BASE_URL, cvData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Error saving CV:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(BASE_URL, cvData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Error saving CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -44,13 +62,13 @@ export const saveCV = async (cvData) => {
  * @returns {Promise<Object>} Delete response
  */
 export const deleteCV = async () => {
-  try {
-    const response = await axios.delete(BASE_URL, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Error deleting CV:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.delete(BASE_URL, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -59,22 +77,21 @@ export const deleteCV = async () => {
  * @returns {Promise<Object>} Upload response
  */
 export const uploadCV = async (cvFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('cv', cvFile);
-    
-    const response = await axios.post(`${BASE_URL}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      withCredentials: true,
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error uploading CV:', error);
-    throw error;
-  }
+    try {
+        const formData = new FormData();
+        formData.append('cv', cvFile);
+        
+        const response = await axios.post(`${BASE_URL}/upload`, formData, createAuthConfig({
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }));
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error uploading CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -82,16 +99,15 @@ export const uploadCV = async (cvFile) => {
  * @returns {Promise<Blob>} CV file blob
  */
 export const downloadCV = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/download`, {
-      withCredentials: true,
-      responseType: 'blob'
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error downloading CV:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/download`, createAuthConfig({
+            responseType: 'blob'
+        }));
+        return response.data;
+    } catch (error) {
+        console.error('Error downloading CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -101,17 +117,17 @@ export const downloadCV = async () => {
  * @returns {Promise<Object>} AI generated CV data
  */
 export const generateCVWithAI = async (type, input) => {
-  try {    
-    const response = await axios.post(`${AI_BASE_URL}/generate`, {
-      type: type,
-      input: input
-    }, { withCredentials: true });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error generating CV with AI:', error);
-    throw error;
-  }
+    try {     
+        const response = await axios.post(`${AI_BASE_URL}/generate`, {
+            type: type,
+            input: input
+        }, createAuthConfig());
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error generating CV with AI:', error);
+        throw error;
+    }
 };
 
 /**
@@ -120,16 +136,16 @@ export const generateCVWithAI = async (type, input) => {
  * @returns {Promise<Object>} Extracted CV data
  */
 export const aiExtractCV = async (text) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/ai-extract`, {
-      text: text
-    }, { withCredentials: true });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error in AI CV extraction:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/ai-extract`, {
+            text: text
+        }, createAuthConfig());
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error in AI CV extraction:', error);
+        throw error;
+    }
 };
 
 /**
@@ -138,13 +154,13 @@ export const aiExtractCV = async (text) => {
  * @returns {Promise<Object>} User's CV data
  */
 export const getUserCV = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/user/${userId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user CV:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/user/${userId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -153,17 +169,16 @@ export const getUserCV = async (userId) => {
  * @returns {Promise<Blob>} CV file blob
  */
 export const downloadApplicantCV = async (applicantId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/download/${applicantId}`, {
-      withCredentials: true,
-      responseType: 'blob'
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error downloading applicant CV:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/download/${applicantId}`, createAuthConfig({
+            responseType: 'blob'
+        }));
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error downloading applicant CV:', error);
+        throw error;
+    }
 };
 
 /**
@@ -173,20 +188,19 @@ export const downloadApplicantCV = async (applicantId) => {
  * @returns {Promise<Blob>} Generated PDF blob
  */
 export const generateCVPDF = async (cvData, template = 'professional') => {
-  try {
-    const response = await axios.post(`${BASE_URL}/generate-pdf`, {
-      ...cvData,
-      template
-    }, {
-      withCredentials: true,
-      responseType: 'blob'
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error generating CV PDF:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/generate-pdf`, {
+            ...cvData,
+            template
+        }, createAuthConfig({
+            responseType: 'blob'
+        }));
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error generating CV PDF:', error);
+        throw error;
+    }
 };
 
 /**
@@ -195,22 +209,21 @@ export const generateCVPDF = async (cvData, template = 'professional') => {
  * @returns {Promise<Object>} Extracted CV data
  */
 export const parseCVFile = async (cvFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('cv', cvFile);
-    
-    const response = await axios.post(`${BASE_URL}/parse`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      withCredentials: true,
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error parsing CV file:', error);
-    throw error;
-  }
+    try {
+        const formData = new FormData();
+        formData.append('cv', cvFile);
+        
+        const response = await axios.post(`${BASE_URL}/parse`, formData, createAuthConfig({
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }));
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error parsing CV file:', error);
+        throw error;
+    }
 };
 
 /**
@@ -220,17 +233,17 @@ export const parseCVFile = async (cvFile) => {
  * @returns {Promise<Object>} Improved content
  */
 export const improveCVSection = async (section, currentContent) => {
-  try {
-    const response = await axios.post(`${AI_BASE_URL}/generate`, {
-      type: section,
-      input: `Improve this ${section} section: ${currentContent}`
-    }, { withCredentials: true });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error improving CV section:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${AI_BASE_URL}/generate`, {
+            type: section,
+            input: `Improve this ${section} section: ${currentContent}`
+        }, createAuthConfig());
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error improving CV section:', error);
+        throw error;
+    }
 };
 
 /**
@@ -238,13 +251,13 @@ export const improveCVSection = async (section, currentContent) => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testCVApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`, { withCredentials: true });
-    return true;
-  } catch (error) {
-    console.error('CV API connection test failed:', error);
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        console.error('CV API connection test failed:', error);
+        return false;
+    }
 };
 
 /**
@@ -253,37 +266,37 @@ export const testCVApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleCVApiError = (error, operation) => {
-  console.error(`Error during ${operation}:`, error);
-  
-  if (error.response) {
-    const { status, data } = error.response;
-    console.error(`HTTP ${status}:`, data);
+    console.error(`Error during ${operation}:`, error);
     
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your CV data');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('CV not found');
-      case 413:
-        throw new Error('File too large - please choose a smaller CV file');
-      case 415:
-        throw new Error('Unsupported file type - please upload a PDF file');
-      case 422:
-        throw new Error('Invalid CV data - please check your information');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        console.error(`HTTP ${status}:`, data);
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your CV data');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('CV not found');
+            case 413:
+                throw new Error('File too large - please choose a smaller CV file');
+            case 415:
+                throw new Error('Unsupported file type - please upload a PDF file');
+            case 422:
+                throw new Error('Invalid CV data - please check your information');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 /**
@@ -292,19 +305,19 @@ export const handleCVApiError = (error, operation) => {
  * @param {string} filename - Filename for download
  */
 export const downloadCVFile = (blob, filename = 'cv.pdf') => {
-  try {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error('Error downloading CV file:', error);
-    throw new Error('Failed to download CV file');
-  }
+    try {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error downloading CV file:', error);
+        throw new Error('Failed to download CV file');
+    }
 };
 
 /**
@@ -313,39 +326,39 @@ export const downloadCVFile = (blob, filename = 'cv.pdf') => {
  * @returns {Object} Formatted CV data
  */
 export const formatCVData = (cvData) => {
-  if (!cvData) return null;
-  
-  return {
-    name: cvData.name || '',
-    title: cvData.title || '',
-    summary: cvData.summary || '',
-    education: cvData.education || '',
-    experience: cvData.experience || '',
-    skills: cvData.skills || '',
-    links: cvData.links || '',
-    fileName: cvData.fileName || null,
-    fileUrl: cvData.fileUrl || null,
-    createdAt: cvData.createdAt || null,
-    updatedAt: cvData.updatedAt || null
-  };
+    if (!cvData) return null;
+    
+    return {
+        name: cvData.name || '',
+        title: cvData.title || '',
+        summary: cvData.summary || '',
+        education: cvData.education || '',
+        experience: cvData.experience || '',
+        skills: cvData.skills || '',
+        links: cvData.links || '',
+        fileName: cvData.fileName || null,
+        fileUrl: cvData.fileUrl || null,
+        createdAt: cvData.createdAt || null,
+        updatedAt: cvData.updatedAt || null
+    };
 };
 
 // Export all functions as default for easy importing
 export default {
-  getCV,
-  saveCV,
-  deleteCV,
-  uploadCV,
-  downloadCV,
-  generateCVWithAI,
-  aiExtractCV,
-  getUserCV,
-  downloadApplicantCV,
-  generateCVPDF,
-  parseCVFile,
-  improveCVSection,
-  testCVApiConnection,
-  handleCVApiError,
-  downloadCVFile,
-  formatCVData
+    getCV,
+    saveCV,
+    deleteCV,
+    uploadCV,
+    downloadCV,
+    generateCVWithAI,
+    aiExtractCV,
+    getUserCV,
+    downloadApplicantCV,
+    generateCVPDF,
+    parseCVFile,
+    improveCVSection,
+    testCVApiConnection,
+    handleCVApiError,
+    downloadCVFile,
+    formatCVData
 };

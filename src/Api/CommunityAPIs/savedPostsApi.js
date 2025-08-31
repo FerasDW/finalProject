@@ -1,23 +1,41 @@
-// src/Api/CommunityAPIs/savedPostsApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/community/posts';
+const BASE_URL = 'http://13.61.114.153:8081/api/community/posts';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get all saved posts for the current user
  * @returns {Promise<Array>} Array of saved posts
  */
 export const getSavedPosts = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/saved`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    console.error('Failed to get saved posts:', error);
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/saved`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        console.error('Failed to get saved posts:', error);
+        return [];
+    }
 };
 
 /**
@@ -26,13 +44,13 @@ export const getSavedPosts = async () => {
  * @returns {Promise<Object>} Response data
  */
 export const savePost = async (postId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${postId}/save`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to save post:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${postId}/save`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to save post:', error);
+        throw error;
+    }
 };
 
 /**
@@ -41,13 +59,13 @@ export const savePost = async (postId) => {
  * @returns {Promise<Object>} Response data
  */
 export const unsavePost = async (postId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/${postId}/save`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to unsave post:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/${postId}/save`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to unsave post:', error);
+        throw error;
+    }
 };
 
 /**
@@ -56,13 +74,13 @@ export const unsavePost = async (postId) => {
  * @returns {Promise<boolean>} True if post is saved
  */
 export const isPostSaved = async (postId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/check/${postId}`, { withCredentials: true });
-    return response.data.saved || false;
-  } catch (error) {
-    console.error('Failed to check if post is saved:', error);
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/check/${postId}`, createAuthConfig());
+        return response.data.saved || false;
+    } catch (error) {
+        console.error('Failed to check if post is saved:', error);
+        return false;
+    }
 };
 
 /**
@@ -70,13 +88,13 @@ export const isPostSaved = async (postId) => {
  * @returns {Promise<number>} Number of saved posts
  */
 export const getSavedPostsCount = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/count`, { withCredentials: true });
-    return response.data.count || 0;
-  } catch (error) {
-    console.error('Failed to get saved posts count:', error);
-    return 0;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/count`, createAuthConfig());
+        return response.data.count || 0;
+    } catch (error) {
+        console.error('Failed to get saved posts count:', error);
+        return 0;
+    }
 };
 
 /**
@@ -84,20 +102,20 @@ export const getSavedPostsCount = async () => {
  * @returns {Promise<Object>} Response data
  */
 export const clearAllSavedPosts = async () => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/clear`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to clear saved posts:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/clear`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to clear saved posts:', error);
+        throw error;
+    }
 };
 
 export default {
-  getSavedPosts,
-  savePost,
-  unsavePost,
-  isPostSaved,
-  getSavedPostsCount,
-  clearAllSavedPosts
+    getSavedPosts,
+    savePost,
+    unsavePost,
+    isPostSaved,
+    getSavedPostsCount,
+    clearAllSavedPosts
 };

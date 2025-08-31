@@ -1,10 +1,29 @@
-// src/Api/genericDashboardAPI.js
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api";
+  process.env.REACT_APP_API_URL || "http://13.61.114.153:8082/api";
 
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 const endpoints = {
   // Correct endpoint for fetching users by role
@@ -19,7 +38,7 @@ export const getData = async (entityType) => {
     throw new Error(`Invalid entity type: ${entityType}`);
   }
   try {
-    const response = await axios.get(endpoints[entityType]);
+    const response = await axios.get(endpoints[entityType], createAuthConfig());
     if (Array.isArray(response.data)) {
       return response.data;
     } else if (response.data && Array.isArray(response.data.data)) {
@@ -53,7 +72,8 @@ export const createRecord = async (entityType, recordData) => {
   try {
     const response = await axios.post(
       `${endpoints.users}/admin-create`,
-      dataToSend
+      dataToSend,
+      createAuthConfig()
     );
     return response.data;
   } catch (error) {
@@ -66,7 +86,7 @@ export const createRecord = async (entityType, recordData) => {
 
 export const updateRecord = async (entityType, id, recordData) => {
   try {
-    const response = await axios.put(`${endpoints.users}/${id}`, recordData);
+    const response = await axios.put(`${endpoints.users}/${id}`, recordData, createAuthConfig());
     return response.data;
   } catch (error) {
     console.error(`Error updating ${entityType.slice(0, -1)}:`, error);
@@ -78,7 +98,7 @@ export const updateRecord = async (entityType, id, recordData) => {
 
 export const getAllDepartments = async () => {
   try {
-    const response = await axios.get(endpoints.departments);
+    const response = await axios.get(endpoints.departments, createAuthConfig());
     if (Array.isArray(response.data)) {
       return response.data;
     } else {

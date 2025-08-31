@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/chatApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/chat';
+const BASE_URL = 'http://13.61.114.153:8081/api/chat';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Fetches chat messages between two users in the community context.
@@ -13,15 +31,13 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Array>} Array of chat messages.
  */
 export const fetchChatMessages = async (user1Id, user2Id) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/community/${user1Id}/${user2Id}`, {
-      withCredentials: true
-    });
-    return response.data || [];
-  } catch (error) {
-    console.error('Failed to fetch community chat messages:', error);
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/community/${user1Id}/${user2Id}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        console.error('Failed to fetch community chat messages:', error);
+        return [];
+    }
 };
 
 /**
@@ -30,15 +46,13 @@ export const fetchChatMessages = async (user1Id, user2Id) => {
  * @returns {Promise<number>} The unread message count.
  */
 export const getUnreadCount = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/unread/${userId}?context=community`, {
-      withCredentials: true
-    });
-    return response.data || 0;
-  } catch (error) {
-    console.error('Failed to get community unread count:', error);
-    return 0;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/unread/${userId}?context=community`, createAuthConfig());
+        return response.data || 0;
+    } catch (error) {
+        console.error('Failed to get community unread count:', error);
+        return 0;
+    }
 };
 
 /**
@@ -48,19 +62,17 @@ export const getUnreadCount = async (userId) => {
  * @returns {Promise<Object>} Response data from the server.
  */
 export const markMessagesAsRead = async (receiverId, senderId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/mark-read`, {
-      receiverId,
-      senderId,
-      context: 'community'
-    }, {
-      withCredentials: true
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to mark community messages as read:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/mark-read`, {
+            receiverId,
+            senderId,
+            context: 'community'
+        }, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to mark community messages as read:', error);
+        throw error;
+    }
 };
 
 /**
@@ -69,15 +81,13 @@ export const markMessagesAsRead = async (receiverId, senderId) => {
  * @returns {Promise<Object>} Response data.
  */
 export const sendChatMessage = async (message) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/send`, message, {
-      withCredentials: true
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to send chat message:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/send`, message, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to send chat message:', error);
+        throw error;
+    }
 };
 
 /**
@@ -86,15 +96,13 @@ export const sendChatMessage = async (message) => {
  * @returns {Promise<Array>} Array of chat conversations.
  */
 export const getChatHistory = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/conversations/${userId}?context=community`, {
-      withCredentials: true
-    });
-    return response.data || [];
-  } catch (error) {
-    console.error('Failed to get chat history:', error);
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/conversations/${userId}?context=community`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        console.error('Failed to get chat history:', error);
+        return [];
+    }
 };
 
 /**
@@ -103,33 +111,31 @@ export const getChatHistory = async (userId) => {
  * @returns {Promise<Object>} Response data.
  */
 export const deleteChatMessage = async (messageId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/message/${messageId}`, {
-      withCredentials: true
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to delete chat message:', error);
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/message/${messageId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        console.error('Failed to delete chat message:', error);
+        throw error;
+    }
 };
 
 // Test connection to backend
 export const testChatApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`);
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 export default {
-  fetchChatMessages,
-  getUnreadCount,
-  markMessagesAsRead,
-  sendChatMessage,
-  getChatHistory,
-  deleteChatMessage,
-  testChatApiConnection
+    fetchChatMessages,
+    getUnreadCount,
+    markMessagesAsRead,
+    sendChatMessage,
+    getChatHistory,
+    deleteChatMessage,
+    testChatApiConnection
 };

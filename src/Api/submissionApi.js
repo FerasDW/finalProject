@@ -1,8 +1,28 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/submissions';
+const API_URL = 'http://13.61.114.153:8082/api/submissions';
 
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Fetches all submissions for a specific course.
@@ -12,7 +32,7 @@ axios.defaults.withCredentials = true;
 export const getSubmissionsByCourse = async (courseId) => {
     if (!courseId) return [];
     try {
-        const response = await axios.get(`${API_URL}/course/${courseId}`);
+        const response = await axios.get(`${API_URL}/course/${courseId}`, createAuthConfig());
         return response.data || [];
     } catch (error) {
         console.error("Error fetching submissions for course:", error);
@@ -27,7 +47,7 @@ export const getSubmissionsByCourse = async (courseId) => {
  */
 export const createSubmission = async (submissionData) => {
     try {
-        const response = await axios.post(API_URL, submissionData);
+        const response = await axios.post(API_URL, submissionData, createAuthConfig());
         return response.data;
     } catch (error) {
         console.error("Error creating submission:", error);

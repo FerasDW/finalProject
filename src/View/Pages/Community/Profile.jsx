@@ -337,10 +337,8 @@ const Profile = () => {
 
             <div className="profileActions">
               {isOwnProfile ? (
-                <button className="editBtn" onClick={handleEditProfile}>
-                  <EditIcon fontSize="small" />
-                  Edit Profile
-                </button>
+                <div>
+                </div>
               ) : (
                 <button
                   className={`friendBtn ${friendButtonConfig.className}`}

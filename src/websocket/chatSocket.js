@@ -16,7 +16,7 @@ export const connectWebSocket = (userId, context = 'eduSphere', onMessageReceive
 
   // Create new connection
   try {
-    const socket = new SockJS("http://localhost:8080/ws");
+    const socket = new SockJS("http://13.61.114.153:8082/ws");
 
     stompClient = new Client({
       webSocketFactory: () => socket,

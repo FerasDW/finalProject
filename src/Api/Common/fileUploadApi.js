@@ -1,7 +1,8 @@
 // src/Api/Common/fileUploadApi.js (renamed from imageUploadApi.js)
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/files';
+const BASE_URL = 'http://13.61.114.153:8082/api/files';
+
 
 /**
  * Upload an image file to the server
@@ -21,7 +22,7 @@ export const uploadImage = async (file, context = 'community') => {
       withCredentials: true,
     });
 
-    return response.data; // { url: "http://localhost:8080/api/files/community/images/filename.jpg", filename: "filename.jpg", ... }
+    return response.data;
   } catch (error) {
     console.error('Failed to upload image:', error);
     throw error;
@@ -46,7 +47,7 @@ export const uploadFile = async (file, context = 'community') => {
       withCredentials: true,
     });
 
-    return response.data; // { url: "http://localhost:8080/api/files/community/files/filename.pdf", filename: "filename.pdf", ... }
+    return response.data;
   } catch (error) {
     console.error('Failed to upload file:', error);
     throw error;

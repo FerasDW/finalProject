@@ -1,22 +1,40 @@
-// src/Api/CommunityAPIs/jobsApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/jobs';
+const BASE_URL = 'http://13.61.114.153:8081/api/jobs';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get all available jobs
  * @returns {Promise<Array>} Array of all jobs
  */
 export const getAllJobs = async () => {
-  try {
-    const response = await axios.get(BASE_URL, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(BASE_URL, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -24,12 +42,12 @@ export const getAllJobs = async () => {
  * @returns {Promise<Array>} Array of user's posted jobs
  */
 export const getMyPostedJobs = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/my-posts`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/my-posts`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -37,12 +55,12 @@ export const getMyPostedJobs = async () => {
  * @returns {Promise<Array>} Array of applied jobs
  */
 export const getAppliedJobs = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/applied`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/applied`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -50,12 +68,12 @@ export const getAppliedJobs = async () => {
  * @returns {Promise<Array>} Array of saved jobs
  */
 export const getSavedJobs = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/saved`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/saved`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -64,12 +82,12 @@ export const getSavedJobs = async () => {
  * @returns {Promise<Object>} Created job
  */
 export const createJob = async (jobData) => {
-  try {
-    const response = await axios.post(BASE_URL, jobData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(BASE_URL, jobData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -79,12 +97,12 @@ export const createJob = async (jobData) => {
  * @returns {Promise<Object>} Updated job
  */
 export const updateJob = async (jobId, jobData) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/${jobId}`, jobData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/${jobId}`, jobData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -93,12 +111,12 @@ export const updateJob = async (jobId, jobData) => {
  * @returns {Promise<Object>} Delete response
  */
 export const deleteJob = async (jobId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/${jobId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/${jobId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -108,12 +126,12 @@ export const deleteJob = async (jobId) => {
  * @returns {Promise<Object>} Application response
  */
 export const applyToJob = async (jobId, applicationData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${jobId}/apply`, applicationData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${jobId}/apply`, applicationData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -122,12 +140,12 @@ export const applyToJob = async (jobId, applicationData) => {
  * @returns {Promise<Object>} Save response
  */
 export const saveJob = async (jobId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${jobId}/save`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${jobId}/save`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -136,12 +154,12 @@ export const saveJob = async (jobId) => {
  * @returns {Promise<Object>} Unsave response
  */
 export const unsaveJob = async (jobId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/${jobId}/save`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/${jobId}/save`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -150,12 +168,12 @@ export const unsaveJob = async (jobId) => {
  * @returns {Promise<Array>} Array of job applications
  */
 export const getJobApplications = async (jobId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/${jobId}/applications`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/${jobId}/applications`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -164,12 +182,12 @@ export const getJobApplications = async (jobId) => {
  * @returns {Promise<Object>} Accept response
  */
 export const acceptApplication = async (applicationId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/applications/${applicationId}/accept`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/applications/${applicationId}/accept`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -178,12 +196,12 @@ export const acceptApplication = async (applicationId) => {
  * @returns {Promise<Object>} Reject response
  */
 export const rejectApplication = async (applicationId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/applications/${applicationId}/reject`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/applications/${applicationId}/reject`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -193,15 +211,14 @@ export const rejectApplication = async (applicationId) => {
  * @returns {Promise<Blob>} CV file blob
  */
 export const downloadJobApplicantCV = async (applicantId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/cv/download/${applicantId}`, {
-      withCredentials: true,
-      responseType: 'blob'
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/cv/download/${applicantId}`, createAuthConfig({
+            responseType: 'blob'
+        }));
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -211,22 +228,22 @@ export const downloadJobApplicantCV = async (applicantId) => {
  * @returns {Promise<Array>} Array of matching jobs
  */
 export const searchJobs = async (searchTerm = '', filters = {}) => {
-  try {
-    const params = new URLSearchParams();
-    if (searchTerm.trim()) params.append('q', searchTerm.trim());
-    if (filters.type) params.append('type', filters.type);
-    if (filters.location) params.append('location', filters.location);
-    if (filters.remote) params.append('remote', filters.remote);
-    if (filters.experience) params.append('experience', filters.experience);
-    if (filters.salary) params.append('salary', filters.salary);
-    if (filters.page) params.append('page', filters.page);
-    if (filters.size) params.append('size', filters.size);
+    try {
+        const params = new URLSearchParams();
+        if (searchTerm.trim()) params.append('q', searchTerm.trim());
+        if (filters.type) params.append('type', filters.type);
+        if (filters.location) params.append('location', filters.location);
+        if (filters.remote) params.append('remote', filters.remote);
+        if (filters.experience) params.append('experience', filters.experience);
+        if (filters.salary) params.append('salary', filters.salary);
+        if (filters.page) params.append('page', filters.page);
+        if (filters.size) params.append('size', filters.size);
 
-    const response = await axios.get(`${BASE_URL}/search?${params.toString()}`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+        const response = await axios.get(`${BASE_URL}/search?${params.toString()}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -234,12 +251,12 @@ export const searchJobs = async (searchTerm = '', filters = {}) => {
  * @returns {Promise<Object>} Job statistics
  */
 export const getJobStats = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/stats`, { withCredentials: true });
-    return response.data || {};
-  } catch (error) {
-    return {};
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/stats`, createAuthConfig());
+        return response.data || {};
+    } catch (error) {
+        return {};
+    }
 };
 
 /**
@@ -247,12 +264,12 @@ export const getJobStats = async () => {
  * @returns {Promise<Array>} Array of featured jobs
  */
 export const getFeaturedJobs = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/featured`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/featured`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -262,12 +279,12 @@ export const getFeaturedJobs = async () => {
  * @returns {Promise<Object>} Report response
  */
 export const reportJob = async (jobId, reportData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${jobId}/report`, reportData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${jobId}/report`, reportData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -275,12 +292,12 @@ export const reportJob = async (jobId, reportData) => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testJobsApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`, { withCredentials: true });
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -289,52 +306,52 @@ export const testJobsApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleJobsApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('Job not found');
-      case 409:
-        throw new Error('You have already applied to this job');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('Job not found');
+            case 409:
+                throw new Error('You have already applied to this job');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 // Export all functions as default for easy importing
 export default {
-  getAllJobs,
-  getMyPostedJobs,
-  getAppliedJobs,
-  getSavedJobs,
-  createJob,
-  updateJob,
-  deleteJob,
-  applyToJob,
-  saveJob,
-  unsaveJob,
-  getJobApplications,
-  acceptApplication,
-  rejectApplication,
-  downloadJobApplicantCV,
-  searchJobs,
-  getJobStats,
-  getFeaturedJobs,
-  reportJob,
-  testJobsApiConnection,
-  handleJobsApiError
+    getAllJobs,
+    getMyPostedJobs,
+    getAppliedJobs,
+    getSavedJobs,
+    createJob,
+    updateJob,
+    deleteJob,
+    applyToJob,
+    saveJob,
+    unsaveJob,
+    getJobApplications,
+    acceptApplication,
+    rejectApplication,
+    downloadJobApplicantCV,
+    searchJobs,
+    getJobStats,
+    getFeaturedJobs,
+    reportJob,
+    testJobsApiConnection,
+    handleJobsApiError
 };

@@ -409,7 +409,7 @@ export const useGenericProfile = (initialSection = "overview") => {
         if (row.id) {
           // Use the same endpoint structure as your working download
           window.open(
-            `http://localhost:8080/api/resources/${row.id}/download`,
+            `http://13.61.114.153:8082/api/resources/${row.id}/download`,
             "_blank"
           );
 

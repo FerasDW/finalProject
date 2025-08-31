@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/storiesApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/community/stories';
+const BASE_URL = 'http://13.61.114.153:8081/api/community/stories';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get stories feed (current user + friends)
@@ -13,19 +31,17 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Object>} Stories feed response
  */
 export const getStoriesFeed = async (userId, friendIds = []) => {
-  try {
-    const params = new URLSearchParams();
-    params.append("userId", userId);
-    friendIds.forEach((id) => params.append("friendIds", id));
+    try {
+        const params = new URLSearchParams();
+        params.append("userId", userId);
+        friendIds.forEach((id) => params.append("friendIds", id));
 
-    const response = await axios.get(`${BASE_URL}/feed?${params.toString()}`, {
-      withCredentials: true,
-    });
-    
-    return response.data;
-  } catch (error) {
-    return { stories: [] };
-  }
+        const response = await axios.get(`${BASE_URL}/feed?${params.toString()}`, createAuthConfig());
+        
+        return response.data;
+    } catch (error) {
+        return { stories: [] };
+    }
 };
 
 /**
@@ -34,31 +50,30 @@ export const getStoriesFeed = async (userId, friendIds = []) => {
  * @returns {Promise<Object>} Created story response
  */
 export const createStory = async (storyData) => {
-  try {
-    // Create FormData for file upload
-    const formData = new FormData();
-    
-    // Add text fields
-    formData.append("name", storyData.name);
-    formData.append("profilePic", storyData.profilePic || "");
-    formData.append("text", storyData.text || "");
-    
-    // Add image file if provided
-    if (storyData.img) {
-      formData.append("img", storyData.img);
+    try {
+        // Create FormData for file upload
+        const formData = new FormData();
+        
+        // Add text fields
+        formData.append("name", storyData.name);
+        formData.append("profilePic", storyData.profilePic || "");
+        formData.append("text", storyData.text || "");
+        
+        // Add image file if provided
+        if (storyData.img) {
+            formData.append("img", storyData.img);
+        }
+        
+        const response = await axios.post(BASE_URL, formData, createAuthConfig({
+            headers: {
+                "Content-Type": "multipart/form-data",
+            }
+        }));
+        
+        return response.data;
+    } catch (error) {
+        throw error;
     }
-    
-    const response = await axios.post(BASE_URL, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      withCredentials: true,
-    });
-    
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
 };
 
 /**
@@ -67,12 +82,12 @@ export const createStory = async (storyData) => {
  * @returns {Promise<Array>} Array of user's stories
  */
 export const getUserStories = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/user/${userId}`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/user/${userId}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -81,12 +96,12 @@ export const getUserStories = async (userId) => {
  * @returns {Promise<Object>} Delete response
  */
 export const deleteStory = async (storyId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/${storyId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/${storyId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -95,12 +110,12 @@ export const deleteStory = async (storyId) => {
  * @returns {Promise<Object>} View response
  */
 export const viewStory = async (storyId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${storyId}/view`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    return { success: false };
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${storyId}/view`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        return { success: false };
+    }
 };
 
 /**
@@ -109,12 +124,12 @@ export const viewStory = async (storyId) => {
  * @returns {Promise<Array>} Array of viewers
  */
 export const getStoryViewers = async (storyId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/${storyId}/viewers`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/${storyId}/viewers`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -123,21 +138,20 @@ export const getStoryViewers = async (storyId) => {
  * @returns {Promise<Object>} Upload response with media URL
  */
 export const uploadStoryMedia = async (mediaFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('media', mediaFile);
-    
-    const response = await axios.post(`${BASE_URL}/upload-media`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      withCredentials: true,
-    });
-    
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const formData = new FormData();
+        formData.append('media', mediaFile);
+        
+        const response = await axios.post(`${BASE_URL}/upload-media`, formData, createAuthConfig({
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        }));
+        
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -147,12 +161,12 @@ export const uploadStoryMedia = async (mediaFile) => {
  * @returns {Promise<Object>} Report response
  */
 export const reportStory = async (storyId, reportData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/${storyId}/report`, reportData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/${storyId}/report`, reportData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -161,12 +175,12 @@ export const reportStory = async (storyId, reportData) => {
  * @returns {Promise<Array>} Array of trending stories
  */
 export const getTrendingStories = async (limit = 10) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/trending?limit=${limit}`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/trending?limit=${limit}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -174,12 +188,12 @@ export const getTrendingStories = async (limit = 10) => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testStoriesApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`, { withCredentials: true });
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -188,45 +202,45 @@ export const testStoriesApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleStoriesApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('Story not found');
-      case 413:
-        throw new Error('File too large - please choose a smaller file');
-      case 415:
-        throw new Error('Unsupported file type - please use images or videos');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('Story not found');
+            case 413:
+                throw new Error('File too large - please choose a smaller file');
+            case 415:
+                throw new Error('Unsupported file type - please use images or videos');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 // Export all functions as default for easy importing
 export default {
-  getStoriesFeed,
-  createStory,
-  getUserStories,
-  deleteStory,
-  viewStory,
-  getStoryViewers,
-  uploadStoryMedia,
-  reportStory,
-  getTrendingStories,
-  testStoriesApiConnection,
-  handleStoriesApiError
+    getStoriesFeed,
+    createStory,
+    getUserStories,
+    deleteStory,
+    viewStory,
+    getStoryViewers,
+    uploadStoryMedia,
+    reportStory,
+    getTrendingStories,
+    testStoriesApiConnection,
+    handleStoriesApiError
 };

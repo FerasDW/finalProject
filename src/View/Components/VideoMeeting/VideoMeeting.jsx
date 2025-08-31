@@ -11,6 +11,9 @@ const VideoMeeting = () => {
   const navigate = useNavigate();
   const { authData, loading: authLoading } = useAuth();
   
+  // Use the correct API URL for the edusphere-service (port 8082)
+  const API_BASE_URL = 'http://13.61.114.153:8082';
+  
   // Extract URL parameters with useMemo to prevent re-computation
   const urlParams = useMemo(() => {
     return {
@@ -141,11 +144,13 @@ const VideoMeeting = () => {
         const leaveData = new Blob([JSON.stringify({
           sessionId: currentSession.id,
           leaveTime: new Date().toISOString(),
-          reason: reason
+          reason: reason,
+          token: localStorage.getItem('jwtToken') // Send token in beacon data
         })], { type: 'application/json' });
         
+        // FIX: Use the correct API_BASE_URL
         navigator.sendBeacon(
-          `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/meetings/${meetingId}/leave`,
+          `${API_BASE_URL}/api/meetings/${meetingId}/leave`,
           leaveData
         );
       } catch (beaconError) {
@@ -214,11 +219,13 @@ const VideoMeeting = () => {
           const leaveData = new Blob([JSON.stringify({
             sessionId: currentSession.id,
             leaveTime: new Date().toISOString(),
-            reason: 'page_unload'
+            reason: 'page_unload',
+            token: localStorage.getItem('jwtToken') // Send token in beacon data
           })], { type: 'application/json' });
           
+          // FIX: Use the correct API_BASE_URL
           navigator.sendBeacon(
-            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/meetings/${meetingId}/leave`,
+            `${API_BASE_URL}/api/meetings/${meetingId}/leave`,
             leaveData
           );
           
@@ -266,11 +273,13 @@ const VideoMeeting = () => {
           const leaveData = new Blob([JSON.stringify({
             sessionId: currentSession.id,
             leaveTime: new Date().toISOString(),
-            reason: 'component_unmount'
+            reason: 'component_unmount',
+            token: localStorage.getItem('jwtToken') // Send token in beacon data
           })], { type: 'application/json' });
           
+          // FIX: Use the correct API_BASE_URL
           navigator.sendBeacon(
-            `${process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080'}/api/meetings/${meetingId}/leave`,
+            `${API_BASE_URL}/api/meetings/${meetingId}/leave`,
             leaveData
           );
           
@@ -288,13 +297,14 @@ const VideoMeeting = () => {
       console.error('ZegoCloud Error:', zegoError);
       setInitializationError(zegoError);
       
-      // Try to reinitialize after a delay for connection errors
       if (zegoError.includes('connection') || zegoError.includes('network')) {
         const retryTimer = setTimeout(() => {
           if (mountedRef.current) {
             setInitializationError(null);
             if (reinitialize) {
               reinitialize();
+            } else {
+              window.location.reload();
             }
           }
         }, 5000);
@@ -304,7 +314,6 @@ const VideoMeeting = () => {
     }
   }, [zegoError, reinitialize]);
 
-  // Show loading while auth is loading
   if (authLoading) {
     return (
       <div className={styles.loadingContainer}>
@@ -315,7 +324,6 @@ const VideoMeeting = () => {
     );
   }
 
-  // Early return for missing room ID
   if (!roomID) {
     return (
       <div className={styles.errorContainer}>
@@ -343,7 +351,6 @@ const VideoMeeting = () => {
     );
   }
 
-  // Check if user is authenticated
   if (!authData?.id) {
     return (
       <div className={styles.errorContainer}>
@@ -371,7 +378,6 @@ const VideoMeeting = () => {
     );
   }
 
-  // Enhanced error state with retry options
   if (zegoError || initializationError) {
     const errorMessage = initializationError || zegoError;
     
@@ -415,7 +421,6 @@ const VideoMeeting = () => {
 
   return (
     <div className={styles.meetingContainer}>
-      {/* Enhanced loading state with timeout warning */}
       {(zegoLoading || !shouldInitialize) && (
         <div className={styles.loadingContainer}>
           <div className={styles.loadingText}>
@@ -427,7 +432,6 @@ const VideoMeeting = () => {
             </div>
           )}
           
-          {/* Show reload hint after 15 seconds */}
           {zegoLoading && shouldInitialize && (
             <div className={styles.loadingSubtext} style={{ marginTop: '20px' }}>
               Taking longer than expected? 
@@ -450,7 +454,6 @@ const VideoMeeting = () => {
         </div>
       )}
       
-      {/* ZegoCloud Meeting Container */}
       <div 
         ref={meetingRef} 
         className={styles.meetingRef}
@@ -463,7 +466,6 @@ const VideoMeeting = () => {
         }}
       />
 
-      {/* Loading overlay for leaving state */}
       {isLeavingMeeting && (
         <div style={{
           position: 'fixed',

@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/notificationsApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/notifications';
+const BASE_URL = 'http://13.61.114.153:8081/api/notifications';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get user's notifications
@@ -12,20 +30,20 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Array>} Array of notifications
  */
 export const getNotifications = async (filters = {}) => {
-  try {
-    const params = new URLSearchParams();
-    if (filters.type) params.append('type', filters.type);
-    if (filters.isRead !== undefined) params.append('isRead', filters.isRead);
-    if (filters.page) params.append('page', filters.page);
-    if (filters.size) params.append('size', filters.size);
+    try {
+        const params = new URLSearchParams();
+        if (filters.type) params.append('type', filters.type);
+        if (filters.isRead !== undefined) params.append('isRead', filters.isRead);
+        if (filters.page) params.append('page', filters.page);
+        if (filters.size) params.append('size', filters.size);
 
-    const url = params.toString() ? `${BASE_URL}?${params.toString()}` : BASE_URL;
-    const response = await axios.get(url, { withCredentials: true });
-    
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+        const url = params.toString() ? `${BASE_URL}?${params.toString()}` : BASE_URL;
+        const response = await axios.get(url, createAuthConfig());
+        
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -34,12 +52,12 @@ export const getNotifications = async (filters = {}) => {
  * @returns {Promise<Object>} Send response
  */
 export const sendNotification = async (notificationData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/send`, notificationData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/send`, notificationData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -48,12 +66,12 @@ export const sendNotification = async (notificationData) => {
  * @returns {Promise<Object>} Mark read response
  */
 export const markNotificationRead = async (notificationId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/${notificationId}/read`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/${notificationId}/read`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -61,12 +79,12 @@ export const markNotificationRead = async (notificationId) => {
  * @returns {Promise<Object>} Mark all read response
  */
 export const markAllNotificationsRead = async () => {
-  try {
-    const response = await axios.put(`${BASE_URL}/mark-all-read`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/mark-all-read`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -74,12 +92,12 @@ export const markAllNotificationsRead = async () => {
  * @returns {Promise<Object>} Unread count response
  */
 export const getNotificationCount = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/count`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    return { unreadCount: 0 };
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/count`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        return { unreadCount: 0 };
+    }
 };
 
 /**
@@ -88,12 +106,12 @@ export const getNotificationCount = async () => {
  * @returns {Promise<Object>} Delete response
  */
 export const deleteNotification = async (notificationId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/${notificationId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/${notificationId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -102,15 +120,14 @@ export const deleteNotification = async (notificationId) => {
  * @returns {Promise<Object>} Delete all response
  */
 export const deleteAllNotifications = async (filters = {}) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/delete-all`, {
-      data: filters,
-      withCredentials: true
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/delete-all`, createAuthConfig({
+            data: filters,
+        }));
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -118,12 +135,12 @@ export const deleteAllNotifications = async (filters = {}) => {
  * @returns {Promise<Object>} Notification preferences
  */
 export const getNotificationPreferences = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/preferences`, { withCredentials: true });
-    return response.data || {};
-  } catch (error) {
-    return {};
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/preferences`, createAuthConfig());
+        return response.data || {};
+    } catch (error) {
+        return {};
+    }
 };
 
 /**
@@ -132,12 +149,12 @@ export const getNotificationPreferences = async () => {
  * @returns {Promise<Object>} Updated preferences response
  */
 export const updateNotificationPreferences = async (preferences) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/preferences`, preferences, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/preferences`, preferences, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -145,12 +162,12 @@ export const updateNotificationPreferences = async (preferences) => {
  * @returns {Promise<Array>} Array of notification types
  */
 export const getNotificationTypes = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/types`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/types`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -159,12 +176,12 @@ export const getNotificationTypes = async () => {
  * @returns {Promise<Object>} Bulk send response
  */
 export const sendBulkNotifications = async (bulkData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/send-bulk`, bulkData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/send-bulk`, bulkData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -173,12 +190,12 @@ export const sendBulkNotifications = async (bulkData) => {
  * @returns {Promise<Object>} Subscription response
  */
 export const subscribeToPushNotifications = async (subscriptionData) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/push/subscribe`, subscriptionData, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/push/subscribe`, subscriptionData, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -186,12 +203,12 @@ export const subscribeToPushNotifications = async (subscriptionData) => {
  * @returns {Promise<Object>} Unsubscribe response
  */
 export const unsubscribeFromPushNotifications = async () => {
-  try {
-    const response = await axios.post(`${BASE_URL}/push/unsubscribe`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/push/unsubscribe`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -200,19 +217,19 @@ export const unsubscribeFromPushNotifications = async () => {
  * @returns {Promise<Array>} Array of archived notifications
  */
 export const getNotificationHistory = async (filters = {}) => {
-  try {
-    const params = new URLSearchParams();
-    if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters.dateTo) params.append('dateTo', filters.dateTo);
-    if (filters.type) params.append('type', filters.type);
-    if (filters.page) params.append('page', filters.page);
-    if (filters.size) params.append('size', filters.size);
+    try {
+        const params = new URLSearchParams();
+        if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters.dateTo) params.append('dateTo', filters.dateTo);
+        if (filters.type) params.append('type', filters.type);
+        if (filters.page) params.append('page', filters.page);
+        if (filters.size) params.append('size', filters.size);
 
-    const response = await axios.get(`${BASE_URL}/history?${params.toString()}`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+        const response = await axios.get(`${BASE_URL}/history?${params.toString()}`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -220,12 +237,12 @@ export const getNotificationHistory = async (filters = {}) => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testNotificationsApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`, { withCredentials: true });
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -234,30 +251,30 @@ export const testNotificationsApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleNotificationsApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('Notification not found');
-      case 429:
-        throw new Error('Too many requests - please wait and try again');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('Notification not found');
+            case 429:
+                throw new Error('Too many requests - please wait and try again');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 /**
@@ -266,18 +283,18 @@ export const handleNotificationsApiError = (error, operation) => {
  * @returns {Object} Formatted notification
  */
 export const formatNotification = (notification) => {
-  return {
-    id: notification.id,
-    type: notification.type,
-    title: notification.title,
-    message: notification.message,
-    isRead: notification.isRead || false,
-    createdAt: notification.createdAt,
-    data: notification.data || {},
-    sender: notification.sender || null,
-    priority: notification.priority || 'normal',
-    actionUrl: notification.actionUrl || null
-  };
+    return {
+        id: notification.id,
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        isRead: notification.isRead || false,
+        createdAt: notification.createdAt,
+        data: notification.data || {},
+        sender: notification.sender || null,
+        priority: notification.priority || 'normal',
+        actionUrl: notification.actionUrl || null
+    };
 };
 
 /**
@@ -286,14 +303,14 @@ export const formatNotification = (notification) => {
  * @returns {Object} Notifications grouped by type
  */
 export const groupNotificationsByType = (notifications) => {
-  return notifications.reduce((groups, notification) => {
-    const type = notification.type || 'general';
-    if (!groups[type]) {
-      groups[type] = [];
-    }
-    groups[type].push(notification);
-    return groups;
-  }, {});
+    return notifications.reduce((groups, notification) => {
+        const type = notification.type || 'general';
+        if (!groups[type]) {
+            groups[type] = [];
+        }
+        groups[type].push(notification);
+        return groups;
+    }, {});
 };
 
 /**
@@ -302,28 +319,28 @@ export const groupNotificationsByType = (notifications) => {
  * @returns {Array} Array of unread notifications
  */
 export const getUnreadNotifications = (notifications) => {
-  return notifications.filter(notification => !notification.isRead);
+    return notifications.filter(notification => !notification.isRead);
 };
 
 // Export all functions as default for easy importing
 export default {
-  getNotifications,
-  sendNotification,
-  markNotificationRead,
-  markAllNotificationsRead,
-  getNotificationCount,
-  deleteNotification,
-  deleteAllNotifications,
-  getNotificationPreferences,
-  updateNotificationPreferences,
-  getNotificationTypes,
-  sendBulkNotifications,
-  subscribeToPushNotifications,
-  unsubscribeFromPushNotifications,
-  getNotificationHistory,
-  testNotificationsApiConnection,
-  handleNotificationsApiError,
-  formatNotification,
-  groupNotificationsByType,
-  getUnreadNotifications
+    getNotifications,
+    sendNotification,
+    markNotificationRead,
+    markAllNotificationsRead,
+    getNotificationCount,
+    deleteNotification,
+    deleteAllNotifications,
+    getNotificationPreferences,
+    updateNotificationPreferences,
+    getNotificationTypes,
+    sendBulkNotifications,
+    subscribeToPushNotifications,
+    unsubscribeFromPushNotifications,
+    getNotificationHistory,
+    testNotificationsApiConnection,
+    handleNotificationsApiError,
+    formatNotification,
+    groupNotificationsByType,
+    getUnreadNotifications
 };

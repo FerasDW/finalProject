@@ -3,140 +3,38 @@
  * File: src/Api/AssignmentsDashboardAPI.js
  */
 
+import axios from "axios";
+
 // Configuration
+const API_BASE_URL = 'http://13.61.114.153:8082/api';
 const API_CONFIG = {
-  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api',
+  baseURL: API_BASE_URL,
   timeout: 30000,
   retryAttempts: 3,
   retryDelay: 1000
 };
 
-/**
- * Cookie utility functions
- */
-const cookieUtils = {
-  getCookie: (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-  }
+// Helper function to get token from localStorage
+const getToken = () => {
+  return localStorage.getItem("jwtToken");
 };
 
-/**
- * Enhanced HTTP Client
- */
-class ApiClient {
-  constructor() {
-    this.baseURL = API_CONFIG.baseURL;
-    this.timeout = API_CONFIG.timeout;
-  }
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
-  getToken() {
-    return cookieUtils.getCookie('jwtToken');
-  }
-
-  getHeaders(customHeaders = {}) {
-    const headers = {
-      'Accept': 'application/json',
-      ...customHeaders
-    };
-
-    // Don't set Content-Type for FormData (let browser set it with boundary)
-    if (!customHeaders.isFormData) {
-      headers['Content-Type'] = 'application/json';
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+  return {
+    ...additionalConfig,
+    headers: {
+      ...getAuthHeaders(),
+      ...additionalConfig.headers
     }
-
-    const token = this.getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
-  }
-
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-    
-    const requestOptions = {
-      method: 'GET',
-      headers: this.getHeaders(options.headers),
-      credentials: 'include',
-      signal: controller.signal,
-      ...options
-    };
-
-    // Handle FormData
-    if (options.body instanceof FormData) {
-      delete requestOptions.headers['Content-Type']; // Let browser set it
-    } else if (requestOptions.body && typeof requestOptions.body === 'object') {
-      requestOptions.body = JSON.stringify(requestOptions.body);
-    }
-
-    try {
-
-      const response = await fetch(url, requestOptions);
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const error = new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
-        error.status = response.status;
-        error.details = errorData;
-        throw error;
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return response;
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw this.formatError(error);
-    }
-  }
-
-  formatError(error) {
-    return {
-      error: true,
-      status: error.status || 0,
-      message: error.message || 'An unexpected error occurred',
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  async get(endpoint, params = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    const url = queryString ? `${endpoint}?${queryString}` : endpoint;
-    return this.request(url, { method: 'GET' });
-  }
-
-  async post(endpoint, data = {}) {
-    return this.request(endpoint, { method: 'POST', body: data });
-  }
-
-  async put(endpoint, data = {}) {
-    return this.request(endpoint, { method: 'PUT', body: data });
-  }
-
-  async delete(endpoint, options = {}) {
-    return this.request(endpoint, { method: 'DELETE', ...options });
-  }
-
-  async postFormData(endpoint, formData) {
-    return this.request(endpoint, { 
-      method: 'POST', 
-      body: formData,
-      headers: { isFormData: true }
-    });
-  }
-}
-
-const apiClient = new ApiClient();
+  };
+};
 
 /**
  * Helper Functions for TaskSubmission Objects
@@ -145,19 +43,19 @@ const TaskSubmissionHelpers = {
   hasFiles: (submission) => {
     return submission.fileUrls && Array.isArray(submission.fileUrls) && submission.fileUrls.length > 0;
   },
-  
+
   getFileCount: (submission) => {
     return submission.fileUrls && Array.isArray(submission.fileUrls) ? submission.fileUrls.length : 0;
   },
-  
+
   isGraded: (submission) => {
     return submission.grade !== null && submission.grade !== undefined;
   },
-  
+
   needsGrading: (submission) => {
     return submission.status === 'submitted' && (submission.grade === null || submission.grade === undefined);
   },
-  
+
   getFinalGrade: (submission) => {
     if (submission.grade === null || submission.grade === undefined) return 0.0;
 
@@ -179,19 +77,19 @@ const ExamResponseHelpers = {
   isCompleted: (response) => {
     return response.status === 'SUBMITTED' || response.status === 'GRADED';
   },
-  
+
   isGraded: (response) => {
     return response.graded === true || response.status === 'GRADED';
   },
-  
+
   needsManualGrading: (response) => {
     return response.status === 'SUBMITTED' && !response.graded && !response.autoGraded;
   },
-  
+
   canAutoGrade: (response) => {
     return response.status === 'SUBMITTED' && !response.graded;
   },
-  
+
   getGradingStatus: (response) => {
     if (response.flaggedForReview) return 'flagged';
     if (response.status === 'IN_PROGRESS') return 'in-progress';
@@ -200,14 +98,14 @@ const ExamResponseHelpers = {
     if (response.status === 'SUBMITTED' && !response.graded) return 'needs-grading';
     return 'unknown';
   },
-  
+
   formatTimeSpent: (timeSpentSeconds) => {
     if (!timeSpentSeconds || timeSpentSeconds === 0) return 'N/A';
     const minutes = Math.floor(timeSpentSeconds / 60);
     const seconds = timeSpentSeconds % 60;
     return `${minutes}m ${seconds}s`;
   },
-  
+
   calculatePercentage: (response) => {
     if (!response.maxScore || response.maxScore === 0) return 0;
     return Math.round((response.totalScore || 0) / response.maxScore * 100);
@@ -218,21 +116,21 @@ const ExamResponseHelpers = {
 export const formatFileSize = (bytes) => {
   if (!bytes || isNaN(bytes) || bytes === 0) return '0 Bytes';
   if (bytes < 0) return 'Invalid size';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   if (i >= sizes.length) return 'File too large';
   if (i < 0) return '0 Bytes';
-  
+
   const size = bytes / Math.pow(k, i);
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${sizes[i]}`;
 };
 
 export const getFileTypeIcon = (fileName) => {
   if (!fileName) return '📄';
-  
+
   const extension = fileName.split('.').pop().toLowerCase();
   const iconMap = {
     'pdf': '📕',
@@ -249,7 +147,7 @@ export const getFileTypeIcon = (fileName) => {
     'xls': '📊',
     'xlsx': '📊'
   };
-  
+
   return iconMap[extension] || '📄';
 };
 
@@ -258,14 +156,12 @@ export const getFileTypeIcon = (fileName) => {
  */
 export const uploadFile = async (file, context = 'assignment', additionalData = {}) => {
   try {
-
-    
     // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       throw new Error('File size exceeds 10MB limit');
     }
-    
+
     // Validate file type
     const allowedTypes = [
       'application/pdf',
@@ -278,16 +174,16 @@ export const uploadFile = async (file, context = 'assignment', additionalData = 
       'image/png',
       'image/gif'
     ];
-    
+
     if (!allowedTypes.includes(file.type)) {
       throw new Error('File type not supported. Please use PDF, DOC, DOCX, TXT, ZIP, JPG, PNG, or GIF files.');
     }
-    
+
     // Create FormData
     const formData = new FormData();
     formData.append('file', file);
     formData.append('context', context);
-    
+
     // Add additional data
     if (additionalData.assignmentId) {
       formData.append('assignmentId', additionalData.assignmentId);
@@ -298,21 +194,23 @@ export const uploadFile = async (file, context = 'assignment', additionalData = 
     if (additionalData.description) {
       formData.append('description', additionalData.description);
     }
-    
-    // Upload file using task controller endpoint
-    const response = await apiClient.postFormData('/tasks/upload-file', formData);
-    
 
-    
+    // Upload file using task controller endpoint
+    const response = await axios.post(`${API_BASE_URL}/tasks/upload-file`, formData, createAuthConfig({
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }));
+
     return {
-      id: response.id || 'file_' + Date.now(),
-      url: response.url || response.fileUrl || `/uploads/${file.name}`,
-      name: response.fileName || file.name,
-      size: response.fileSize || file.size,
+      id: response.data.id || 'file_' + Date.now(),
+      url: response.data.url || response.data.fileUrl || `/uploads/${file.name}`,
+      name: response.data.fileName || file.name,
+      size: response.data.fileSize || file.size,
       type: file.type,
-      uploadedAt: response.uploadedAt || new Date().toISOString()
+      uploadedAt: response.data.uploadedAt || new Date().toISOString()
     };
-    
+
   } catch (error) {
     console.error('❌ File upload failed:', error);
     throw new Error(`File upload failed: ${error.message}`);
@@ -324,58 +222,39 @@ export const uploadFile = async (file, context = 'assignment', additionalData = 
  */
 export const viewFile = async (fileUrl, fileName = null) => {
   try {
-
-    
     if (!fileUrl) {
       throw new Error('No file URL provided');
     }
 
-    // Proper URL construction with base URL and encoding
     let fullUrl;
-    
     if (fileUrl.startsWith('http')) {
-      // Already a full URL
       fullUrl = fileUrl;
     } else if (fileUrl.startsWith('/api/')) {
-      // API endpoint URL - construct with base URL
-      // FIXED: Remove /api prefix to avoid duplication
-      const apiPath = fileUrl.substring(4); // Remove '/api' prefix
-      fullUrl = `${API_CONFIG.baseURL}${apiPath}`;
+      const apiPath = fileUrl.substring(4);
+      fullUrl = `${API_BASE_URL}${apiPath}`;
     } else if (fileUrl.startsWith('/uploads/')) {
-      // Direct upload path - needs to go through the API endpoint
       const filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-      // Properly encode the filename for Hebrew and special characters
       const encodedFilename = encodeURIComponent(filename);
-      fullUrl = `${API_CONFIG.baseURL}/tasks/files/${encodedFilename}`;
+      fullUrl = `${API_BASE_URL}/tasks/files/${encodedFilename}`;
     } else {
-      // Assume it's just a filename
       const encodedFilename = encodeURIComponent(fileUrl);
-      fullUrl = `${API_CONFIG.baseURL}/tasks/files/${encodedFilename}`;
+      fullUrl = `${API_BASE_URL}/tasks/files/${encodedFilename}`;
     }
 
-
-    
     try {
-      // FIXED: Use window.open with '_blank' and NO window features to open in new tab
-      // Removing windowFeatures parameter makes it open as a new tab instead of popup
       const newTab = window.open(fullUrl, '_blank');
-      
       if (newTab) {
-        // Handle authentication if needed
         try {
-          const token = apiClient.getToken();
+          const token = getToken();
           if (token) {
-            // For authenticated requests, we can try to validate access
             const response = await fetch(fullUrl, {
-              method: 'HEAD', // Just check if accessible
+              method: 'HEAD',
               headers: {
                 'Authorization': `Bearer ${token}`
-              },
-              credentials: 'include'
+              }
             });
-            
+
             if (!response.ok && response.status === 401) {
-              // If unauthorized, try to redirect the new tab with token
               const tokenUrl = `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`;
               newTab.location.href = tokenUrl;
             }
@@ -383,17 +262,15 @@ export const viewFile = async (fileUrl, fileName = null) => {
         } catch (fetchError) {
           console.warn('⚠️ Could not validate file access, proceeding with direct open');
         }
-        
-        // Focus the new tab (optional - browser may still block this)
+
         try {
           newTab.focus();
         } catch (e) {
           console.log('ℹ️ Could not focus new tab (browser security)');
         }
-        
 
-        return { 
-          success: true, 
+        return {
+          success: true,
           method: 'new_tab',
           url: fullUrl,
           fileName: fileName
@@ -405,7 +282,7 @@ export const viewFile = async (fileUrl, fileName = null) => {
       console.warn('⚠️ window.open failed, trying fallback method:', windowError.message);
       return fallbackFileOpen(fullUrl, fileName);
     }
-    
+
   } catch (error) {
     console.error('❌ Error viewing file:', error);
     throw new Error(`Failed to open file: ${error.message}`);
@@ -417,41 +294,36 @@ export const viewFile = async (fileUrl, fileName = null) => {
  */
 const fallbackFileOpen = (fullUrl, fileName) => {
   try {
-    // Method 2: Create and click a download link
     const link = document.createElement('a');
     link.href = fullUrl;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
-    
-    // Add download attribute if filename is provided
+
     if (fileName) {
       link.download = fileName;
     }
-    
-    // Style the link to be invisible
+
     link.style.display = 'none';
-    
+
     document.body.appendChild(link);
     link.click();
-    
-    // Clean up
+
     setTimeout(() => {
       document.body.removeChild(link);
     }, 100);
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       method: 'link_click',
       url: fullUrl,
       fileName: fileName
     };
   } catch (error) {
-    // Method 3: Last resort - navigate in current window
     console.warn('⚠️ Link click failed, navigating in current window');
     window.location.href = fullUrl;
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       method: 'current_window',
       url: fullUrl,
       fileName: fileName
@@ -461,22 +333,17 @@ const fallbackFileOpen = (fullUrl, fileName) => {
 
 export const deleteFile = async (fileUrl) => {
   try {
-
-    
     if (!fileUrl) {
       return { success: true, message: 'No file to delete' };
     }
-    
-    // Extract filename from URL and use task controller delete endpoint
+
     const filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
     const encodedFilename = encodeURIComponent(filename);
-    
-    // Call delete endpoint
-    await apiClient.delete(`/tasks/files/${encodedFilename}`);
-    
+
+    await axios.delete(`${API_BASE_URL}/tasks/files/${encodedFilename}`, createAuthConfig());
 
     return { success: true, message: 'File deleted successfully' };
-    
+
   } catch (error) {
     console.error('❌ Error deleting file:', error);
     throw new Error(`Failed to delete file: ${error.message}`);
@@ -490,10 +357,9 @@ export const deleteFile = async (fileUrl) => {
 // Courses
 export const fetchCourses = async (params = {}) => {
   try {
+    const courses = await axios.get(`${API_BASE_URL}/courses`, createAuthConfig({ params }));
 
-    const courses = await apiClient.get('/courses', params);
-    
-    const transformedCourses = Array.isArray(courses) ? courses.map(course => ({
+    const transformedCourses = Array.isArray(courses.data) ? courses.data.map(course => ({
       id: course.id,
       name: course.name,
       code: course.code,
@@ -511,7 +377,6 @@ export const fetchCourses = async (params = {}) => {
       prerequisites: course.prerequisites,
       finalExam: course.finalExam
     })) : [];
-    
 
     return transformedCourses;
   } catch (error) {
@@ -523,47 +388,41 @@ export const fetchCourses = async (params = {}) => {
 // Students
 export const fetchStudents = async (courseId, params = {}) => {
   try {
+    const course = await axios.get(`${API_BASE_URL}/courses/${courseId}`, createAuthConfig());
 
-    
-    const course = await apiClient.get(`/courses/${courseId}`);
-    
-    if (!course.enrollments || course.enrollments.length === 0) {
-
+    if (!course.data.enrollments || course.data.enrollments.length === 0) {
       return [];
     }
-    
-    const allStudentIds = course.enrollments.flatMap(enrollment => 
+
+    const allStudentIds = course.data.enrollments.flatMap(enrollment =>
       enrollment.studentIds || []
     );
-    
-    if (allStudentIds.length === 0) {
 
+    if (allStudentIds.length === 0) {
       return [];
     }
-    
 
-    
     // Fetch student details
-    const studentDetails = await apiClient.post('/users/by-ids', allStudentIds);
-    
+    const studentDetails = await axios.post(`${API_BASE_URL}/users/by-ids`, allStudentIds, createAuthConfig());
+
     // Fetch existing grades
     let existingGrades = [];
     try {
-      existingGrades = await apiClient.get(`/courses/${courseId}/grades`);
+      existingGrades = (await axios.get(`${API_BASE_URL}/courses/${courseId}/grades`, createAuthConfig())).data;
     } catch (error) {
       console.warn('⚠️ No existing grades found:', error.message);
       existingGrades = [];
     }
-    
+
     // Combine student details with grades
-    const studentsWithGrades = studentDetails.map(student => {
+    const studentsWithGrades = studentDetails.data.map(student => {
       const studentGrade = existingGrades.find(g => g.studentId === student.id);
-      
+
       // Find which academic year this student is enrolled in
-      const studentEnrollment = course.enrollments.find(enrollment => 
+      const studentEnrollment = course.data.enrollments.find(enrollment =>
         enrollment.studentIds?.includes(student.id)
       );
-      
+
       return {
         id: student.id,
         name: student.name,
@@ -576,16 +435,15 @@ export const fetchStudents = async (courseId, params = {}) => {
         finalLetterGrade: studentGrade?.finalLetterGrade || 'N/A'
       };
     });
-    
 
     return studentsWithGrades;
-    
+
   } catch (error) {
     console.error('❌ Error fetching students:', error);
-    if (error.status === 404) {
+    if (error.response?.status === 404) {
       throw new Error(`Course with ID ${courseId} not found`);
     }
-    if (error.status === 403) {
+    if (error.response?.status === 403) {
       throw new Error('You do not have permission to view students for this course');
     }
     return [];
@@ -595,10 +453,9 @@ export const fetchStudents = async (courseId, params = {}) => {
 // ASSIGNMENTS using Tasks API with file handling
 export const fetchAssignments = async (courseId, params = {}) => {
   try {
+    const tasks = await axios.get(`${API_BASE_URL}/tasks/course/${courseId}`, createAuthConfig({ params }));
 
-    const tasks = await apiClient.get(`/tasks/course/${courseId}`, params);
-    
-    const transformedAssignments = Array.isArray(tasks) ? tasks.map((task) => ({
+    const transformedAssignments = Array.isArray(tasks.data) ? tasks.data.map((task) => ({
       id: task.id,
       title: task.title,
       description: task.description,
@@ -643,7 +500,6 @@ export const fetchAssignments = async (courseId, params = {}) => {
       fileName: task.fileName,
       fileSize: task.fileSize
     })) : [];
-    
 
     return transformedAssignments;
   } catch (error) {
@@ -654,8 +510,6 @@ export const fetchAssignments = async (courseId, params = {}) => {
 
 export const createAssignment = async (assignmentData) => {
   try {
-
-    
     // Prepare task creation request
     const taskCreateRequest = {
       title: assignmentData.title,
@@ -679,62 +533,56 @@ export const createAssignment = async (assignmentData) => {
       tags: assignmentData.tags,
       prerequisiteTasks: assignmentData.prerequisiteTasks
     };
-    
+
     // Handle file attachment
     if (assignmentData.file) {
-
-      
       try {
         const fileData = await uploadFile(assignmentData.file, 'assignment', {
           courseId: assignmentData.courseId,
           description: `Attachment for assignment: ${assignmentData.title}`
         });
-        
+
         // Add file information to task request
         taskCreateRequest.fileUrl = fileData.url;
         taskCreateRequest.fileName = fileData.name;
         taskCreateRequest.fileSize = fileData.size;
-        
 
       } catch (fileError) {
         console.error('❌ File upload failed:', fileError);
         throw new Error(`Failed to upload file: ${fileError.message}`);
       }
     } else if (assignmentData.fileUrl) {
-      // Use existing file data
       taskCreateRequest.fileUrl = assignmentData.fileUrl;
       taskCreateRequest.fileName = assignmentData.fileName;
       taskCreateRequest.fileSize = assignmentData.fileSize;
     }
-    
-    // Create the task
-    const createdTask = await apiClient.post('/tasks', taskCreateRequest);
 
-    
+    const createdTask = await axios.post(`${API_BASE_URL}/tasks`, taskCreateRequest, createAuthConfig());
+
     return {
-      id: createdTask.id,
-      title: createdTask.title,
-      description: createdTask.description,
-      courseId: createdTask.courseId,
-      type: createdTask.type,
-      dueDate: createdTask.dueDate,
-      dueTime: createdTask.dueTime,
-      maxPoints: createdTask.maxPoints,
-      status: createdTask.status,
-      priority: createdTask.priority,
-      difficulty: createdTask.difficulty,
-      category: createdTask.category,
-      instructions: createdTask.instructions,
-      hasAttachment: !!(createdTask.fileUrl && createdTask.fileUrl.trim() !== ''),
-      fileUrl: createdTask.fileUrl,
-      fileName: createdTask.fileName,
-      fileSize: createdTask.fileSize,
-      submissionCount: createdTask.submissionCount || 0,
-      gradedCount: createdTask.gradedCount || 0,
-      averageGrade: createdTask.averageGrade || 0,
-      isOverdue: createdTask.isOverdue,
-      createdAt: createdTask.createdAt,
-      updatedAt: createdTask.updatedAt
+      id: createdTask.data.id,
+      title: createdTask.data.title,
+      description: createdTask.data.description,
+      courseId: createdTask.data.courseId,
+      type: createdTask.data.type,
+      dueDate: createdTask.data.dueDate,
+      dueTime: createdTask.data.dueTime,
+      maxPoints: createdTask.data.maxPoints,
+      status: createdTask.data.status,
+      priority: createdTask.data.priority,
+      difficulty: createdTask.data.difficulty,
+      category: createdTask.data.category,
+      instructions: createdTask.data.instructions,
+      hasAttachment: !!(createdTask.data.fileUrl && createdTask.data.fileUrl.trim() !== ''),
+      fileUrl: createdTask.data.fileUrl,
+      fileName: createdTask.data.fileName,
+      fileSize: createdTask.data.fileSize,
+      submissionCount: createdTask.data.submissionCount || 0,
+      gradedCount: createdTask.data.gradedCount || 0,
+      averageGrade: createdTask.data.averageGrade || 0,
+      isOverdue: createdTask.data.isOverdue,
+      createdAt: createdTask.data.createdAt,
+      updatedAt: createdTask.data.updatedAt
     };
   } catch (error) {
     console.error('❌ Error creating assignment:', error);
@@ -744,9 +592,6 @@ export const createAssignment = async (assignmentData) => {
 
 export const updateAssignment = async (assignmentId, updates) => {
   try {
-
-    
-    // Prepare task update request
     const taskUpdateRequest = {
       title: updates.title,
       description: updates.description,
@@ -769,39 +614,31 @@ export const updateAssignment = async (assignmentId, updates) => {
       tags: updates.tags,
       prerequisiteTasks: updates.prerequisiteTasks
     };
-    
-    // Handle file attachment updates
-    if (updates.file) {
 
-      
+    if (updates.file) {
       try {
-        // Delete old file if exists
         if (updates.fileUrl) {
           await deleteFile(updates.fileUrl);
         }
-        
+
         const fileData = await uploadFile(updates.file, 'assignment', {
           assignmentId: assignmentId,
           description: `Updated attachment for assignment: ${updates.title}`
         });
-        
-        // Add new file information to task request
+
         taskUpdateRequest.fileUrl = fileData.url;
         taskUpdateRequest.fileName = fileData.name;
         taskUpdateRequest.fileSize = fileData.size;
-        
 
       } catch (fileError) {
         console.error('❌ File upload failed:', fileError);
         throw new Error(`Failed to upload file: ${fileError.message}`);
       }
     } else if (updates.fileUrl && updates.fileUrl !== '') {
-      // Keep existing file data
       taskUpdateRequest.fileUrl = updates.fileUrl;
       taskUpdateRequest.fileName = updates.fileName;
       taskUpdateRequest.fileSize = updates.fileSize;
     } else if (updates.hasAttachment === false) {
-      // Remove file attachment
       if (updates.fileUrl) {
         try {
           await deleteFile(updates.fileUrl);
@@ -813,35 +650,33 @@ export const updateAssignment = async (assignmentId, updates) => {
       taskUpdateRequest.fileName = null;
       taskUpdateRequest.fileSize = null;
     }
-    
-    // Update the task
-    const updatedTask = await apiClient.put(`/tasks/${assignmentId}`, taskUpdateRequest);
 
-    
+    const updatedTask = await axios.put(`${API_BASE_URL}/tasks/${assignmentId}`, taskUpdateRequest, createAuthConfig());
+
     return {
-      id: updatedTask.id,
-      title: updatedTask.title,
-      description: updatedTask.description,
-      courseId: updatedTask.courseId,
-      type: updatedTask.type,
-      dueDate: updatedTask.dueDate,
-      dueTime: updatedTask.dueTime,
-      maxPoints: updatedTask.maxPoints,
-      status: updatedTask.status,
-      priority: updatedTask.priority,
-      difficulty: updatedTask.difficulty,
-      category: updatedTask.category,
-      instructions: updatedTask.instructions,
-      hasAttachment: !!(updatedTask.fileUrl && updatedTask.fileUrl.trim() !== ''),
-      fileUrl: updatedTask.fileUrl,
-      fileName: updatedTask.fileName,
-      fileSize: updatedTask.fileSize,
-      submissionCount: updatedTask.submissionCount || 0,
-      gradedCount: updatedTask.gradedCount || 0,
-      averageGrade: updatedTask.averageGrade || 0,
-      isOverdue: updatedTask.isOverdue,
-      createdAt: updatedTask.createdAt,
-      updatedAt: updatedTask.updatedAt
+      id: updatedTask.data.id,
+      title: updatedTask.data.title,
+      description: updatedTask.data.description,
+      courseId: updatedTask.data.courseId,
+      type: updatedTask.data.type,
+      dueDate: updatedTask.data.dueDate,
+      dueTime: updatedTask.data.dueTime,
+      maxPoints: updatedTask.data.maxPoints,
+      status: updatedTask.data.status,
+      priority: updatedTask.data.priority,
+      difficulty: updatedTask.data.difficulty,
+      category: updatedTask.data.category,
+      instructions: updatedTask.data.instructions,
+      hasAttachment: !!(updatedTask.data.fileUrl && updatedTask.data.fileUrl.trim() !== ''),
+      fileUrl: updatedTask.data.fileUrl,
+      fileName: updatedTask.data.fileName,
+      fileSize: updatedTask.data.fileSize,
+      submissionCount: updatedTask.data.submissionCount || 0,
+      gradedCount: updatedTask.data.gradedCount || 0,
+      averageGrade: updatedTask.data.averageGrade || 0,
+      isOverdue: updatedTask.data.isOverdue,
+      createdAt: updatedTask.data.createdAt,
+      updatedAt: updatedTask.data.updatedAt
     };
   } catch (error) {
     console.error('❌ Error updating assignment:', error);
@@ -851,21 +686,16 @@ export const updateAssignment = async (assignmentId, updates) => {
 
 export const deleteAssignment = async (assignmentId) => {
   try {
-
-    
-    // First, get the assignment to check for file attachments
     try {
-      const assignment = await apiClient.get(`/tasks/${assignmentId}`);
-      if (assignment.fileUrl) {
-        await deleteFile(assignment.fileUrl);
-
+      const assignment = await axios.get(`${API_BASE_URL}/tasks/${assignmentId}`, createAuthConfig());
+      if (assignment.data.fileUrl) {
+        await deleteFile(assignment.data.fileUrl);
       }
     } catch (error) {
       console.warn('⚠️ Could not delete assignment file:', error.message);
     }
-    
-    // Delete the task
-    await apiClient.delete(`/tasks/${assignmentId}`);
+
+    await axios.delete(`${API_BASE_URL}/tasks/${assignmentId}`, createAuthConfig());
 
     return { success: true };
   } catch (error) {
@@ -877,70 +707,48 @@ export const deleteAssignment = async (assignmentId) => {
 // ENHANCED submissions API to match TaskSubmission backend
 export const fetchSubmissions = async (courseId, params = {}) => {
   try {
+    const submissions = await axios.get(`${API_BASE_URL}/tasksubmissions/course/${courseId}`, createAuthConfig({ params }));
 
-    
-    const submissions = await apiClient.get(`/tasksubmissions/course/${courseId}`, params);
-    
-    // Transform TaskSubmissions to match frontend expectations
-    const transformedSubmissions = Array.isArray(submissions) ? submissions.map(submission => {
+    const transformedSubmissions = Array.isArray(submissions.data) ? submissions.data.map(submission => {
       return {
         id: submission.id,
         courseId: submission.courseId,
         taskId: submission.taskId,
-        assignmentId: submission.taskId, // Map taskId to assignmentId for compatibility
+        assignmentId: submission.taskId,
         studentId: submission.studentId,
         content: submission.content,
         notes: submission.notes,
-        
-        // File handling - TaskSubmission supports multiple files
         hasFiles: TaskSubmissionHelpers.hasFiles(submission),
         fileUrls: submission.fileUrls || [],
         fileNames: submission.fileNames || [],
         fileSizes: submission.fileSizes || [],
         fileCount: TaskSubmissionHelpers.getFileCount(submission),
-        
-        // For backward compatibility, use first file as primary
         fileUrl: submission.fileUrls && submission.fileUrls.length > 0 ? submission.fileUrls[0] : null,
         fileName: submission.fileNames && submission.fileNames.length > 0 ? submission.fileNames[0] : null,
         fileSize: submission.fileSizes && submission.fileSizes.length > 0 ? submission.fileSizes[0] : null,
-        
-        // Grading information
         grade: submission.grade,
         feedback: submission.feedback,
         status: submission.status || 'submitted',
         isGraded: TaskSubmissionHelpers.isGraded(submission),
         needsGrading: TaskSubmissionHelpers.needsGrading(submission),
-        
-        // Submission metadata
         attemptNumber: submission.attemptNumber || 1,
         isLate: submission.isLate || false,
         latePenaltyApplied: submission.latePenaltyApplied || 0,
         originalDueDate: submission.originalDueDate,
-        
-        // Auto-grading
         autoGraded: submission.autoGraded || false,
         autoGradeScore: submission.autoGradeScore,
         manualOverride: submission.manualOverride || false,
-        
-        // Group submission
         isGroupSubmission: submission.isGroupSubmission || false,
         groupMembers: submission.groupMembers || [],
-        
-        // Plagiarism
         plagiarismScore: submission.plagiarismScore,
         plagiarismChecked: submission.plagiarismChecked || false,
-        
-        // Timestamps
         submittedAt: submission.submittedAt,
         gradedAt: submission.gradedAt,
         updatedAt: submission.updatedAt,
         timeSpent: submission.timeSpent,
-        
-        // Final grade calculation using helper function
         finalGrade: TaskSubmissionHelpers.getFinalGrade(submission)
       };
     }) : [];
-    
 
     return transformedSubmissions;
   } catch (error) {
@@ -952,17 +760,14 @@ export const fetchSubmissions = async (courseId, params = {}) => {
 // ENHANCED submission grading with sync support
 export const updateSubmissionGrade = async (submissionId, grade, feedback = '') => {
   try {
-
-    
-    // Use the specific grading endpoint that syncs with grade columns
     const gradeData = {
       grade: grade,
       feedback: feedback
     };
-    
-    const response = await apiClient.put(`/tasksubmissions/${submissionId}/grade`, gradeData);
 
-    return response.submission || response;
+    const response = await axios.put(`${API_BASE_URL}/tasksubmissions/${submissionId}/grade`, gradeData, createAuthConfig());
+
+    return response.data.submission || response.data;
   } catch (error) {
     console.error('❌ Error updating submission grade:', error);
     throw error;
@@ -971,24 +776,19 @@ export const updateSubmissionGrade = async (submissionId, grade, feedback = '') 
 
 export const downloadSubmission = async (submissionId) => {
   try {
+    const submission = (await axios.get(`${API_BASE_URL}/tasksubmissions/${submissionId}`, createAuthConfig())).data;
 
-    
-    const submission = await apiClient.get(`/tasksubmissions/${submissionId}`);
-    
     if (submission.fileUrls && submission.fileUrls.length > 0) {
-      // Download all files if multiple
       for (let i = 0; i < submission.fileUrls.length; i++) {
         const fileUrl = submission.fileUrls[i];
-        const fileName = submission.fileNames && submission.fileNames[i] 
-          ? submission.fileNames[i] 
+        const fileName = submission.fileNames && submission.fileNames[i]
+          ? submission.fileNames[i]
           : `submission_file_${i + 1}`;
-        
-        // Use our viewFile function to open/download the file
+
         await viewFile(fileUrl, fileName);
       }
       return { success: true, message: `Downloaded ${submission.fileUrls.length} files` };
     } else if (submission.fileUrl) {
-      // Legacy single file support
       await viewFile(submission.fileUrl, submission.fileName);
       return { success: true, message: 'File download initiated' };
     } else {
@@ -1002,11 +802,8 @@ export const downloadSubmission = async (submissionId) => {
 
 export const createSubmission = async (submissionData) => {
   try {
-
-    
-    const response = await apiClient.post('/tasksubmissions/simple', submissionData);
-
-    return response;
+    const response = await axios.post(`${API_BASE_URL}/tasksubmissions/simple`, submissionData, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error creating submission:', error);
     throw error;
@@ -1015,10 +812,7 @@ export const createSubmission = async (submissionData) => {
 
 export const deleteSubmission = async (submissionId) => {
   try {
-
-    
-    await apiClient.delete(`/tasksubmissions/${submissionId}`);
-
+    await axios.delete(`${API_BASE_URL}/tasksubmissions/${submissionId}`, createAuthConfig());
     return { success: true };
   } catch (error) {
     console.error('❌ Error deleting submission:', error);
@@ -1029,9 +823,6 @@ export const deleteSubmission = async (submissionId) => {
 // ENHANCED batch grading with sync support
 export const batchGradeSubmissions = async (submissionIds, grade, feedback = '') => {
   try {
-
-    
-    // Grade each submission individually to ensure proper sync
     const results = [];
     for (const submissionId of submissionIds) {
       try {
@@ -1042,8 +833,6 @@ export const batchGradeSubmissions = async (submissionIds, grade, feedback = '')
         // Continue with other submissions
       }
     }
-    
-
     return { gradedSubmissions: results, successCount: results.length };
   } catch (error) {
     console.error('❌ Error batch grading submissions:', error);
@@ -1057,10 +846,9 @@ export const batchGradeSubmissions = async (submissionIds, grade, feedback = '')
 
 export const fetchExams = async (courseId, params = {}) => {
   try {
+    const exams = await axios.get(`${API_BASE_URL}/courses/${courseId}/exams`, createAuthConfig({ params }));
 
-    const exams = await apiClient.get(`/courses/${courseId}/exams`, params);
-    
-    const transformedExams = Array.isArray(exams) ? exams.map(exam => ({
+    const transformedExams = Array.isArray(exams.data) ? exams.data.map(exam => ({
       id: exam.id,
       title: exam.title,
       description: exam.description,
@@ -1087,7 +875,6 @@ export const fetchExams = async (courseId, params = {}) => {
       createdAt: exam.createdAt,
       updatedAt: exam.updatedAt
     })) : [];
-    
 
     return transformedExams;
   } catch (error) {
@@ -1098,9 +885,7 @@ export const fetchExams = async (courseId, params = {}) => {
 
 export const fetchExamById = async (examId) => {
   try {
-
-    const exam = await apiClient.get(`/exams/${examId}`);
-
+    const exam = (await axios.get(`${API_BASE_URL}/exams/${examId}`, createAuthConfig())).data;
     return exam;
   } catch (error) {
     console.error('❌ Error fetching exam by ID:', error);
@@ -1110,9 +895,7 @@ export const fetchExamById = async (examId) => {
 
 export const fetchExamForGrading = async (examId) => {
   try {
-
-    const exam = await apiClient.get(`/exams/${examId}/for-grading`);
-
+    const exam = (await axios.get(`${API_BASE_URL}/exams/${examId}/for-grading`, createAuthConfig())).data;
     return exam;
   } catch (error) {
     console.error('❌ Error fetching exam for grading:', error);
@@ -1122,10 +905,8 @@ export const fetchExamForGrading = async (examId) => {
 
 export const createExam = async (examData) => {
   try {
-
-    const response = await apiClient.post('/exams', examData);
-
-    return response.exam || response;
+    const response = await axios.post(`${API_BASE_URL}/exams`, examData, createAuthConfig());
+    return response.data.exam || response.data;
   } catch (error) {
     console.error('❌ Error creating exam:', error);
     throw error;
@@ -1134,10 +915,8 @@ export const createExam = async (examData) => {
 
 export const updateExam = async (examId, updates) => {
   try {
-
-    const response = await apiClient.put(`/exams/${examId}`, updates);
-
-    return response.exam || response;
+    const response = await axios.put(`${API_BASE_URL}/exams/${examId}`, updates, createAuthConfig());
+    return response.data.exam || response.data;
   } catch (error) {
     console.error('❌ Error updating exam:', error);
     throw error;
@@ -1146,10 +925,8 @@ export const updateExam = async (examId, updates) => {
 
 export const deleteExam = async (examId) => {
   try {
-
-    const response = await apiClient.delete(`/exams/${examId}`);
-
-    return response;
+    const response = await axios.delete(`${API_BASE_URL}/exams/${examId}`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error deleting exam:', error);
     throw error;
@@ -1158,10 +935,8 @@ export const deleteExam = async (examId) => {
 
 export const publishExam = async (examId) => {
   try {
-
-    const response = await apiClient.post(`/exams/${examId}/publish`);
-
-    return response.exam || response;
+    const response = await axios.post(`${API_BASE_URL}/exams/${examId}/publish`, {}, createAuthConfig());
+    return response.data.exam || response.data;
   } catch (error) {
     console.error('❌ Error publishing exam:', error);
     throw error;
@@ -1170,10 +945,8 @@ export const publishExam = async (examId) => {
 
 export const unpublishExam = async (examId) => {
   try {
-
-    const response = await apiClient.post(`/exams/${examId}/unpublish`);
-
-    return response;
+    const response = await axios.post(`${API_BASE_URL}/exams/${examId}/unpublish`, {}, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error unpublishing exam:', error);
     throw error;
@@ -1182,10 +955,8 @@ export const unpublishExam = async (examId) => {
 
 export const updateExamStatus = async (examId, status) => {
   try {
-
-    const response = await apiClient.put(`/exams/${examId}/status`, { status });
-
-    return response;
+    const response = await axios.put(`${API_BASE_URL}/exams/${examId}/status`, { status }, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error updating exam status:', error);
     throw error;
@@ -1198,10 +969,8 @@ export const updateExamStatus = async (examId, status) => {
 
 export const addQuestionToExam = async (examId, questionData) => {
   try {
-
-    const response = await apiClient.post(`/exams/${examId}/questions`, questionData);
-
-    return response.question || response;
+    const response = await axios.post(`${API_BASE_URL}/exams/${examId}/questions`, questionData, createAuthConfig());
+    return response.data.question || response.data;
   } catch (error) {
     console.error('❌ Error adding question:', error);
     throw error;
@@ -1210,10 +979,8 @@ export const addQuestionToExam = async (examId, questionData) => {
 
 export const updateQuestion = async (examId, questionId, updates) => {
   try {
-
-    const response = await apiClient.put(`/exams/${examId}/questions/${questionId}`, updates);
-
-    return response.question || response;
+    const response = await axios.put(`${API_BASE_URL}/exams/${examId}/questions/${questionId}`, updates, createAuthConfig());
+    return response.data.question || response.data;
   } catch (error) {
     console.error('❌ Error updating question:', error);
     throw error;
@@ -1222,10 +989,8 @@ export const updateQuestion = async (examId, questionId, updates) => {
 
 export const deleteQuestion = async (examId, questionId) => {
   try {
-
-    const response = await apiClient.delete(`/exams/${examId}/questions/${questionId}`);
-
-    return response;
+    const response = await axios.delete(`${API_BASE_URL}/exams/${examId}/questions/${questionId}`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error deleting question:', error);
     throw error;
@@ -1234,10 +999,8 @@ export const deleteQuestion = async (examId, questionId) => {
 
 export const reorderQuestions = async (examId, questionIds) => {
   try {
-
-    const response = await apiClient.put(`/exams/${examId}/questions/reorder`, { questionIds });
-
-    return response;
+    const response = await axios.put(`${API_BASE_URL}/exams/${examId}/questions/reorder`, { questionIds }, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error reordering questions:', error);
     throw error;
@@ -1253,62 +1016,43 @@ export const reorderQuestions = async (examId, questionIds) => {
  */
 export const fetchExamResponses = async (courseId, params = {}) => {
   try {
-
-    
     if (!courseId) {
       console.warn('⚠️ No courseId provided to fetchExamResponses');
       return [];
     }
-    
-    // Step 1: Get all exams for the course using existing endpoint
 
-    const exams = await apiClient.get(`/courses/${courseId}/exams`);
-    
+    const exams = (await axios.get(`${API_BASE_URL}/courses/${courseId}/exams`, createAuthConfig())).data;
+
     if (!Array.isArray(exams) || exams.length === 0) {
-
       return [];
     }
-    
 
-    
-    // Step 2: Get responses for each exam in parallel using existing endpoints
     const responsePromises = exams.map(async (exam) => {
       try {
         console.log(`📊 Fetching responses for exam: ${exam.id} (${exam.title})`);
-        const examResponses = await apiClient.get(`/exams/${exam.id}/responses`);
-        
-        // Ensure each response has courseId set for consistency
+        const examResponses = (await axios.get(`${API_BASE_URL}/exams/${exam.id}/responses`, createAuthConfig())).data;
         return Array.isArray(examResponses) ? examResponses.map(response => ({
           ...response,
-          courseId: response.courseId || courseId, // Ensure courseId is set
-          examTitle: exam.title, // Add exam title for reference
-          examId: response.examId || exam.id // Ensure examId is set
+          courseId: response.courseId || courseId,
+          examTitle: exam.title,
+          examId: response.examId || exam.id
         })) : [];
-        
       } catch (error) {
         console.warn(`⚠️ Failed to fetch responses for exam ${exam.id}:`, error.message);
-        return []; // Return empty array on error, don't fail entire operation
+        return [];
       }
     });
-    
-    // Wait for all response fetches to complete
+
     const responseArrays = await Promise.all(responsePromises);
-    
-    // Flatten all responses into single array
+
     const allResponses = responseArrays.flat();
-    
 
-    
     if (allResponses.length === 0) {
-
       return [];
     }
-    
-    // Transform ExamResponses to match frontend expectations
+
     const transformedResponses = allResponses.map(response => {
-      // Handle the MongoDB _id field if present
       const id = response.id || response._id?.$oid || response._id;
-      
       return {
         id: id,
         examId: response.examId,
@@ -1334,39 +1078,30 @@ export const fetchExamResponses = async (courseId, params = {}) => {
         lateSubmission: response.lateSubmission || false,
         createdAt: response.createdAt,
         updatedAt: response.updatedAt,
-        
-        // Additional fields for frontend use
         examTitle: response.examTitle,
-        
-        // Computed properties using helper functions
         isCompleted: ExamResponseHelpers.isCompleted(response),
         needsManualGrading: ExamResponseHelpers.needsManualGrading(response),
         gradingStatus: ExamResponseHelpers.getGradingStatus(response),
         timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
       };
     });
-    
-    // Sort by submission date (newest first)
+
     transformedResponses.sort((a, b) => {
       const dateA = new Date(a.submittedAt || a.updatedAt || 0);
       const dateB = new Date(b.submittedAt || b.updatedAt || 0);
       return dateB - dateA;
     });
-    
 
     return transformedResponses;
-    
+
   } catch (error) {
     console.error('❌ Error fetching exam responses:', error);
-    
-    // Enhanced error handling
-    if (error.status === 404) {
-
+    if (error.response?.status === 404) {
       return [];
-    } else if (error.status === 403) {
+    } else if (error.response?.status === 403) {
       console.error('❌ Permission denied for exam responses');
       throw new Error('You do not have permission to view exam responses for this course');
-    } else if (error.status === 500) {
+    } else if (error.response?.status === 500) {
       console.error('❌ Server error fetching exam responses');
       throw new Error('Server error while fetching exam responses. Please try again.');
     } else {
@@ -1378,9 +1113,7 @@ export const fetchExamResponses = async (courseId, params = {}) => {
 
 export const fetchExamResponsesForExam = async (examId) => {
   try {
-
-    const responses = await apiClient.get(`/exams/${examId}/responses`);
-    
+    const responses = (await axios.get(`${API_BASE_URL}/exams/${examId}/responses`, createAuthConfig())).data;
     const transformedResponses = Array.isArray(responses) ? responses.map(response => ({
       id: response.id,
       examId: response.examId,
@@ -1406,14 +1139,11 @@ export const fetchExamResponsesForExam = async (examId) => {
       lateSubmission: response.lateSubmission || false,
       createdAt: response.createdAt,
       updatedAt: response.updatedAt,
-      
-      // Computed properties
       isCompleted: ExamResponseHelpers.isCompleted(response),
       needsManualGrading: ExamResponseHelpers.needsManualGrading(response),
       gradingStatus: ExamResponseHelpers.getGradingStatus(response),
       timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
     })) : [];
-    
 
     return transformedResponses;
   } catch (error) {
@@ -1424,9 +1154,7 @@ export const fetchExamResponsesForExam = async (examId) => {
 
 export const fetchExamResponseById = async (responseId) => {
   try {
-
-    const response = await apiClient.get(`/exam-responses/${responseId}`);
-
+    const response = (await axios.get(`${API_BASE_URL}/exam-responses/${responseId}`, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error fetching exam response:', error);
@@ -1436,9 +1164,7 @@ export const fetchExamResponseById = async (responseId) => {
 
 export const fetchDetailedExamResponse = async (responseId) => {
   try {
-
-    const response = await apiClient.get(`/exam-responses/${responseId}/detailed`);
-
+    const response = (await axios.get(`${API_BASE_URL}/exam-responses/${responseId}/detailed`, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error fetching detailed exam response:', error);
@@ -1448,9 +1174,7 @@ export const fetchDetailedExamResponse = async (responseId) => {
 
 export const fetchStudentExamResponses = async (studentId, courseId) => {
   try {
-
-    const responses = await apiClient.get(`/students/${studentId}/courses/${courseId}/exam-responses`);
-    
+    const responses = (await axios.get(`${API_BASE_URL}/students/${studentId}/courses/${courseId}/exam-responses`, createAuthConfig())).data;
     const transformedResponses = Array.isArray(responses) ? responses.map(response => ({
       id: response.id,
       examId: response.examId,
@@ -1466,12 +1190,9 @@ export const fetchStudentExamResponses = async (studentId, courseId) => {
       passed: response.passed || false,
       graded: response.graded || false,
       attemptNumber: response.attemptNumber || 1,
-      
-      // Computed properties
       isCompleted: ExamResponseHelpers.isCompleted(response),
       timeSpentFormatted: ExamResponseHelpers.formatTimeSpent(response.timeSpent)
     })) : [];
-    
 
     return transformedResponses;
   } catch (error) {
@@ -1482,9 +1203,7 @@ export const fetchStudentExamResponses = async (studentId, courseId) => {
 
 export const fetchExamResponseHistory = async (examId, studentId) => {
   try {
-
-    const responses = await apiClient.get(`/exams/${examId}/responses/student/${studentId}`);
-
+    const responses = (await axios.get(`${API_BASE_URL}/exams/${examId}/responses/student/${studentId}`, createAuthConfig())).data;
     return responses;
   } catch (error) {
     console.error('❌ Error fetching exam response history:', error);
@@ -1498,13 +1217,11 @@ export const fetchExamResponseHistory = async (examId, studentId) => {
 
 export const gradeExamResponse = async (responseId, gradeData) => {
   try {
-
-    const response = await apiClient.put('/exam-responses/grade', {
+    const response = await axios.put(`${API_BASE_URL}/exam-responses/grade`, {
       responseId,
       ...gradeData
-    });
-
-    return response;
+    }, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error grading exam response:', error);
     throw error;
@@ -1513,38 +1230,30 @@ export const gradeExamResponse = async (responseId, gradeData) => {
 
 export const manualGradeExamResponse = async (responseId, questionScores, instructorFeedback = '', flaggedForReview = false) => {
   try {
-
-    
-    // FIXED: Create the correct request structure to match backend expectations
     const requestData = {
       responseId: responseId,
       questionScores: questionScores,
       instructorFeedback: instructorFeedback,
       flaggedForReview: flaggedForReview
     };
-    
 
-    
-    const response = await apiClient.put('/exam-responses/manual-grade', requestData);
-
-    return response.response || response;
+    const response = await axios.put(`${API_BASE_URL}/exam-responses/manual-grade`, requestData, createAuthConfig());
+    return response.data.response || response.data;
   } catch (error) {
     console.error('❌ Error manual grading exam response:', error);
-    console.error('❌ Error details:', error.details);
+    console.error('❌ Error details:', error.response?.data);
     throw error;
   }
 };
 
 export const updateQuestionScore = async (responseId, questionId, score, feedback = '') => {
   try {
-
-    const response = await apiClient.put(`/exam-responses/${responseId}/question-score`, {
+    const response = await axios.put(`${API_BASE_URL}/exam-responses/${responseId}/question-score`, {
       questionId,
       score,
       feedback
-    });
-
-    return response.response || response;
+    }, createAuthConfig());
+    return response.data.response || response.data;
   } catch (error) {
     console.error('❌ Error updating question score:', error);
     throw error;
@@ -1553,10 +1262,8 @@ export const updateQuestionScore = async (responseId, questionId, score, feedbac
 
 export const autoGradeResponse = async (responseId) => {
   try {
-
-    const response = await apiClient.post(`/exam-responses/${responseId}/auto-grade`);
-
-    return response;
+    const response = await axios.post(`${API_BASE_URL}/exam-responses/${responseId}/auto-grade`, {}, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error auto-grading response:', error);
     throw error;
@@ -1565,10 +1272,8 @@ export const autoGradeResponse = async (responseId) => {
 
 export const autoGradeAllResponses = async (examId) => {
   try {
-
-    const response = await apiClient.post(`/exams/${examId}/auto-grade-all`);
-
-    return response;
+    const response = await axios.post(`${API_BASE_URL}/exams/${examId}/auto-grade-all`, {}, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error auto-grading all responses:', error);
     throw error;
@@ -1577,13 +1282,11 @@ export const autoGradeAllResponses = async (examId) => {
 
 export const flagResponseForReview = async (responseId, flagReason = '', flagPriority = 'medium') => {
   try {
-
-    const response = await apiClient.put(`/exam-responses/${responseId}/flag`, {
+    const response = await axios.put(`${API_BASE_URL}/exam-responses/${responseId}/flag`, {
       flagReason,
       flagPriority
-    });
-
-    return response.response || response;
+    }, createAuthConfig());
+    return response.data.response || response.data;
   } catch (error) {
     console.error('❌ Error flagging response:', error);
     throw error;
@@ -1592,10 +1295,8 @@ export const flagResponseForReview = async (responseId, flagReason = '', flagPri
 
 export const unflagResponse = async (responseId) => {
   try {
-
-    const response = await apiClient.put(`/exam-responses/${responseId}/unflag`);
-
-    return response.response || response;
+    const response = await axios.put(`${API_BASE_URL}/exam-responses/${responseId}/unflag`, {}, createAuthConfig());
+    return response.data.response || response.data;
   } catch (error) {
     console.error('❌ Error unflagging response:', error);
     throw error;
@@ -1604,14 +1305,12 @@ export const unflagResponse = async (responseId) => {
 
 export const batchGradeExamResponses = async (responseIds, instructorFeedback = '', flagForReview = false) => {
   try {
-
-    const response = await apiClient.post('/exam-responses/batch-grade', {
+    const response = await axios.post(`${API_BASE_URL}/exam-responses/batch-grade`, {
       responseIds,
       instructorFeedback,
       flagForReview
-    });
-
-    return response;
+    }, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error('❌ Error batch grading exam responses:', error);
     throw error;
@@ -1624,9 +1323,7 @@ export const batchGradeExamResponses = async (responseIds, instructorFeedback = 
 
 export const fetchExamStats = async (examId) => {
   try {
-
-    const stats = await apiClient.get(`/exams/${examId}/stats`);
-
+    const stats = (await axios.get(`${API_BASE_URL}/exams/${examId}/stats`, createAuthConfig())).data;
     return stats;
   } catch (error) {
     console.error('❌ Error fetching exam statistics:', error);
@@ -1636,9 +1333,7 @@ export const fetchExamStats = async (examId) => {
 
 export const fetchExamGradingStats = async (examId) => {
   try {
-
-    const stats = await apiClient.get(`/exams/${examId}/grading-stats`);
-
+    const stats = (await axios.get(`${API_BASE_URL}/exams/${examId}/grading-stats`, createAuthConfig())).data;
     return stats;
   } catch (error) {
     console.error('❌ Error fetching exam grading statistics:', error);
@@ -1648,9 +1343,7 @@ export const fetchExamGradingStats = async (examId) => {
 
 export const fetchCourseExamStats = async (courseId) => {
   try {
-
-    const stats = await apiClient.get(`/courses/${courseId}/exam-stats`);
-
+    const stats = (await axios.get(`${API_BASE_URL}/courses/${courseId}/exam-stats`, createAuthConfig())).data;
     return stats;
   } catch (error) {
     console.error('❌ Error fetching course exam statistics:', error);
@@ -1665,7 +1358,7 @@ export const fetchCourseExamStats = async (courseId) => {
 // Grade Columns
 export const fetchGradeColumns = async (courseId, params = {}) => {
   try {
-    const columns = await apiClient.get(`/courses/${courseId}/grade-columns`, params);
+    const columns = (await axios.get(`${API_BASE_URL}/courses/${courseId}/grade-columns`, createAuthConfig({ params }))).data;
     return Array.isArray(columns) ? columns : [];
   } catch (error) {
     console.error('Error fetching grade columns:', error);
@@ -1675,7 +1368,7 @@ export const fetchGradeColumns = async (courseId, params = {}) => {
 
 export const createGradeColumn = async (columnData) => {
   try {
-    return await apiClient.post('/grade-columns', columnData);
+    return (await axios.post(`${API_BASE_URL}/grade-columns`, columnData, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1683,7 +1376,7 @@ export const createGradeColumn = async (columnData) => {
 
 export const updateGradeColumn = async (columnId, updates) => {
   try {
-    return await apiClient.put(`/grade-columns/${columnId}`, updates);
+    return (await axios.put(`${API_BASE_URL}/grade-columns/${columnId}`, updates, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1691,7 +1384,7 @@ export const updateGradeColumn = async (columnId, updates) => {
 
 export const deleteGradeColumn = async (columnId) => {
   try {
-    return await apiClient.delete(`/grade-columns/${columnId}`);
+    return (await axios.delete(`${API_BASE_URL}/grade-columns/${columnId}`, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1700,7 +1393,7 @@ export const deleteGradeColumn = async (columnId) => {
 // Grades
 export const updateGrade = async (studentId, columnId, grade) => {
   try {
-    return await apiClient.put(`/students/${studentId}/grades/${columnId}`, { grade });
+    return (await axios.put(`${API_BASE_URL}/students/${studentId}/grades/${columnId}`, { grade }, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1713,7 +1406,7 @@ export const addStudent = async (courseId, studentData) => {
       studentId: studentData.id || studentData.studentId,
       academicYear: new Date().getFullYear()
     };
-    return await apiClient.post(`/courses/${courseId}/enroll`, enrollmentRequest);
+    return (await axios.post(`${API_BASE_URL}/courses/${courseId}/enroll`, enrollmentRequest, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1724,9 +1417,9 @@ export const removeStudent = async (courseId, studentId) => {
     const unenrollmentRequest = {
       studentIds: [studentId]
     };
-    return await apiClient.delete(`/courses/${courseId}/enrollments`, {
-      body: unenrollmentRequest
-    });
+    return (await axios.delete(`${API_BASE_URL}/courses/${courseId}/enrollments`, createAuthConfig({
+      data: unenrollmentRequest
+    }))).data;
   } catch (error) {
     throw error;
   }
@@ -1734,7 +1427,7 @@ export const removeStudent = async (courseId, studentId) => {
 
 export const updateStudent = async (studentId, updates) => {
   try {
-    return await apiClient.put(`/users/${studentId}`, updates);
+    return (await axios.put(`${API_BASE_URL}/users/${studentId}`, updates, createAuthConfig())).data;
   } catch (error) {
     throw error;
   }
@@ -1772,9 +1465,7 @@ export const fetchDashboardAnalytics = async (courseId) => {
 
 export const canStudentTakeExam = async (examId, studentId) => {
   try {
-
-    const response = await apiClient.get(`/exams/${examId}/can-take`);
-
+    const response = (await axios.get(`${API_BASE_URL}/exams/${examId}/can-take`, createAuthConfig())).data;
     return response.canTake || false;
   } catch (error) {
     console.error('❌ Error checking exam eligibility:', error);
@@ -1784,9 +1475,7 @@ export const canStudentTakeExam = async (examId, studentId) => {
 
 export const getStudentAttemptCount = async (examId, studentId) => {
   try {
-
-    const response = await apiClient.get(`/exams/${examId}/attempt-count/${studentId}`);
-
+    const response = (await axios.get(`${API_BASE_URL}/exams/${examId}/attempt-count/${studentId}`, createAuthConfig())).data;
     return response.attemptCount || 0;
   } catch (error) {
     console.error('❌ Error getting attempt count:', error);
@@ -1796,7 +1485,6 @@ export const getStudentAttemptCount = async (examId, studentId) => {
 
 export const hasActiveAttempt = async (examId, studentId) => {
   try {
-    // Check if student has an active (in-progress) attempt
     const responses = await fetchExamResponseHistory(examId, studentId);
     const activeAttempt = responses.find(response => response.status === 'IN_PROGRESS');
     return !!activeAttempt;
@@ -1812,9 +1500,7 @@ export const hasActiveAttempt = async (examId, studentId) => {
 
 export const startExam = async (examId) => {
   try {
-
-    const response = await apiClient.post(`/exams/${examId}/start`);
-
+    const response = (await axios.post(`${API_BASE_URL}/exams/${examId}/start`, {}, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error starting exam:', error);
@@ -1824,9 +1510,7 @@ export const startExam = async (examId) => {
 
 export const saveExamProgress = async (progressData) => {
   try {
-
-    const response = await apiClient.put('/exams/save-progress', progressData);
-
+    const response = (await axios.put(`${API_BASE_URL}/exams/save-progress`, progressData, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error saving progress:', error);
@@ -1836,9 +1520,7 @@ export const saveExamProgress = async (progressData) => {
 
 export const submitExam = async (submissionData) => {
   try {
-
-    const response = await apiClient.post('/exams/submit', submissionData);
-
+    const response = (await axios.post(`${API_BASE_URL}/exams/submit`, submissionData, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error submitting exam:', error);
@@ -1852,12 +1534,10 @@ export const submitExam = async (submissionData) => {
 
 export const exportDetailedExamResponses = async (examId, format = 'csv') => {
   try {
-
-    const response = await apiClient.post('/exam-responses/export-detailed', {
+    const response = (await axios.post(`${API_BASE_URL}/exam-responses/export-detailed`, {
       examId,
       format
-    });
-
+    }, createAuthConfig())).data;
     return response;
   } catch (error) {
     console.error('❌ Error exporting exam responses:', error);
@@ -1869,56 +1549,35 @@ export const exportDetailedExamResponses = async (examId, format = 'csv') => {
 // HELPER FUNCTIONS
 // ===================================
 
-/**
- * Helper function to get exam response grading status
- */
 export const getResponseGradingStatus = (response) => {
   return ExamResponseHelpers.getGradingStatus(response);
 };
 
-/**
- * Helper function to check if response can be auto-graded
- */
 export const canResponseBeAutoGraded = (response) => {
   return ExamResponseHelpers.canAutoGrade(response);
 };
 
-/**
- * Helper function to check if response needs manual grading
- */
 export const needsManualGrading = (response) => {
   return ExamResponseHelpers.needsManualGrading(response);
 };
 
-/**
- * Helper function to check if response is completed
- */
 export const isResponseCompleted = (response) => {
   return ExamResponseHelpers.isCompleted(response);
 };
 
-/**
- * Helper function to format time spent
- */
 export const formatTimeSpent = (timeSpentSeconds) => {
   return ExamResponseHelpers.formatTimeSpent(timeSpentSeconds);
 };
 
-/**
- * Helper function to calculate percentage
- */
 export const calculateResponsePercentage = (response) => {
   return ExamResponseHelpers.calculatePercentage(response);
 };
 
-// Error handling utility
 export const handleApiError = (error) => {
   console.error('API Error:', error);
-  
   if (error.error && error.status !== undefined) {
     return error;
   }
-  
   return {
     error: true,
     status: error.status || 0,
@@ -1928,5 +1587,4 @@ export const handleApiError = (error) => {
   };
 };
 
-// Export the apiClient for direct use if needed
-export { apiClient, ExamResponseHelpers, TaskSubmissionHelpers };
+export { ExamResponseHelpers, TaskSubmissionHelpers };

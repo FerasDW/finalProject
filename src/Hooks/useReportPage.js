@@ -1,14 +1,34 @@
-// src/Hooks/useReportPage.js
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8080";
+// Use the correct base URL for edusphere-service (port 8082)
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://13.61.114.153:8082";
 const GENERATE_REPORT_URL = `${API_BASE_URL}/api/reports/generate`;
 const RECENT_REPORTS_URL = `${API_BASE_URL}/api/reports/recent`;
 const DOWNLOAD_REPORT_URL = `${API_BASE_URL}/api/reports/download/`;
 const VIEW_REPORT_URL = `${API_BASE_URL}/api/reports/view/`;
+
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 export const useReportPage = () => {
   const [queryText, setQueryText] = useState("");
@@ -30,7 +50,7 @@ export const useReportPage = () => {
     setIsViewing(true);
     setViewingError("");
     try {
-      const response = await axios.get(`${VIEW_REPORT_URL}${reportId}`);
+      const response = await axios.get(`${VIEW_REPORT_URL}${reportId}`, createAuthConfig());
       if (response.data && response.data.data) {
         setViewedReportData(response.data.data);
         setIsViewing(false);
@@ -54,7 +74,7 @@ export const useReportPage = () => {
   const fetchRecentReports = async () => {
     setLoadingReports(true);
     try {
-      const response = await axios.get(RECENT_REPORTS_URL);
+      const response = await axios.get(RECENT_REPORTS_URL, createAuthConfig());
       setRecentReports(response.data || []);
       setLoadingReports(false);
     } catch (err) {
@@ -79,7 +99,7 @@ export const useReportPage = () => {
     try {
       const response = await axios.post(GENERATE_REPORT_URL, {
         query: queryText,
-      });
+      }, createAuthConfig());
       if (response.data && response.data.data) {
         setResultData(response.data.data);
         setLastQuery(queryText);
@@ -112,7 +132,7 @@ export const useReportPage = () => {
       setResultData([]);
     } finally {
       setLoading(false);
-      fetchRecentReports(); // Re-fetch recent reports after generating a new one
+      fetchRecentReports();
     }
   };
 
@@ -170,9 +190,9 @@ export const useReportPage = () => {
 
   const handleDownloadFromRecent = async (reportId) => {
     try {
-      const response = await axios.get(`${DOWNLOAD_REPORT_URL}${reportId}`, {
+      const response = await axios.get(`${DOWNLOAD_REPORT_URL}${reportId}`, createAuthConfig({
         responseType: "blob",
-      });
+      }));
       const blob = new Blob([response.data], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -196,8 +216,8 @@ export const useReportPage = () => {
   const handleDeleteReport = async (reportId) => {
     if (window.confirm("Are you sure you want to delete this report?")) {
       try {
-        await axios.delete(`${API_BASE_URL}/api/reports/${reportId}`);
-        fetchRecentReports(); // Re-fetch the list to show the updated state
+        await axios.delete(`${API_BASE_URL}/api/reports/${reportId}`, createAuthConfig());
+        fetchRecentReports();
       } catch (err) {
         console.error("❌ Error deleting report:", err);
         alert("Error deleting report. Please try again.");
@@ -218,7 +238,6 @@ export const useReportPage = () => {
     handleRegenerateReport,
     handleDownloadFromRecent,
     handleDeleteReport,
-
     viewedReportData,
     isViewing,
     viewingError,

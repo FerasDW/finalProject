@@ -109,9 +109,15 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
     }
   };
 
-  const handleDownloadFile = (file) => {
+  // ✅ FIX 1: Use the `contentApi.downloadFile` function for proper authentication
+  const handleDownloadFile = async (file) => {
     if (file.id) {
-      window.open(`http://localhost:8080/api/files/${file.id}/download`, '_blank');
+      try {
+        await contentApi.downloadFile(file.id, file.fileName);
+      } catch (error) {
+        console.error("Error downloading file:", error);
+        alert(error.message);
+      }
     } else {
       console.error("No download method available for file:", file.name);
       alert("Unable to download file.");
@@ -209,6 +215,7 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
       return;
     }
     try {
+      // ✅ FIX 2: The `contentApi.uploadFile` function already handles the categoryId.
       const newFile = await contentApi.uploadFile(data.categoryId, data.file);
       setCategories(
         categories.map((cat) =>
@@ -241,7 +248,6 @@ const CourseFilesManager = ({ courseId, academicYear, userRole }) => {
   }
 
   return (
-    // The JSX part is mostly the same, it will now render the state that is correctly fetched from the API
     <div className="files-manager">
       <div className="files-container">
           <div className="categories-sidebar">

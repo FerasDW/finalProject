@@ -1,15 +1,30 @@
 // Api/editDocumentAPI.js - Complete fixed version for React with jsPDF
 
-// Import the libraries at the top of the file
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://13.61.114.153:8082';
 
-// Helper function to get standard headers (no auth tokens needed - using session auth)
-const getStandardHeaders = () => {
+// Helper function to get token from localStorage
+const getToken = () => {
+  return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
   return {
-    'Content-Type': 'application/json',
+    ...additionalConfig,
+    headers: {
+      ...getAuthHeaders(),
+      ...additionalConfig.headers
+    }
   };
 };
 
@@ -21,32 +36,18 @@ export const uploadFile = async (categoryId, file) => {
       throw new Error('File is too large. Maximum size is 10MB.');
     }
 
+    // Create FormData
     const formData = new FormData();
     formData.append('file', file);
-    
-    // Create AbortController for timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
-    const response = await fetch(`${BASE_URL}/api/files/upload/${categoryId}`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-      signal: controller.signal, // Add timeout signal
-    });
 
-    clearTimeout(timeoutId);
+    const response = await axios.post(`${BASE_URL}/api/files/upload/${categoryId}`, formData, createAuthConfig({
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }));
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    return response.data;
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('Upload timeout. Please try again with a smaller file.');
-    }
     console.error("Error uploading file:", error);
     throw new Error(`Failed to upload file: ${error.message}`);
   }
@@ -55,14 +56,10 @@ export const uploadFile = async (categoryId, file) => {
 // Upload document as PDF using jsPDF - React version
 export const uploadDocumentAsPDF = async (categoryId, htmlContent, fileName) => {
   try {
-    // Generate PDF using jsPDF
     const pdfBlob = await generatePDFWithJsPDF(htmlContent, fileName);
-    
-    // Create a File object with PDF MIME type
-    const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { 
-      type: 'application/pdf' 
+    const pdfFile = new File([pdfBlob], `${fileName}.pdf`, {
+      type: 'application/pdf'
     });
-    
     return await uploadFile(categoryId, pdfFile);
   } catch (error) {
     console.error("Error uploading document as PDF:", error);
@@ -70,24 +67,20 @@ export const uploadDocumentAsPDF = async (categoryId, htmlContent, fileName) => 
   }
 };
 
-// Generate PDF with reduced size and better compression
 const generatePDFWithJsPDF = async (htmlContent, fileName) => {
   return new Promise((resolve, reject) => {
     try {
-      // Create PDF instance with compression
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
         putOnlyUsedFonts: true,
         floatPrecision: 16,
-        compress: true // Enable compression
+        compress: true
       });
 
-      // Clean and simplify HTML content
       const cleanedHTML = cleanHTMLForPDF(htmlContent);
-      
-      // Create smaller, optimized container
+
       const container = document.createElement('div');
       container.innerHTML = `
         <div style="
@@ -128,43 +121,38 @@ const generatePDFWithJsPDF = async (htmlContent, fileName) => {
         </div>
       `;
 
-      // Style the container for rendering
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.top = '0';
       container.style.background = '#fff';
       container.style.width = '190mm';
-      
+
       document.body.appendChild(container);
 
-      // Use html2canvas with reduced quality for smaller file size
       html2canvas(container, {
-        scale: 1.5, // Reduced from 2 to 1.5
+        scale: 1.5,
         useCORS: true,
         allowTaint: false,
         backgroundColor: '#ffffff',
-        width: 680, // Reduced width
-        height: 900, // Reduced height
+        width: 680,
+        height: 900,
         scrollX: 0,
         scrollY: 0,
-        logging: false, // Disable logging
-        imageTimeout: 15000 // 15 second timeout for images
+        logging: false,
+        imageTimeout: 15000
       }).then(canvas => {
         document.body.removeChild(container);
-        
-        // Compress image quality
-        const imgData = canvas.toDataURL('image/jpeg', 0.7); // JPEG with 70% quality
-        const imgWidth = 190; // Reduced width
-        const pageHeight = 277; // A4 height in mm
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.7);
+        const imgWidth = 190;
+        const pageHeight = 277;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         let heightLeft = imgHeight;
         let position = 0;
 
-        // Add first page
         pdf.addImage(imgData, 'JPEG', 10, position + 10, imgWidth, imgHeight, undefined, 'MEDIUM');
         heightLeft -= pageHeight;
 
-        // Add additional pages if needed (limit to 5 pages max)
         let pageCount = 1;
         while (heightLeft >= 0 && pageCount < 5) {
           position = heightLeft - imgHeight;
@@ -175,13 +163,12 @@ const generatePDFWithJsPDF = async (htmlContent, fileName) => {
         }
 
         const pdfBlob = pdf.output('blob');
-        
-        // Check final PDF size
-        if (pdfBlob.size > 8 * 1024 * 1024) { // 8MB limit
+
+        if (pdfBlob.size > 8 * 1024 * 1024) {
           reject(new Error('Generated PDF is too large. Please reduce content or try HTML format.'));
           return;
         }
-        
+
         resolve(pdfBlob);
       }).catch(error => {
         document.body.removeChild(container);
@@ -194,7 +181,6 @@ const generatePDFWithJsPDF = async (htmlContent, fileName) => {
   });
 };
 
-// Clean HTML content for better PDF rendering
 const cleanHTMLForPDF = (htmlContent) => {
   return htmlContent
     .replace(/contenteditable="true"/g, '')
@@ -207,10 +193,8 @@ const cleanHTMLForPDF = (htmlContent) => {
     .replace(/<td[^>]*>/g, '<td style="border: 1px solid #ddd; padding: 8px;">');
 };
 
-// Simple text-only PDF generation (emergency fallback)
 export const uploadDocumentAsSimplePDF = async (categoryId, htmlContent, fileName) => {
   try {
-    // Create simple text-only PDF
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -218,31 +202,26 @@ export const uploadDocumentAsSimplePDF = async (categoryId, htmlContent, fileNam
       compress: true
     });
 
-    // Extract text content only
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
     const textContent = tempDiv.innerText || tempDiv.textContent || '';
 
-    // Add title
     pdf.setFontSize(16);
     pdf.text(fileName, 20, 20);
-    
-    // Add date
+
     pdf.setFontSize(10);
     pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 30);
-    
-    // Add content as text
+
     pdf.setFontSize(12);
     const lines = pdf.splitTextToSize(textContent, 170);
     pdf.text(lines, 20, 45);
 
     const pdfBlob = pdf.output('blob');
-    
-    // Create file and upload
-    const pdfFile = new File([pdfBlob], `${fileName}.pdf`, { 
-      type: 'application/pdf' 
+
+    const pdfFile = new File([pdfBlob], `${fileName}.pdf`, {
+      type: 'application/pdf'
     });
-    
+
     return await uploadFile(categoryId, pdfFile);
   } catch (error) {
     console.error("Error uploading simple PDF:", error);
@@ -250,7 +229,6 @@ export const uploadDocumentAsSimplePDF = async (categoryId, htmlContent, fileNam
   }
 };
 
-// Simple fallback - save as HTML but viewable in browser
 export const uploadDocumentAsHTML = async (categoryId, htmlContent, fileName) => {
   try {
     const styledHTML = `
@@ -334,7 +312,7 @@ export const uploadDocumentAsHTML = async (categoryId, htmlContent, fileName) =>
 
     const blob = new Blob([styledHTML], { type: 'text/html;charset=utf-8' });
     const file = new File([blob], `${fileName}.html`, { type: 'text/html' });
-    
+
     return await uploadFile(categoryId, file);
   } catch (error) {
     console.error("Error uploading document as HTML:", error);
@@ -342,150 +320,75 @@ export const uploadDocumentAsHTML = async (categoryId, htmlContent, fileName) =>
   }
 };
 
-// Get files by category - matches your getFilesByCategory method
 export const getFilesByCategory = async (categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/files/by-category/${categoryId}`, {
-      method: 'GET',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await axios.get(`${BASE_URL}/api/files/by-category/${categoryId}`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error("Error fetching files by category:", error);
     throw error;
   }
 };
 
-// Get files by category (simple version) - matches your getFilesByCategorySimple method
 export const getFilesByCategorySimple = async (categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/files/by-category/${categoryId}/simple`, {
-      method: 'GET',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await axios.get(`${BASE_URL}/api/files/by-category/${categoryId}/simple`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error("Error fetching files by category (simple):", error);
     throw error;
   }
 };
 
-// Delete file - matches your deleteFile method
 export const deleteFile = async (fileId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/files/${fileId}`, {
-      method: 'DELETE',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    // 204 No Content response doesn't have a body
+    const response = await axios.delete(`${BASE_URL}/api/files/${fileId}`, createAuthConfig());
     if (response.status === 204) {
       return { success: true };
     }
-
-    return await response.json();
+    return response.data;
   } catch (error) {
     console.error("Error deleting file:", error);
     throw error;
   }
 };
 
-// Download file - matches your downloadFile method
 export const downloadFile = async (fileId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/files/${fileId}/download`, {
-      method: 'GET',
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    // Return the blob for download
-    return await response.blob();
+    const response = await axios.get(`${BASE_URL}/api/files/${fileId}/download`, createAuthConfig({
+      responseType: 'blob',
+    }));
+    return response.data;
   } catch (error) {
     console.error("Error downloading file:", error);
     throw error;
   }
 };
 
-// Get file count by category - matches your getFilesCountByCategory method
 export const getFilesCountByCategory = async (categoryId) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/files/category/${categoryId}/count`, {
-      method: 'GET',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await axios.get(`${BASE_URL}/api/files/category/${categoryId}/count`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error("Error fetching file count:", error);
     throw error;
   }
 };
 
-// Get courses - matches your CourseController.getAllCourses method
 export const getCourses = async () => {
   try {
-    const response = await fetch(`${BASE_URL}/api/courses`, {
-      method: 'GET',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await axios.get(`${BASE_URL}/api/courses`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error("Error fetching courses:", error);
     throw error;
   }
 };
 
-// Get categories by course - you'll need to add this endpoint to your backend
 export const getCategoriesByCourse = async (courseId, year = new Date().getFullYear()) => {
   try {
-    const response = await fetch(`${BASE_URL}/api/categories/by-course/${courseId}?year=${year}`, {
-      method: 'GET',
-      headers: getStandardHeaders(),
-      credentials: 'include', // Session-based auth
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    const response = await axios.get(`${BASE_URL}/api/categories/by-course/${courseId}?year=${year}`, createAuthConfig());
+    return response.data;
   } catch (error) {
     console.error("Error fetching categories by course:", error);
     throw error;

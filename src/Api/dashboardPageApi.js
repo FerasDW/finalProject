@@ -1,18 +1,30 @@
 import axios from 'axios';
 
-// const API_BASE_URL = 'http://13.61.114.153:8082/api';
-
-
-// const BASE_URL = 'http://localhost:8080/api/dashboard';
-// const COURSES_URL = 'http://localhost:8080/api/courses';
-// const USERS_URL = 'http://localhost:8080/api/users';
-
 const BASE_URL = 'http://13.61.114.153:8082/api/dashboard';
 const COURSES_URL = 'http://13.61.114.153:8082/api/courses';
 const USERS_URL = 'http://13.61.114.153:8082/api/users';
 
-// Set default axios configuration to send cookies with requests
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /* ==================================================================
                       PRIMARY DASHBOARD LOADER
@@ -20,7 +32,7 @@ axios.defaults.withCredentials = true;
 
 export const getDashboardData = async (userRole) => {
   try {
-    const response = await axios.get(`${BASE_URL}/complete/${userRole}`);
+    const response = await axios.get(`${BASE_URL}/complete/${userRole}`, createAuthConfig());
     return response.data || {
       stats: {},
       charts: {},
@@ -36,14 +48,13 @@ export const getDashboardData = async (userRole) => {
   }
 };
 
-
 /* ==================================================================
                         ASSIGNMENTS (CRUD)
    ================================================================== */
 
 export const addAssignment = async (assignmentData) => {
   try {
-    const response = await axios.post(`${BASE_URL}/assignments`, assignmentData);
+    const response = await axios.post(`${BASE_URL}/assignments`, assignmentData, createAuthConfig());
     return response.data;
   } catch (error) {
     console.error("Error adding assignment:", error);
@@ -53,7 +64,7 @@ export const addAssignment = async (assignmentData) => {
 
 export const updateAssignment = async (assignmentId, assignmentData) => {
   try {
-    const response = await axios.put(`${BASE_URL}/assignments/${assignmentId}`, assignmentData);
+    const response = await axios.put(`${BASE_URL}/assignments/${assignmentId}`, assignmentData, createAuthConfig());
     return response.data;
   } catch (error) {
     console.error("Error updating assignment:", error);
@@ -63,13 +74,12 @@ export const updateAssignment = async (assignmentId, assignmentData) => {
 
 export const deleteAssignment = async (assignmentId) => {
   try {
-    await axios.delete(`${BASE_URL}/assignments/${assignmentId}`);
+    await axios.delete(`${BASE_URL}/assignments/${assignmentId}`, createAuthConfig());
   } catch (error) {
     console.error("Error deleting assignment:", error);
     throw error;
   }
 };
-
 
 /* ==================================================================
                             FORM DATA
@@ -77,7 +87,7 @@ export const deleteAssignment = async (assignmentId) => {
 
 export const getAllCourses = async () => {
     try {
-        const response = await axios.get(COURSES_URL);
+        const response = await axios.get(COURSES_URL, createAuthConfig());
         return response.data || [];
     } catch (error) {
         console.error("Error fetching courses:", error);
@@ -94,7 +104,7 @@ export const getAllCourses = async () => {
 export const getAllLecturers = async () => {
     try {
         // Assuming '1200' is the role code for lecturers
-        const response = await axios.get(`${USERS_URL}/role/1200`);
+        const response = await axios.get(`${USERS_URL}/role/1200`, createAuthConfig());
         return response.data || [];
     } catch (error) {
         console.error("Error fetching lecturers:", error);

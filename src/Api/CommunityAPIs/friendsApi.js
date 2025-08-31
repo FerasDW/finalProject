@@ -1,10 +1,28 @@
-// src/Api/CommunityAPIs/friendsApi.js
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/friends';
+const BASE_URL = 'http://13.61.114.153:8081/api/friends';
 
-// Set default axios configuration
-axios.defaults.withCredentials = true;
+// Helper function to get token from localStorage
+const getToken = () => {
+    return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+    const token = getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+    return {
+        ...additionalConfig,
+        headers: {
+            ...getAuthHeaders(),
+            ...additionalConfig.headers
+        }
+    };
+};
 
 /**
  * Get user's friend list
@@ -12,13 +30,13 @@ axios.defaults.withCredentials = true;
  * @returns {Promise<Array>} Array of friends
  */
 export const getFriends = async (status = null) => {
-  try {
-    const url = status ? `${BASE_URL}?status=${status}` : BASE_URL;
-    const response = await axios.get(url, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const url = status ? `${BASE_URL}?status=${status}` : BASE_URL;
+        const response = await axios.get(url, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -26,12 +44,12 @@ export const getFriends = async (status = null) => {
  * @returns {Promise<Array>} Array of suggested users
  */
 export const getFriendSuggestions = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/suggestions`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/suggestions`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -39,12 +57,12 @@ export const getFriendSuggestions = async () => {
  * @returns {Promise<Array>} Array of friend requests
  */
 export const getFriendRequests = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/requests`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/requests`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -53,12 +71,12 @@ export const getFriendRequests = async () => {
  * @returns {Promise<Object>} Request response
  */
 export const sendFriendRequest = async (userId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/request/${userId}`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/request/${userId}`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -67,12 +85,12 @@ export const sendFriendRequest = async (userId) => {
  * @returns {Promise<Object>} Accept response
  */
 export const acceptFriendRequest = async (userId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/accept/${userId}`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/accept/${userId}`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -81,12 +99,12 @@ export const acceptFriendRequest = async (userId) => {
  * @returns {Promise<Object>} Reject response
  */
 export const rejectFriendRequest = async (userId) => {
-  try {
-    const response = await axios.put(`${BASE_URL}/reject/${userId}`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.put(`${BASE_URL}/reject/${userId}`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -95,12 +113,12 @@ export const rejectFriendRequest = async (userId) => {
  * @returns {Promise<Object>} Remove response
  */
 export const removeFriend = async (userId) => {
-  try {
-    const response = await axios.delete(`${BASE_URL}/remove/${userId}`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.delete(`${BASE_URL}/remove/${userId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -109,12 +127,12 @@ export const removeFriend = async (userId) => {
  * @returns {Promise<Object>} Friendship status object
  */
 export const getFriendshipStatus = async (userId) => {
-  try {
-    const response = await axios.get(`${BASE_URL}/status/${userId}`, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    return { status: 'none' }; // Default fallback
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/status/${userId}`, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        return { status: 'none' }; // Default fallback
+    }
 };
 
 /**
@@ -122,12 +140,12 @@ export const getFriendshipStatus = async (userId) => {
  * @returns {Promise<Array>} Array of friend activities
  */
 export const getFriendsActivities = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/activities`, { withCredentials: true });
-    return response.data || [];
-  } catch (error) {
-    return [];
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/activities`, createAuthConfig());
+        return response.data || [];
+    } catch (error) {
+        return [];
+    }
 };
 
 /**
@@ -136,12 +154,12 @@ export const getFriendsActivities = async () => {
  * @returns {Promise<Object>} Dismiss response
  */
 export const dismissSuggestion = async (userId) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/dismiss-suggestion/${userId}`, {}, { withCredentials: true });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+    try {
+        const response = await axios.post(`${BASE_URL}/dismiss-suggestion/${userId}`, {}, createAuthConfig());
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
 };
 
 /**
@@ -149,12 +167,12 @@ export const dismissSuggestion = async (userId) => {
  * @returns {Promise<boolean>} True if connection successful
  */
 export const testFriendsApiConnection = async () => {
-  try {
-    const response = await axios.get(`${BASE_URL}/test`, { withCredentials: true });
-    return true;
-  } catch (error) {
-    return false;
-  }
+    try {
+        const response = await axios.get(`${BASE_URL}/test`, createAuthConfig());
+        return true;
+    } catch (error) {
+        return false;
+    }
 };
 
 /**
@@ -163,44 +181,44 @@ export const testFriendsApiConnection = async () => {
  * @param {string} operation - Description of the operation that failed
  */
 export const handleFriendsApiError = (error, operation) => {
-  if (error.response) {
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        throw new Error(data.message || 'Bad request - please check your input');
-      case 401:
-        throw new Error('Unauthorized - please log in again');
-      case 403:
-        throw new Error('Forbidden - you do not have permission');
-      case 404:
-        throw new Error('User not found');
-      case 409:
-        throw new Error('Friend request already exists or user is already a friend');
-      case 500:
-        throw new Error('Server error - please try again later');
-      default:
-        throw new Error(data.message || 'An unexpected error occurred');
+    if (error.response) {
+        const { status, data } = error.response;
+        
+        switch (status) {
+            case 400:
+                throw new Error(data.message || 'Bad request - please check your input');
+            case 401:
+                throw new Error('Unauthorized - please log in again');
+            case 403:
+                throw new Error('Forbidden - you do not have permission');
+            case 404:
+                throw new Error('User not found');
+            case 409:
+                throw new Error('Friend request already exists or user is already a friend');
+            case 500:
+                throw new Error('Server error - please try again later');
+            default:
+                throw new Error(data.message || 'An unexpected error occurred');
+        }
+    } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+    } else {
+        throw new Error('Request failed - please try again');
     }
-  } else if (error.request) {
-    throw new Error('Network error - please check your connection');
-  } else {
-    throw new Error('Request failed - please try again');
-  }
 };
 
 // Export all functions as default for easy importing
 export default {
-  getFriends,
-  getFriendSuggestions,
-  getFriendRequests,
-  sendFriendRequest,
-  acceptFriendRequest,
-  rejectFriendRequest,
-  removeFriend,
-  getFriendshipStatus,
-  getFriendsActivities,
-  dismissSuggestion,
-  testFriendsApiConnection,
-  handleFriendsApiError
+    getFriends,
+    getFriendSuggestions,
+    getFriendRequests,
+    sendFriendRequest,
+    acceptFriendRequest,
+    rejectFriendRequest,
+    removeFriend,
+    getFriendshipStatus,
+    getFriendsActivities,
+    dismissSuggestion,
+    testFriendsApiConnection,
+    handleFriendsApiError
 };

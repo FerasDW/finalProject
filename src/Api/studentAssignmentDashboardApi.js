@@ -1,34 +1,44 @@
 // api/studentAssignmentDashboardApi.js - Fixed to match backend endpoints
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://13.61.114.153:8082/api';
 
-// Create axios instance with default config
+// Helper function to get token from localStorage
+const getToken = () => {
+  return localStorage.getItem("jwtToken");
+};
+
+// Helper function to get authorization headers
+const getAuthHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Create axios config with auth headers
+const createAuthConfig = (additionalConfig = {}) => {
+  return {
+    ...additionalConfig,
+    headers: {
+      ...getAuthHeaders(),
+      ...additionalConfig.headers
+    }
+  };
+};
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Request interceptor for auth tokens
 apiClient.interceptors.request.use(
   (config) => {
-    // Try to get token from cookies first (since you're using react-cookie)
-    const cookieToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('jwtToken='))
-      ?.split('=')[1];
-    
-    // Also try localStorage as fallback
-    const authToken = cookieToken || localStorage.getItem('authToken');
-    
-    if (authToken) {
-      config.headers.Authorization = `Bearer ${authToken}`;
+    const token = getToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
@@ -37,23 +47,16 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.status);
     return response;
   },
   (error) => {
     console.error('❌ API Error:', error.response?.data || error.message);
-    
-    // Handle auth errors
     if (error.response?.status === 401) {
-      // Clear both cookie and localStorage
-      document.cookie = 'jwtToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('jwtToken');
       window.location.href = '/login';
     }
-    
     return Promise.reject(error);
   }
 );
@@ -62,69 +65,57 @@ export const studentApi = {
   // ====================================
   // ASSIGNMENTS API (Tasks for Students)
   // ====================================
-  
-  // Get assignments for a course (Students access tasks)
+
   getAssignmentsByCourse: async (courseId, filters = {}) => {
     const params = new URLSearchParams();
     if (filters.status) params.append('status', filters.status);
     if (filters.category) params.append('category', filters.category);
     if (filters.priority) params.append('priority', filters.priority);
-    
     const url = `/courses/${courseId}/tasks${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
-  // Get assignments for a specific student (uses backend endpoint)
   getAssignmentsForStudent: async (studentId, courseId, status = null) => {
     const params = new URLSearchParams();
     if (status) params.append('status', status);
-    
     const url = `/tasks/student/${studentId}/course/${courseId}${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
-  // Get single assignment (task)
   getAssignment: async (assignmentId) => {
-    const response = await apiClient.get(`/tasks/${assignmentId}`);
+    const response = await apiClient.get(`/tasks/${assignmentId}`, createAuthConfig());
     return response.data;
   },
 
-  // Get upcoming assignments for student
   getUpcomingAssignments: async (studentId, courseId = null, daysAhead = 7) => {
     const params = new URLSearchParams();
     if (courseId) params.append('courseId', courseId);
     params.append('daysAhead', daysAhead);
-    
     const url = `/tasks/student/${studentId}/upcoming${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
-  // Get overdue assignments for student
   getOverdueAssignments: async (studentId, courseId = null) => {
     const params = new URLSearchParams();
     if (courseId) params.append('courseId', courseId);
-    
     const url = `/tasks/student/${studentId}/overdue${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
-  // Search assignments
   searchAssignments: async (courseId, query) => {
-    const response = await apiClient.get(`/tasks/search?courseId=${courseId}&query=${encodeURIComponent(query)}`);
+    const response = await apiClient.get(`/tasks/search?courseId=${courseId}&query=${encodeURIComponent(query)}`, createAuthConfig());
     return response.data;
   },
 
-  // Download assignment file
   downloadAssignmentFile: async (assignmentId) => {
     try {
-      const response = await apiClient.get(`/tasks/${assignmentId}/download`, {
+      const response = await apiClient.get(`/tasks/${assignmentId}/download`, createAuthConfig({
         responseType: 'blob'
-      });
-      
+      }));
       if (response.data instanceof Blob) {
         return response.data;
       } else {
@@ -140,48 +131,38 @@ export const studentApi = {
   // SUBMISSIONS API
   // ====================================
 
-  // Create new submission (simple version for students)
   createSubmission: async (submissionData) => {
-    const response = await apiClient.post('/tasksubmissions/simple', submissionData);
+    const response = await apiClient.post('/tasksubmissions/simple', submissionData, createAuthConfig());
     return response.data;
   },
 
-  // Submit assignment with file (Enhanced for students)
   submitAssignment: async (assignmentId, submissionData) => {
     const formData = new FormData();
-    
-    // Add basic submission data
     formData.append('taskId', assignmentId);
     formData.append('content', submissionData.content || '');
     formData.append('notes', submissionData.notes || '');
-    
-    // Add files if present
     if (submissionData.files && submissionData.files.length > 0) {
       submissionData.files.forEach((file) => {
         formData.append('files', file);
       });
     }
 
-    const response = await apiClient.post('/tasksubmissions', formData, {
+    const response = await apiClient.post('/tasksubmissions', formData, createAuthConfig({
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-    });
+    }));
     return response.data;
   },
 
-  // Update submission by student (before grading)
   updateSubmission: async (submissionId, updates) => {
-    const response = await apiClient.put(`/tasksubmissions/${submissionId}/student`, updates);
+    const response = await apiClient.put(`/tasksubmissions/${submissionId}/student`, updates, createAuthConfig());
     return response.data;
   },
 
-  // Delete submission by student
   deleteSubmission: async (submissionId) => {
     try {
-
-      const response = await apiClient.delete(`/tasksubmissions/${submissionId}`);
-
+      const response = await apiClient.delete(`/tasksubmissions/${submissionId}`, createAuthConfig());
       return response.data;
     } catch (error) {
       console.error('❌ Delete submission error:', error);
@@ -189,10 +170,9 @@ export const studentApi = {
     }
   },
 
-  // Check if student can delete their submission
   canDeleteSubmission: async (submissionId) => {
     try {
-      const response = await apiClient.get(`/tasksubmissions/${submissionId}/can-delete`);
+      const response = await apiClient.get(`/tasksubmissions/${submissionId}/can-delete`, createAuthConfig());
       return response.data;
     } catch (error) {
       console.error('❌ Error checking delete permission:', error);
@@ -200,45 +180,39 @@ export const studentApi = {
     }
   },
 
-  // Get submission by ID
   getSubmission: async (submissionId) => {
-    const response = await apiClient.get(`/tasksubmissions/${submissionId}`);
+    const response = await apiClient.get(`/tasksubmissions/${submissionId}`, createAuthConfig());
     return response.data;
   },
 
-  // Get student's submissions for a course
   getStudentSubmissions: async (studentId, courseId) => {
-    const url = courseId 
+    const url = courseId
       ? `/tasksubmissions/student/${studentId}?courseId=${courseId}`
       : `/tasksubmissions/student/${studentId}`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
-  // Get specific student's submission for a task
   getStudentSubmissionForTask: async (studentId, taskId) => {
-    const response = await apiClient.get(`/tasksubmissions/student/${studentId}/task/${taskId}`);
+    const response = await apiClient.get(`/tasksubmissions/student/${studentId}/task/${taskId}`, createAuthConfig());
     return response.data;
   },
 
-  // Get submissions for a task
   getSubmissionsByTask: async (taskId) => {
-    const response = await apiClient.get(`/tasksubmissions/task/${taskId}`);
+    const response = await apiClient.get(`/tasksubmissions/task/${taskId}`, createAuthConfig());
     return response.data;
   },
 
-  // Check if student can submit
   canStudentSubmit: async (taskId, studentId) => {
-    const response = await apiClient.get(`/tasks/${taskId}/can-submit/${studentId}`);
+    const response = await apiClient.get(`/tasks/${taskId}/can-submit/${studentId}`, createAuthConfig());
     return response.data;
   },
 
-  // Get student submission statistics
-  getStudentSubmissionStats: async (studentId, courseId = null) => {
-    const url = courseId 
+  getStudentSubmissionStats: async (studentId, courseId) => {
+    const url = courseId
       ? `/tasksubmissions/student/${studentId}/stats?courseId=${courseId}`
       : `/tasksubmissions/student/${studentId}/stats`;
-    const response = await apiClient.get(url);
+    const response = await apiClient.get(url, createAuthConfig());
     return response.data;
   },
 
@@ -246,10 +220,9 @@ export const studentApi = {
   // COURSES API
   // ====================================
 
-  // Get student's enrolled courses
   getEnrolledCourses: async (studentId) => {
     try {
-      const response = await apiClient.get('/courses');
+      const response = await apiClient.get('/courses', createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error fetching enrolled courses:', err);
@@ -257,10 +230,9 @@ export const studentApi = {
     }
   },
 
-  // Get course details
   getCourse: async (courseId) => {
     try {
-      const response = await apiClient.get(`/courses/${courseId}`);
+      const response = await apiClient.get(`/courses/${courseId}`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error fetching course:', err);
@@ -272,12 +244,9 @@ export const studentApi = {
   // GRADES API - FIXED TO MATCH BACKEND
   // ====================================
 
-  // Get student grades for a course
   getCourseGrades: async (courseId) => {
     try {
-
-      const response = await apiClient.get(`/courses/${courseId}/grades`);
-
+      const response = await apiClient.get(`/courses/${courseId}/grades`, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching course grades:', err);
@@ -285,12 +254,9 @@ export const studentApi = {
     }
   },
 
-  // Get grade columns for a course
   getGradeColumns: async (courseId) => {
     try {
-
-      const response = await apiClient.get(`/courses/${courseId}/grade-columns`);
-
+      const response = await apiClient.get(`/courses/${courseId}/grade-columns`, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching grade columns:', err);
@@ -298,12 +264,9 @@ export const studentApi = {
     }
   },
 
-  // Get student's final grade for a course
   getFinalGrade: async (studentId, courseId) => {
     try {
-
-      const response = await apiClient.get(`/students/${studentId}/final-grade/${courseId}`);
-
+      const response = await apiClient.get(`/students/${studentId}/final-grade/${courseId}`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching final grade:', err);
@@ -311,13 +274,10 @@ export const studentApi = {
     }
   },
 
-  // Get all grades for current student (student-accessible endpoint)
   getMyGrades: async (courseId = null) => {
     try {
       const url = courseId ? `/grades/course/${courseId}` : '/grades';
-
-      const response = await apiClient.get(url);
-
+      const response = await apiClient.get(url, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching my grades:', err);
@@ -325,12 +285,9 @@ export const studentApi = {
     }
   },
 
-  // Get my grade columns for a course
   getMyGradeColumns: async (courseId) => {
     try {
-
-      const response = await apiClient.get(`/gradecolumns/course/${courseId}`);
-
+      const response = await apiClient.get(`/gradecolumns/course/${courseId}`, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching my grade columns:', err);
@@ -342,12 +299,9 @@ export const studentApi = {
   // STUDENT EXAM API - FIXED TO MATCH BACKEND
   // ====================================
 
-  // Get available exams for student in a course
   getExamsByCourse: async (courseId) => {
     try {
-
-      const response = await apiClient.get(`/student/courses/${courseId}/exams`);
-
+      const response = await apiClient.get(`/student/courses/${courseId}/exams`, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching exams:', err);
@@ -355,12 +309,9 @@ export const studentApi = {
     }
   },
 
-  // Get exam details for student (student-specific view)
   getExam: async (examId) => {
     try {
-
-      const response = await apiClient.get(`/student/exams/${examId}`);
-
+      const response = await apiClient.get(`/student/exams/${examId}`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam:', err);
@@ -368,12 +319,9 @@ export const studentApi = {
     }
   },
 
-  // Check exam eligibility for student
   checkExamEligibility: async (examId) => {
     try {
-
-      const response = await apiClient.get(`/student/exams/${examId}/eligibility`);
-
+      const response = await apiClient.get(`/student/exams/${examId}/eligibility`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error checking exam eligibility:', err);
@@ -381,12 +329,9 @@ export const studentApi = {
     }
   },
 
-  // Start exam attempt
   startExam: async (examId) => {
     try {
-
-      const response = await apiClient.post(`/student/exams/${examId}/start`);
-
+      const response = await apiClient.post(`/student/exams/${examId}/start`, {}, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error starting exam:', err);
@@ -394,12 +339,9 @@ export const studentApi = {
     }
   },
 
-  // Save exam progress (auto-save and manual save)
   saveExamProgress: async (progressData) => {
     try {
-
-      const response = await apiClient.put(`/student/exams/${progressData.examId}/save-progress`, progressData);
-
+      const response = await apiClient.put(`/student/exams/${progressData.examId}/save-progress`, progressData, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error saving progress:', err);
@@ -407,12 +349,9 @@ export const studentApi = {
     }
   },
 
-  // Submit exam (final submission)
   submitExam: async (submissionData) => {
     try {
-
-      const response = await apiClient.post(`/student/exams/${submissionData.examId}/submit`, submissionData);
-
+      const response = await apiClient.post(`/student/exams/${submissionData.examId}/submit`, submissionData, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error submitting exam:', err);
@@ -420,12 +359,9 @@ export const studentApi = {
     }
   },
 
-  // Resume exam attempt
   resumeExamAttempt: async (examId) => {
     try {
-
-      const response = await apiClient.post(`/student/exams/${examId}/resume`);
-
+      const response = await apiClient.post(`/student/exams/${examId}/resume`, {}, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error resuming exam:', err);
@@ -433,12 +369,9 @@ export const studentApi = {
     }
   },
 
-  // Get exam attempt history for student
   getExamAttemptHistory: async (examId) => {
     try {
-
-      const response = await apiClient.get(`/student/exams/${examId}/attempts`);
-
+      const response = await apiClient.get(`/student/exams/${examId}/attempts`, createAuthConfig());
       return response.data || [];
     } catch (err) {
       console.error('❌ Error fetching attempt history:', err);
@@ -446,12 +379,9 @@ export const studentApi = {
     }
   },
 
-  // Check for active exam attempt
   checkActiveAttempt: async (examId) => {
     try {
-
-      const response = await apiClient.get(`/student/exams/${examId}/active-attempt`);
-
+      const response = await apiClient.get(`/student/exams/${examId}/active-attempt`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error checking active attempt:', err);
@@ -459,12 +389,9 @@ export const studentApi = {
     }
   },
 
-  // Get exam results for student
   getStudentExamResults: async (responseId) => {
     try {
-
-      const response = await apiClient.get(`/student/exam-responses/${responseId}/results`);
-
+      const response = await apiClient.get(`/student/exam-responses/${responseId}/results`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam results:', err);
@@ -472,12 +399,9 @@ export const studentApi = {
     }
   },
 
-  // Get detailed exam results for student
   getDetailedExamResults: async (responseId) => {
     try {
-
-      const response = await apiClient.get(`/student/exam-responses/${responseId}/detailed`);
-
+      const response = await apiClient.get(`/student/exam-responses/${responseId}/detailed`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching detailed exam results:', err);
@@ -485,12 +409,9 @@ export const studentApi = {
     }
   },
 
-  // Get student exam statistics for course
   getStudentExamStats: async (courseId) => {
     try {
-
-      const response = await apiClient.get(`/student/courses/${courseId}/exam-stats`);
-
+      const response = await apiClient.get(`/student/courses/${courseId}/exam-stats`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching exam stats:', err);
@@ -498,12 +419,9 @@ export const studentApi = {
     }
   },
 
-  // Get exam dashboard summary for student
   getExamDashboardSummary: async () => {
     try {
-
-      const response = await apiClient.get('/student/dashboard/exam-summary');
-
+      const response = await apiClient.get('/student/dashboard/exam-summary', createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('❌ Error fetching dashboard summary:', err);
@@ -519,7 +437,6 @@ export const studentApi = {
     }
   },
 
-  // Legacy method aliases for backward compatibility
   getExamResponse: async (responseId) => {
     return studentApi.getStudentExamResults(responseId);
   },
@@ -549,7 +466,6 @@ export const studentApi = {
   // DASHBOARD ANALYTICS (Enhanced implementations)
   // ====================================
 
-  // Get dashboard analytics for student
   getDashboardAnalytics: async (studentId, courseId) => {
     try {
       const [submissions, upcomingTasks, overdueTasks] = await Promise.all([
@@ -560,8 +476,8 @@ export const studentApi = {
 
       const totalAssignments = submissions.length + upcomingTasks.length + overdueTasks.length;
       const completedAssignments = submissions.filter(sub => sub.grade !== null).length;
-      const averageGrade = submissions.length > 0 
-        ? submissions.reduce((sum, sub) => sum + (sub.grade || 0), 0) / submissions.length 
+      const averageGrade = submissions.length > 0
+        ? submissions.reduce((sum, sub) => sum + (sub.grade || 0), 0) / submissions.length
         : 0;
 
       return {
@@ -585,12 +501,9 @@ export const studentApi = {
     }
   },
 
-  // Get recent activity (enhanced)
   getRecentActivity: async (studentId, limit = 10) => {
     try {
-      const submissions = await studentApi.getStudentSubmissions(studentId);
-      
-      // Sort by most recent and limit
+      const submissions = await studentApi.getStudentSubmissions(studentId, null);
       const recentSubmissions = submissions
         .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
         .slice(0, limit);
@@ -609,11 +522,9 @@ export const studentApi = {
     }
   },
 
-  // Get upcoming deadlines (enhanced)
   getUpcomingDeadlines: async (studentId, days = 7) => {
     try {
       const upcomingTasks = await studentApi.getUpcomingAssignments(studentId, null, days);
-      
       return upcomingTasks.map(task => ({
         id: task.id,
         title: task.title,
@@ -632,18 +543,17 @@ export const studentApi = {
   // FILE MANAGEMENT
   // ====================================
 
-  // Upload file with proper FormData handling
   uploadFile: async (file, context = 'submission') => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('context', context);
 
     try {
-      const response = await apiClient.post('/files/upload', formData, {
+      const response = await apiClient.post('/files/upload', formData, createAuthConfig({
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      });
+      }));
       return response.data;
     } catch (err) {
       console.error('File upload failed:', err);
@@ -651,12 +561,11 @@ export const studentApi = {
     }
   },
 
-  // Download file
   downloadFile: async (fileId) => {
     try {
-      const response = await apiClient.get(`/files/${fileId}/download`, {
+      const response = await apiClient.get(`/files/${fileId}/download`, createAuthConfig({
         responseType: 'blob'
-      });
+      }));
       return response.data;
     } catch (err) {
       console.error('File download failed:', err);
@@ -664,15 +573,13 @@ export const studentApi = {
     }
   },
 
-  // Add file to submission
   addFileToSubmission: async (submissionId, fileData) => {
-    const response = await apiClient.post(`/tasksubmissions/${submissionId}/add-file`, fileData);
+    const response = await apiClient.post(`/tasksubmissions/${submissionId}/add-file`, fileData, createAuthConfig());
     return response.data;
   },
 
-  // Remove file from submission
   removeFileFromSubmission: async (submissionId, fileIndex) => {
-    const response = await apiClient.delete(`/tasksubmissions/${submissionId}/file/${fileIndex}`);
+    const response = await apiClient.delete(`/tasksubmissions/${submissionId}/file/${fileIndex}`, createAuthConfig());
     return response.data;
   },
 
@@ -680,11 +587,10 @@ export const studentApi = {
   // NOTIFICATIONS
   // ====================================
 
-  // Get student notifications
   getNotifications: async (studentId, unreadOnly = false) => {
     try {
       const params = unreadOnly ? '?unread=true' : '';
-      const response = await apiClient.get(`/notifications/user/${studentId}${params}`);
+      const response = await apiClient.get(`/notifications/user/${studentId}${params}`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error fetching notifications:', err);
@@ -692,10 +598,9 @@ export const studentApi = {
     }
   },
 
-  // Mark notification as read
   markNotificationRead: async (notificationId) => {
     try {
-      const response = await apiClient.put(`/notifications/${notificationId}/read`);
+      const response = await apiClient.put(`/notifications/${notificationId}/read`, {}, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error marking notification as read:', err);
@@ -703,10 +608,9 @@ export const studentApi = {
     }
   },
 
-  // Mark all notifications as read
   markAllNotificationsRead: async (studentId) => {
     try {
-      const response = await apiClient.put(`/notifications/user/${studentId}/read-all`);
+      const response = await apiClient.put(`/notifications/user/${studentId}/read-all`, {}, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
@@ -718,10 +622,9 @@ export const studentApi = {
   // ADDITIONAL UTILITY METHODS
   // ====================================
 
-  // Get submission statistics for course
   getSubmissionStats: async (courseId) => {
     try {
-      const response = await apiClient.get(`/tasksubmissions/course/${courseId}/stats`);
+      const response = await apiClient.get(`/tasksubmissions/course/${courseId}/stats`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error fetching submission stats:', err);
@@ -729,10 +632,9 @@ export const studentApi = {
     }
   },
 
-  // Get all assignments needing grading (for instructors)
   getAssignmentsNeedingGrading: async (courseId) => {
     try {
-      const response = await apiClient.get(`/tasksubmissions/course/${courseId}/needing-grading`);
+      const response = await apiClient.get(`/tasksubmissions/course/${courseId}/needing-grading`, createAuthConfig());
       return response.data;
     } catch (err) {
       console.error('Error fetching assignments needing grading:', err);
