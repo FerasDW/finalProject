@@ -4,17 +4,21 @@ import React, { useContext } from "react";
 import { LogOut, User, Edit } from "react-feather";
 import { AuthContext } from "../../../../Context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
-// import "../../../../CSS/Components/Global/QuickAction.css";
 import "./QuickAction.css";
 
 const QuickAction = ({ onClose }) => {
-  const { authData, logout } = useContext(AuthContext);
+  const { authData, logoutUser } = useContext(AuthContext); // Fixed: changed from logout to logoutUser
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-    onClose();
+  const handleLogout = async () => { // Made async since logoutUser is async
+    try {
+      onClose(); // Close dropdown first
+      navigate("/"); // Navigate immediately to avoid null authData issues
+      await logoutUser(); // Then logout
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Navigation already happened above
+    }
   };
 
   const handleEditProfile = () => {

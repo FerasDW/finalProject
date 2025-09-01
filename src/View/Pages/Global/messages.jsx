@@ -22,22 +22,11 @@ import MidPageNavbar from "../../Components/CoursePage/Content/MidPageNavBar";
 import Table from "../../Components/Tables/Table";
 import Modal from "../../Components/Modal/Modal.jsx";
 import PopUp from "../../Components/Cards/PopUp.jsx";
-// You can remove the DynamicForm import or leave it if other parts of the page use it
-import DynamicForm from "../../Components/Forms/dynamicForm.jsx";
 import LoadingSpinner from "./Loading.jsx";
-
-// Import getFieldIcon from dynamicForm.jsx (if you still need it for other parts)
-import { getFieldIcon } from "../../Components/Forms/dynamicForm.jsx";
 
 // Custom Hooks
 import useMessages from "../../../Hooks/useMessages.js";
 import { useAuth } from "../../../Context/AuthContext.jsx";
-
-// Static Data (for form fields, we will still use these)
-import {
-  announcementFormFields,
-  templateFormFields,
-} from "../../../Static/FIxed/messagesPageData.js";
 
 // API Functions
 import {

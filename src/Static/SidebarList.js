@@ -35,8 +35,6 @@ export const leftMenuItems = {
     { title: "Community", icon: <Users /> },
     { title: "Generate Semester", icon: <Sparkles /> },
     { title: "Statistics", icon: <BarChart2 /> },
-    { title: "Settings", icon: <Settings /> },
-    { title: "Logout", icon: <LogOut /> },
   ],
 
   // Lecturer Student left sidebar menu
@@ -49,8 +47,6 @@ export const leftMenuItems = {
     { title: "Video Meeting", icon: <Video /> },
     { title: "Text Editor", icon: <Edit3 /> },
     { title: "Assignments And Tests", icon: <ClipboardCheck /> },
-    { title: "Settings", icon: <Settings /> },
-    { title: "Logout", icon: <LogOut /> },
   ],
 
   // Student left sidebar menu
@@ -62,23 +58,5 @@ export const leftMenuItems = {
     { title: "Community", icon: <Users /> },
     { title: "Video Meeting", icon: <Video /> },
     { title: "Assignments And Tests Grades", icon: <ClipboardCheck /> },
-    { title: "Settings", icon: <Settings /> },
-    { title: "Logout", icon: <LogOut /> },
   ],
 };
-
-const imgStyle = { width: 30, height: 30, borderRadius: 10 };
-const createMenuItem = (title, imgSrc) => ({
-  title,
-  icon: <img src={imgSrc} alt={title} style={imgStyle} />,
-});
-export const rightMenuItems = [
-  createMenuItem("Muhammed1", maleFace1),
-  createMenuItem("Muhammed2", maleFace2),
-  createMenuItem("Muhammed3", femaleFace1),
-  createMenuItem("Muhammed4", femaleFace2),
-  createMenuItem("Muhammed1", maleFace1),
-  createMenuItem("Muhammed2", maleFace2),
-  createMenuItem("Muhammed3", femaleFace1),
-  createMenuItem("Muhammed4", femaleFace2),
-];
