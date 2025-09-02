@@ -260,13 +260,13 @@ export const viewFile = async (fileUrl, fileName = null) => {
             }
           }
         } catch (fetchError) {
-          console.warn('⚠️ Could not validate file access, proceeding with direct open');
+          console.warn('Could not validate file access, proceeding with direct open');
         }
 
         try {
           newTab.focus();
         } catch (e) {
-          console.log('ℹ️ Could not focus new tab (browser security)');
+          console.log('Could not focus new tab (browser security)');
         }
 
         return {
@@ -1029,7 +1029,7 @@ export const fetchExamResponses = async (courseId, params = {}) => {
 
     const responsePromises = exams.map(async (exam) => {
       try {
-        console.log(`📊 Fetching responses for exam: ${exam.id} (${exam.title})`);
+        console.log(`Fetching responses for exam: ${exam.id} (${exam.title})`);
         const examResponses = (await axios.get(`${API_BASE_URL}/exams/${exam.id}/responses`, createAuthConfig())).data;
         return Array.isArray(examResponses) ? examResponses.map(response => ({
           ...response,

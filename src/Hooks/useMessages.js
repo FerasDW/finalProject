@@ -20,6 +20,7 @@ import {
   fetchFiles,
   uploadFile,
   deleteFile,
+  downloadFile,
   fetchUsersByRole,
 } from "../Api/messagesPageApi.js";
 
@@ -68,6 +69,8 @@ const useMessages = () => {
   const [students, setStudents] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [lecturers, setLecturers] = useState([]);
+
+  const FILE_SERVICE_BASE_URL = 'http://13.61.114.153:8082';
 
   useEffect(() => {
     if (!userRole) return;
@@ -326,9 +329,15 @@ const useMessages = () => {
     }
   };
 
-  const handleDownloadFile = (row) => {
-    window.open(row.fileUrl, '_blank');
-  };
+const handleDownloadFile = async (row) => {
+  try {
+    await downloadFile(row.id, row.name);
+    console.log('File downloaded successfully');
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    alert('Failed to download file. Please try again.');
+  }
+};
 
   const handleDeleteFile = async (row) => {
     try {

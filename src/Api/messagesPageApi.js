@@ -168,3 +168,31 @@ export const deleteFile = async (fileId) => {
   const response = await api.delete(`/files/${fileId}`, createAuthConfig());
   return response.data;
 };
+
+export const downloadFile = async (fileId, fileName) => {
+  try {
+    const response = await api.get(`course-content/files/${fileId}/download`, createAuthConfig({
+      responseType: 'blob', // Important for handling binary data
+    }));
+    
+    // Create blob URL and trigger download
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName || 'downloaded-file';
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    window.URL.revokeObjectURL(url);
+    
+    return response.data;
+  } catch (error) {
+    console.error('Download failed:', error);
+    throw error;
+  }
+};

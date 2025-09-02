@@ -5,18 +5,26 @@ let stompClient = null;
 let connectedContexts = new Map(); // Map of context -> callback
 
 export const connectWebSocket = (userId, context = 'eduSphere', onMessageReceived) => {
-  // Store the callback for this context
   connectedContexts.set(context, onMessageReceived);
 
-  // If already connected, just subscribe to the new context
   if (stompClient && stompClient.connected) {
     subscribeToContext(userId, context, onMessageReceived);
     return Promise.resolve();
   }
 
-  // Create new connection
   try {
-    const socket = new SockJS("http://13.61.114.153:8082/ws");
+    const token = localStorage.getItem("jwtToken");
+    if (!token) {
+      console.error("No JWT token found");
+      return;
+    }
+
+    const socketUrl = `http://13.61.114.153:8081/ws?token=${token}`;
+    
+    // ✅ Force WebSocket transport
+    const socket = new SockJS(socketUrl, null, {
+      transports: ['websocket']
+    });
 
     stompClient = new Client({
       webSocketFactory: () => socket,
@@ -24,23 +32,23 @@ export const connectWebSocket = (userId, context = 'eduSphere', onMessageReceive
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: (frame) => {
-        // Subscribe to all contexts that were requested
+        console.log('✅ WebSocket connected:', frame);
         connectedContexts.forEach((callback, ctx) => {
           subscribeToContext(userId, ctx, callback);
         });
       },
       onDisconnect: () => {
-        connectedContexts.clear();
+        console.log('WebSocket disconnected');
       },
       onStompError: (frame) => {
-        console.error("STOMP error:", frame);
+        console.error("STOMP Error:", frame);
       }
     });
 
     stompClient.activate();
-    
+
   } catch (error) {
-    console.error("Failed to create WebSocket connection:", error);
+    console.error("WebSocket connection failed:", error);
   }
 };
 

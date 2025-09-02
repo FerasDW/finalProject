@@ -4,7 +4,10 @@ import { useFriends } from "../../../Context/FriendContext";
 import "../../../CSS/Components/Community/stories.scss";
 
 // Import the new clean API functions
-import { getStoriesFeed, createStory } from "../../../Api/CommunityAPIs/storiesApi";
+import {
+  getStoriesFeed,
+  createStory,
+} from "../../../Api/CommunityAPIs/storiesApi";
 
 const Stories = () => {
   const [openUserIndex, setOpenUserIndex] = useState(null);
@@ -19,6 +22,8 @@ const Stories = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const MEDIA_BASE_URL = "http://13.61.114.153:8081";
+
   const userId = authData?.id;
 
   // Load user stories when component mounts or user changes
@@ -30,7 +35,7 @@ const Stories = () => {
   const loadStories = async () => {
     try {
       const friendIds = friendsList.map((friend) => friend.id);
-      
+
       const response = await getStoriesFeed(userId, friendIds);
       const storiesData = response.stories || [];
 
@@ -104,7 +109,9 @@ const Stories = () => {
       setCurrentStoryIndex(0);
       setStoryProgress(0);
     } else {
-      alert("You don't have any stories yet. Click the + button to create one!");
+      alert(
+        "You don't have any stories yet. Click the + button to create one!"
+      );
     }
   };
 
@@ -182,7 +189,7 @@ const Stories = () => {
         name: authData.name,
         profilePic: authData.profilePic || "",
         text: storyText.trim(),
-        img: selectedFile || null
+        img: selectedFile || null,
       };
 
       await createStory(storyData);
@@ -264,17 +271,29 @@ const Stories = () => {
     return () => document.removeEventListener("keydown", handleKeyPress);
   }, [openUserIndex, currentStoryIndex]);
 
+  // In Stories.jsx
+
   const renderStoryMedia = (story) => {
+    // Check if the image path is already a full URL.
+    // This handles old stories that were saved with the wrong format.
+    let imageUrl = story.img;
+    if (imageUrl && !imageUrl.startsWith("http")) {
+      // If it's a relative path, prepend the base URL.
+      // This handles new stories that are saved with the correct format.
+      const MEDIA_BASE_URL = "http://13.61.114.153:8081";
+      imageUrl = `${MEDIA_BASE_URL}${story.img}`;
+    }
+
     const isVideo =
       story.type === "video" ||
-      (story.img &&
-        (story.img.includes(".mp4") ||
-          story.img.includes(".webm") ||
-          story.img.includes(".ogg") ||
-          story.img.includes(".mov")));
+      (imageUrl &&
+        (imageUrl.includes(".mp4") ||
+          imageUrl.includes(".webm") ||
+          imageUrl.includes(".ogg") ||
+          imageUrl.includes(".mov")));
 
     // If it's just text or no media
-    if (story.type === "text" || (!story.img && story.text)) {
+    if (story.type === "text" || (!imageUrl && story.text)) {
       return (
         <div className="story-text-content">
           <p>{story.text}</p>
@@ -283,30 +302,32 @@ const Stories = () => {
     }
 
     // If we have media (image or video)
-    if (story.img) {
+    if (imageUrl) {
       const mediaElement = isVideo ? (
         <video
           className="story-full-video"
-          src={story.img}
+          src={imageUrl}
           autoPlay
           muted
           loop
           onError={(e) => {
-            console.error("Video failed to load:", story.img);
+            console.error("Video failed to load:", imageUrl);
           }}
         />
       ) : (
         <img
-          src={story.img}
+          src={imageUrl}
           alt="Story"
           className="story-full-img"
           onError={(e) => {
-            e.target.src =
-              "https://via.placeholder.com/400x600/cccccc/666666?text=Story";
+            console.error("Image failed to load:", imageUrl);
+            e.target.src = "https://picsum.photos/400/600?grayscale";
+          }}
+          onLoad={() => {
+            console.log("Image loaded successfully:", imageUrl);
           }}
         />
       );
-
       return (
         <div className="story-media-container">
           {mediaElement}
@@ -339,12 +360,19 @@ const Stories = () => {
         }}
       >
         <img
-          src={authData?.profilePic || authData?.profile_pic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "default")}
+          src={
+            authData?.profilePic ||
+            authData?.profile_pic ||
+            "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
+              (authData?.name || "default")
+          }
           alt={authData?.name || "User"}
           onClick={handleOpenCurrentUserStory}
           style={{ cursor: "pointer" }}
           onError={(e) => {
-            e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (authData?.name || "default");
+            e.target.src =
+              "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
+              (authData?.name || "default");
           }}
         />
         <span
@@ -366,11 +394,17 @@ const Stories = () => {
             key={user.userId}
             onClick={() => handleOpenStory(displayIndex)}
           >
-            <img 
-              src={user.profilePic || "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (user.name || "user")}
+            <img
+              src={
+                user.profilePic ||
+                "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
+                  (user.name || "user")
+              }
               alt={user.name}
               onError={(e) => {
-                e.target.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + (user.name || "user");
+                e.target.src =
+                  "https://api.dicebear.com/7.x/avataaars/svg?seed=" +
+                  (user.name || "user");
               }}
             />
             <span>{user.name}</span>

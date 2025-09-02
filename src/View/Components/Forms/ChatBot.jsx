@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import styles from "../../../CSS/Components/Forms/chatBot.module.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://13.61.114.153:8082';
+const API_BASE_URL = 'http://13.61.114.153:8082';
 
 const ChatUI = () => {
   const [isOpen, setIsOpen] = useState(false);
