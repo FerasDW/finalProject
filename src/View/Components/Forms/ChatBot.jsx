@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import styles from "../../../CSS/Components/Forms/chatBot.module.css";
+import { getBotResponse } from "../../../Utils/chatbotResponses";
 
-const API_BASE_URL = 'http://13.61.114.153:8082';
+const API_BASE_URL = "http://13.61.114.153:8082";
 
 const ChatUI = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,38 +37,19 @@ const ChatUI = () => {
 
   // Function to format bot response text
   const formatBotResponse = (text) => {
-    return text
-      .split('\n')
-      .map((line, index) => (
-        <React.Fragment key={index}>
-          {line}
-          {index < text.split('\n').length - 1 && <br />}
-        </React.Fragment>
-      ));
+    return text.split("\n").map((line, index) => (
+      <React.Fragment key={index}>
+        {line}
+        {index < text.split("\n").length - 1 && <br />}
+      </React.Fragment>
+    ));
   };
 
-  const handleSend = async () => {
-    if (!message.trim()) return;
-
-    const userMessage = {
-      sender: "user",
-      text: message,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setChatLog((prev) => [...prev, userMessage]);
-    setMessage("");
-    setIsTyping(true);
-
-    if (!isOpen) setIsOpen(true);
-
+  const handleApiCall = async (userMessage) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/chat`, { message });
-      const botResponse = response.data.response;
-
+      const response = await axios.post(`${API_BASE_URL}/api/chatbot`, {
+        message,
+      });
       // Simulate typing delay for better UX
       setTimeout(() => {
         setChatLog((prev) => [
@@ -83,15 +65,13 @@ const ChatUI = () => {
         ]);
         setIsTyping(false);
       }, 800);
-
-    } catch (error) {
-      console.error("Error sending message to bot:", error);
+      // Simulate typing delay for better UX
       setTimeout(() => {
         setChatLog((prev) => [
           ...prev,
           {
             sender: "bot",
-            text: "I'm sorry, I'm having trouble connecting. Please try again later. 😔",
+            text: botResponse,
             time: new Date().toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -99,8 +79,59 @@ const ChatUI = () => {
           },
         ]);
         setIsTyping(false);
-      }, 500);
+      }, 800);
+    } catch (error) {
+      console.error("Error fetching bot response:", error);
+      setChatLog((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: "Sorry, I'm having trouble connecting to the server. Please try again later.",
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+      setIsTyping(false);
     }
+  };
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    const userMessage = {
+      sender: "user",
+      text: message,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    setChatLog((prev) => [...prev, userMessage]);
+    setMessage("");
+    setIsTyping(true);
+
+    if (!isOpen) setIsOpen(true);
+
+    // Get the response directly from the new file without a network call
+    const botResponse = getBotResponse(userMessage.text);
+
+    // Simulate typing delay for better UX
+    setTimeout(() => {
+      setChatLog((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: botResponse,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+      setIsTyping(false);
+    }, 800);
   };
 
   const handleKeyDown = (e) => {
@@ -159,20 +190,27 @@ const ChatUI = () => {
 
         <div className={styles.chatBody} ref={chatBodyRef}>
           {chatLog.map((msg, i) => (
-            <div key={i} className={`${styles.chatBubble} ${styles[msg.sender]}`}>
+            <div
+              key={i}
+              className={`${styles.chatBubble} ${styles[msg.sender]}`}
+            >
               <div className={styles.messageContent}>
                 {msg.sender === "bot" ? formatBotResponse(msg.text) : msg.text}
               </div>
               <div className={styles.meta}>
                 <span className={styles.time}>{msg.time}</span>
-                {msg.sender === "user" && <span className={styles.check}>✔</span>}
+                {msg.sender === "user" && (
+                  <span className={styles.check}>✔</span>
+                )}
               </div>
             </div>
           ))}
-          
+
           {/* Typing indicator */}
           {isTyping && (
-            <div className={`${styles.chatBubble} ${styles.bot} ${styles.typingIndicator}`}>
+            <div
+              className={`${styles.chatBubble} ${styles.bot} ${styles.typingIndicator}`}
+            >
               <div className={styles.typingDots}>
                 <span></span>
                 <span></span>
@@ -200,8 +238,8 @@ const ChatUI = () => {
             onKeyDown={handleKeyDown}
             disabled={isTyping}
           />
-          <button 
-            onClick={handleSend} 
+          <button
+            onClick={handleSend}
             disabled={!message.trim() || isTyping}
             className={isTyping ? styles.sending : ""}
           >
@@ -211,7 +249,11 @@ const ChatUI = () => {
       </div>
 
       {!isOpen && (
-        <div className={`${styles.chatInputBar} ${inputFocused ? styles.focused : ""}`}>
+        <div
+          className={`${styles.chatInputBar} ${
+            inputFocused ? styles.focused : ""
+          }`}
+        >
           <img
             src="https://img.icons8.com/?size=100&id=uZrQP6cYos2I&format=png&color=000000"
             alt="bot"

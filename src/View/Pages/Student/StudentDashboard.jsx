@@ -152,17 +152,7 @@ export default function StudentDashboard() {
             </div>
             
             {/* User Avatar */}
-            <div className={styles.userAvatar}>
-              {authData.profilePic ? (
-                <img 
-                  src={authData.profilePic} 
-                  alt="Profile" 
-                  className={styles.profileImage}
-                />
-              ) : (
-                <User className={styles.userIcon} />
-              )}
-            </div>
+            
           </div>
         </div>
       </header>

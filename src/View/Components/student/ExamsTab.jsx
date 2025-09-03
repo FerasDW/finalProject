@@ -209,10 +209,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
 
   const getExamStatus = (exam) => {
     // Use the status provided by the backend since it already handles all the logic
-    if (exam.status) {
-      // Backend provides: 'upcoming', 'available', 'expired'
-      return exam.status;
-    }
+    
 
     // Fallback logic if status is not provided by backend
     const now = new Date();
@@ -1203,12 +1200,15 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
         ) : (
           exams.map(exam => {
             const status = getExamStatus(exam);
+            //const status = 'available';
             const course = courses?.find(c => c.id === exam.courseId);
             const examDate = new Date(exam.startTime);
             const endDate = new Date(exam.endTime);
             
             // Check if exam can be taken - use backend information
-            const canTakeExam = exam.canTakeExam !== undefined ? exam.canTakeExam : (status === 'available');
+            const canTakeExam = exam.canTakeExam !== undefined ? true : (status === 'available');
+            
+            //const canTakeExam = true
             const hasActiveAttempt = exam.hasActiveAttempt || false;
             const attemptCount = exam.attemptCount || 0;
             const maxAttempts = exam.maxAttempts || 1;
@@ -1332,7 +1332,9 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
                   </div>
 
                   <div className={styles.actionPanel}>
+                    
                     {/* FIXED: Check for both SUBMITTED and GRADED status */}
+                    
                     {exam.latestAttempt && (exam.latestAttempt.status === 'SUBMITTED' || exam.latestAttempt.status === 'GRADED') ? (
                       <div className={styles.completedPanel}>
                         <div className={styles.completedIcon}>
@@ -1375,6 +1377,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
                         })()}
                       </div>
                     ) : (status === 'available' && canTakeExam) ? (
+                     
                       <div className={styles.availablePanel}>
                         <div className={styles.examIconContainer}>
                           <Play className={styles.examActionIcon} />
@@ -1413,6 +1416,7 @@ export default function ExamsTab({ selectedCourse, setSelectedCourse, studentId,
                         )}
                       </div>
                     ) : (
+                       console.log('Exam can be takenssssssssssssssssssssssssssssssssssssssssssssssssss:', { canTakeExam,status }),
                       <div className={styles.scheduledPanel}>
                         <div className={styles.scheduledIconContainer}>
                           <Clock className={styles.scheduledActionIcon} />

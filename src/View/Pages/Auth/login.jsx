@@ -68,7 +68,7 @@ export default function Login() {
   return (
     <div className="login-body">
       <div className="container">
-        <div className="form-container">
+        <div className="form-containerr">
           <div className="login-form form-splitter">
             <form className="form-group" onSubmit={handleLogin}>
               <img className="logo" src={Logo} alt="logo" />

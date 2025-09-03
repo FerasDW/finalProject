@@ -763,7 +763,7 @@ const GenericProfile = ({
               <div className="info-row">
                 <strong>Status:</strong> {selectedMessage.status}
               </div>
-              <div className="info-row message-content">
+              <div className="info-row message-contentt">
                 <strong>Message:</strong>
                 <p>{selectedMessage.content}</p>
               </div>
@@ -882,7 +882,7 @@ const GenericProfile = ({
               </div>
               <div className="info-row">
                 <strong>Message:</strong>
-                <p className="message-content">{selectedRecord.content}</p>
+                <p className="message-contentt">{selectedRecord.content}</p>
               </div>
             </div>
           </div>

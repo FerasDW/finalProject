@@ -33,6 +33,7 @@ const createAuthConfig = (additionalConfig = {}) => {
 export const getDashboardData = async (userRole) => {
   try {
     const response = await axios.get(`${BASE_URL}/complete/${userRole}`, createAuthConfig());
+    console.log("Fetched dashboard data:", response.data);
     return response.data || {
       stats: {},
       charts: {},

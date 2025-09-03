@@ -129,12 +129,13 @@ const DashboardContent = ({ userRole }) => {
                 bar: dashboardApiData.charts.departmentEnrollment,
                 pie: dashboardApiData.charts.systemUsage,
                 line: dashboardApiData.charts.annualEnrollment,
+                
               };
               const chartData = chartDataMap[props.chartType] || [];
 
               let chartComponent;
               if (chartData.length > 0) {
-                  const ChartComponents = { bar: <BarChart data={chartData} />, pie: <PieChart data={chartData} />, line: <LineChart data={chartData} /> };
+                  const ChartComponents = { bar: <BarChart data={chartData} />, pie: <PieChart data={chartData} />, line: <BarChart data={chartData} /> };
                   chartComponent = ChartComponents[props.chartType];
               } else {
                   chartComponent = <div style={{ textAlign: 'center', padding: '20px' }}>No data available.</div>;

@@ -568,6 +568,7 @@ export const TemplateForm = ({ formType, onSave, onUse, onCancel, initialData, s
                             <div className={`form-field ${errors.variables ? 'error' : ''}`}>
                                 <label className="form-label">Variables</label>
                                 <input 
+                                disa
                                     type="text" 
                                     name="variables" 
                                     value={formData.variables || ""} 

@@ -33,7 +33,6 @@ export const leftMenuItems = {
     { title: "Calendar", icon: <Calendar /> },
     { title: "Messages", icon: <Mail /> },
     { title: "Community", icon: <Users /> },
-    { title: "Generate Semester", icon: <Sparkles /> },
     { title: "Statistics", icon: <BarChart2 /> },
   ],
 
