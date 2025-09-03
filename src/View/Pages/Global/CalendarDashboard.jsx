@@ -96,12 +96,7 @@ const CalendarDashboard = () => {
             ))}
           </select>
 
-          <select name="courseId" value={filters.courseId || ''} onChange={handleFilterChange} className={styles.filterSelect}>
-            <option value="">Filter by Course</option>
-            {courseOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
+
         </div>
       )}
       <div className={styles.gridLayout}>

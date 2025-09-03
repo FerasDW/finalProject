@@ -96,6 +96,8 @@ export default function GenericDashboard({ entityType = "students" }) {
       "accountNonLocked",
       "credentialsNonExpired",
       "accountNonExpired",
+      "dateOfBirth",
+      "socialLinks",
     ];
 
     if (entityType === "students") {
@@ -107,7 +109,10 @@ export default function GenericDashboard({ entityType = "students" }) {
         "rating",
       ];
     } else if (entityType === "lecturers") {
-      return [...commonHiddenColumns, "academicYear"];
+      return [
+        ...commonHiddenColumns, "academicYear",
+        "status",
+      ];
     }
 
     return commonHiddenColumns;

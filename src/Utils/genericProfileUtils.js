@@ -585,7 +585,7 @@ export const getColumnConfigs = (tableType) => {
 export const getHiddenColumns = (tableType) => {
   const hiddenColumns = {
     "academic-records": ["id"],
-    courses: ["id", "notes"],
+    courses: ["id", "notes", "description", "classSize"],
     enrollments: ["id"],
     "weekly-schedule": ["id"],
     schedules: ["id", "courseCode"],

@@ -84,10 +84,24 @@ const useCourses = () => {
             
             // Note: The backend now sends a CourseSummaryResponse DTO. The `lecturerName` is already included.
             // This mapping is now simpler.
-            const enhancedCourses = backendCourses?.map(course => ({
-                ...course,
-                lecturer: filteredLecturers.find(l => l.name === course.lecturerName)
-            })) || [];
+const enhancedCourses = backendCourses?.map(course => {
+    // Find the lecturer using the ID, not the name (more reliable)
+    const lecturer = filteredLecturers.find(l => l.id === course.lecturer_id);
+    return {
+        // Spread all properties from the original course object
+        ...course,
+        // Map the lecturer object to a new field
+        lecturer: lecturer,
+        // Ensure academicYear and semester are explicitly preserved
+        academicYear: course.academicYear,
+        semester: course.semester,
+        // You might also need to map other fields
+        id: course._id?.$oid || course.id,
+        imageUrl: course.imageUrl || null,
+        name: course.name || course.title,
+        code: course.code || null
+    };
+}) || [];
 
 
 
@@ -174,7 +188,6 @@ const useCourses = () => {
                     { name: "department", label: "Department", type: "select", options: options.departments },
                     { name: "academicYear", label: "Academic Year", type: "select", options: academicYearOptions },
                     { name: "semester", label: "Semester", type: "select", options: options.semesters || [] },
-                    { name: "year", label: "Year", type: "select", options: options.years || [] },
                     { name: "selectable", label: "Elective", type: "select", options: ["yes", "no"] },
                 ];
             }
